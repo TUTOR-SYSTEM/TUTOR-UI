@@ -16,6 +16,8 @@ export type ApiErrorResponse = {
     path?: string;
     message?: string;
   }>;
+  /** Request context id set by gateway middleware — same id `/logs/trace/:correlationId` groups on. */
+  correlationId?: string;
   [key: string]: unknown;
 };
 

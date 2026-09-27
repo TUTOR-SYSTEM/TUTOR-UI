@@ -6,6 +6,8 @@ export type ApiResponse<T> = {
   timestamp: string;
   method: string;
   path: string;
+  /** Request context id set by gateway middleware — same id `/logs/trace/:correlationId` groups on. */
+  correlationId?: string;
 };
 
 /** Common shape returned by `DELETE` endpoints across resources. */

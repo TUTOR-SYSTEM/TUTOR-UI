@@ -592,6 +592,31 @@ read access follows the same rule as `GET /sessions/:id` (owner, enrolled studen
 
 ---
 
+## 22. Logs (Request Logging) — `/logs`
+
+
+| M   | Path                          | Auth | Scenario | Payload                                                                                          | Response                                                                                                     | Roles | Status |
+| --- | ------------------------------ | ---- | -------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----- | ------ |
+| GET | `/logs`                       | JWT  | success  | Query: `page?`, `limit?` (default 1/20, max 100), `serviceName?`, `type?` (`HTTP`/`RPC`), `correlationId?`, `search?` (substring match trên `path`) | `{ data: RequestLogRow[], pagination: { total, page, limit, totalPages } }` — key list là `data`, không phải `logs` | ADMIN |        |
+| GET | `/logs/trace/:correlationId`  | JWT  | success  | —                                                                                                    | `RequestLogRow[]` — mảng phẳng, KHÔNG có pagination, toàn bộ hop cùng correlationId, ORDER BY `createdAt` ASC     | ADMIN |        |
+
+Notes: gateway expose module logging tập trung (bảng `request_logs` ở THIRD_SERVICE). Không hỗ trợ
+filter theo `statusCode`/lỗi hay `sort` param — FE tự lọc/sắp xếp client-side trên dữ liệu trang hiện
+tại (xem `components/logger/logger-page.tsx`). `serviceName` thực tế: `gateway`, `tutor-service`,
+`user-service`, `third-service`.
+
+Envelope (mọi endpoint, không riêng `/logs`): cả response thành công (`ApiResponse<T>`) lẫn lỗi
+(`ApiErrorResponse`) đều có sẵn field `correlationId` (gateway `ResponseInterceptor`/error filter tự
+gắn từ `RequestContext`) — FE dùng field này để, sau khi tự gọi lại (`Send`) một request đã log ở
+trang `/logs`, mở đúng trace của lần gọi MỚI thay vì trace cũ (xem `handleSend` trong
+`components/logger/logger-page.tsx` + `components/logger/log-replay-panel.tsx`). `type LogType =
+"HTTP" | "RPC"`: chỉ hop `HTTP` (luôn qua `gateway`) mới gọi lại được từ FE — hop `RPC` giữa các
+service nội bộ (vd `curriculum.getById`, `redis.get`) không có route HTTP tương ứng nên không thể
+replay.
+
+
+---
+
 ## Summary
 
 

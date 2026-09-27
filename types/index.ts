@@ -15,3 +15,4 @@ export * from "./schedule.types";
 export * from "./lesson.types";
 export * from "./attendance.types";
 export * from "./flow-request.types";
+export * from "./log.types";
