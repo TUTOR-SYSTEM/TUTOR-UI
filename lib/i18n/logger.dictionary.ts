@@ -4,300 +4,227 @@ export type LoggerDictionary = {
   page: {
     title: string;
     subtitle: string;
-    totalSuffix: (count: number) => string;
   };
-  filters: {
+  list: {
+    title: (count: number) => string;
     searchPlaceholder: string;
-    errorOnlyLabel: string;
-  };
-  table: {
-    index: string;
-    request: string;
-    occurrenceHint: (count: number) => string;
-    status: string;
-    duration: string;
-    durationSortHint: string;
-    replayColumn: string;
-    hasRedactedToast: string;
+    filters: Record<"all" | "err" | "warn" | "slow" | "ok", string>;
+    columns: {
+      result: string;
+      method: string;
+      endpoint: string;
+      duration: string;
+    };
+    resultBadge: Record<"ok" | "warn" | "err" | "slow", string>;
+    subline: (dateTime: string, ip: string) => string;
+    empty: string;
     loading: string;
     error: string;
-    empty: string;
-    expandHint: string;
-    subCaseSectionTitle: (count: number) => string;
-    subCaseSuccessLabel: string;
-    subCaseCheckButton: string;
-    subCaseNone: string;
   };
-  badge: {
-    error: string;
-    slowest: string;
-    pass: string;
-    failed: string;
-  };
-  trace: {
-    title: string;
-    subtitle: (correlationId: string) => string;
-    closeButton: string;
-    loading: string;
-    error: string;
-    empty: string;
-    hopCountSuffix: (count: number) => string;
-    requestBodyLabel: string;
-    noBody: string;
-    refresh: string;
-    viewTracking: string;
-    trackingTitle: string;
-  };
-  replay: {
-    sectionTitle: string;
-    warning: string;
-    bodyLabel: string;
-    sendButton: (method: string) => string;
-    confirmSend: (method: string, path: string) => string;
-    invalidJson: string;
-    sendFailed: string;
-    resultSuccess: (statusCode?: number) => string;
-    resultError: (statusCode?: number) => string;
-    fieldsTitle: string;
-    noBodyFields: string;
-    rawBodyLabel: string;
-    fieldRequired: string;
-    invalidNumber: string;
-    sensitiveFieldHint: string;
-    sensitiveFieldPlaceholder: (key: string) => string;
-    showValue: string;
-    hideValue: string;
-    viewNewTrace: string;
+  detail: {
+    headerTitle: string;
+    headerPosition: (index: number, total: number) => string;
+    escHint: string;
+    prev: string;
+    next: string;
+    close: string;
+    traceIdLabel: string;
+    copyTraceId: string;
+    traceIdCopied: string;
+    loadingTrace: string;
+    summary: {
+      totalTime: string;
+      servicesPassedLabel: string;
+      servicesPassed: (count: number) => string;
+      spanCountLabel: string;
+      spanCount: (total: number, errorCount: number) => string;
+      clientIp: string;
+    };
+    errorBox: (service: string) => string;
+    waterfall: { title: string; timeStart: string; timeEnd: (totalMs: number) => string };
+    span: {
+      noBody: string;
+      tabs: { req: string; res: string; processing: string };
+      callFlow: { client: string };
+      requestTab: { body: string };
+      responseTab: { responseTime: string; size: string; body: string };
+      processingTab: {
+        metrics: { start: string; duration: string; percentOfTrace: string };
+        childrenTitle: string;
+        noChildren: string;
+      };
+    };
   };
   usageGuide: {
-    steps: {
-      n: number;
-      title: string;
-      body: string;
-    }[];
+    steps: { n: number; title: string; body: string }[];
     warning: string;
   };
 };
 
 const vi: LoggerDictionary = {
   page: {
-    title: "Nhật ký request",
-    subtitle:
-      "Danh sách request HTTP đi vào qua gateway — bấm \"Gửi lại & theo dõi\" trên 1 request để xem đầy đủ hop xuyên các service khác.",
-    totalSuffix: (count) => `${count} bản ghi`,
+    title: "Giám sát Request",
+    subtitle: "Theo dõi request qua từng microservice · distributed tracing · realtime",
   },
-  filters: {
-    searchPlaceholder: "Tìm theo đường dẫn (path)...",
-    errorOnlyLabel: "Chỉ hiện lỗi (trang hiện tại)",
+  list: {
+    title: (count) => `Danh sách request · ${count} kết quả`,
+    searchPlaceholder: "Tìm endpoint...",
+    filters: {
+      all: "Tất cả",
+      err: "Lỗi 5xx",
+      warn: "Lỗi 4xx",
+      slow: "Chậm",
+      ok: "Thành công",
+    },
+    columns: {
+      result: "Kết quả",
+      method: "Method",
+      endpoint: "Endpoint",
+      duration: "Thời gian xử lý",
+    },
+    resultBadge: { ok: "Đạt", warn: "Lỗi", err: "Lỗi", slow: "Chậm" },
+    subline: (dateTime, ip) => `${dateTime} · ${ip}`,
+    empty: "Không có request nào phù hợp bộ lọc.",
+    loading: "Đang tải request...",
+    error: "Không tải được danh sách request.",
   },
-  table: {
-    index: "STT",
-    request: "Request",
-    occurrenceHint: (count) =>
-      `Endpoint này xuất hiện ${count} lần trong dữ liệu trang hiện tại — chỉ hiện bản ghi gần nhất.`,
-    status: "Mã trạng thái",
-    duration: "Thời lượng",
-    durationSortHint: "Bấm để sắp xếp theo thời lượng (trang hiện tại)",
-    replayColumn: "Gửi lại & theo dõi",
-    hasRedactedToast:
-      "Request này có trường nhạy cảm bị ẩn trong log (vd password) — mở trace để nhập giá trị thật rồi gửi thủ công.",
-    loading: "Đang tải nhật ký...",
-    error: "Không thể tải nhật ký request.",
-    empty: "Không tìm thấy bản ghi nào phù hợp.",
-    expandHint: "Xem các case pass/failed của endpoint này",
-    subCaseSectionTitle: (count) =>
-      `${count} case quan sát được từ log (trang hiện tại) — bấm Kiểm tra để gửi thật và xác nhận lại`,
-    subCaseSuccessLabel: "Thành công",
-    subCaseCheckButton: "Kiểm tra",
-    subCaseNone: "Chưa ghi nhận case nào cho endpoint này trong trang hiện tại.",
-  },
-  badge: {
-    error: "Lỗi",
-    slowest: "Chậm nhất",
-    pass: "Pass",
-    failed: "Failed",
-  },
-  trace: {
-    title: "Chi tiết trace",
-    subtitle: (correlationId) => `Correlation ID: ${correlationId}`,
-    closeButton: "Đóng",
-    loading: "Đang tải trace...",
-    error: "Không thể tải trace.",
-    empty: "Không tìm thấy hop nào cho correlation ID này.",
-    hopCountSuffix: (count) => `${count} hop`,
-    requestBodyLabel: "Request body đã gửi",
-    noBody: "Không có body",
-    refresh: "Làm mới",
-    viewTracking: "Xem tracking",
-    trackingTitle: "Tracking qua các service",
-  },
-  replay: {
-    sectionTitle: "Gửi lại để kiểm tra",
-    warning:
-      "Đây là request THẬT — sẽ gọi thẳng vào gateway bằng token đang đăng nhập. Chỉ áp dụng cho hop gọi qua HTTP (không thể gửi lại hop RPC nội bộ giữa các service).",
-    bodyLabel: "Các field trong body (sửa từng field trước khi gửi)",
-    sendButton: (method) => `Gửi ${method}`,
-    confirmSend: (method, path) =>
-      `Gửi thật request ${method} ${path}? Hành động này có thể thay đổi dữ liệu thật, không thể hoàn tác.`,
-    invalidJson: "Không phải JSON hợp lệ.",
-    sendFailed: "Gửi request thất bại.",
-    resultSuccess: (statusCode) => `Thành công (status ${statusCode ?? "—"})`,
-    resultError: (statusCode) => `Lỗi (status ${statusCode ?? "—"})`,
-    fieldsTitle: "Field",
-    noBodyFields: "Request này không có field nào trong body.",
-    rawBodyLabel: "Body thô (không phải object phẳng)",
-    fieldRequired: "Không được để trống.",
-    invalidNumber: "Phải là một số.",
-    sensitiveFieldHint:
-      "BE tự ẩn giá trị thật của trường này thành \"[REDACTED]\" trước khi lưu log (đúng thực hành bảo mật) — không thể khôi phục, cần nhập lại giá trị thật để gửi thành công.",
-    sensitiveFieldPlaceholder: (key) => `Nhập ${key} thật...`,
-    showValue: "Hiện giá trị",
-    hideValue: "Ẩn giá trị",
-    viewNewTrace: "Xem tracking lần gửi này",
+  detail: {
+    headerTitle: "Chi tiết request",
+    headerPosition: (index, total) => `Request ${index} / ${total}`,
+    escHint: "Esc để đóng",
+    prev: "Trước",
+    next: "Sau",
+    close: "Đóng",
+    traceIdLabel: "Correlation ID",
+    copyTraceId: "Sao chép Correlation ID",
+    traceIdCopied: "Đã sao chép Correlation ID",
+    loadingTrace: "Đang tải luồng qua các service...",
+    summary: {
+      totalTime: "Tổng thời gian",
+      servicesPassedLabel: "Service đi qua",
+      servicesPassed: (count) => `${count} service`,
+      spanCountLabel: "Hop / lỗi",
+      spanCount: (total, errorCount) => `${total} hop · ${errorCount} lỗi`,
+      clientIp: "Client IP",
+    },
+    errorBox: (service) => `Lỗi phát sinh tại ${service}`,
+    waterfall: {
+      title: "Luồng qua microservice",
+      timeStart: "0ms",
+      timeEnd: (totalMs) => `${totalMs}ms`,
+    },
+    span: {
+      noBody: "(không có body)",
+      tabs: { req: "Request", res: "Response", processing: "Xử lý" },
+      callFlow: { client: "Client (Web / App)" },
+      requestTab: { body: "Body" },
+      responseTab: { responseTime: "Thời gian phản hồi", size: "Kích thước", body: "Body" },
+      processingTab: {
+        metrics: { start: "Bắt đầu", duration: "Thời lượng", percentOfTrace: "% trace" },
+        childrenTitle: "Hop con",
+        noChildren: "Hop này không gọi tiếp service nào khác.",
+      },
+    },
   },
   usageGuide: {
     steps: [
       {
         n: 1,
-        title: "Chỉ xem request HTTP ở gateway",
-        body: "Danh sách chỉ hiện request HTTP đi vào qua gateway, mỗi endpoint (method + path) chỉ 1 dòng đại diện cho lần gọi gần nhất — badge \"×N\" cho biết endpoint đó xuất hiện bao nhiêu lần trong trang hiện tại. Gõ một phần đường dẫn vào ô tìm kiếm để lọc thêm.",
+        title: "Lọc theo trạng thái",
+        body: "Dùng chip \"Lỗi 5xx\" / \"Lỗi 4xx\" / \"Chậm\" / \"Thành công\" để thu hẹp danh sách, hoặc gõ vào ô tìm kiếm để lọc theo endpoint. Request mới phát sinh tự hiện lên đầu danh sách theo thời gian thực, không cần tải lại trang.",
       },
       {
         n: 2,
-        title: "Xem request lỗi",
-        body: "Bật \"Chỉ hiện lỗi\" để lọc các dòng có mã trạng thái ≥ 400 hoặc có thông báo lỗi trên trang hiện tại.",
-      },
-      {
-        n: 3,
-        title: "Tìm hop chậm",
-        body: "Bấm vào tiêu đề cột Thời lượng để sắp xếp các dòng đang hiển thị theo thời gian xử lý.",
-      },
-      {
-        n: 4,
-        title: "Gửi lại & theo dõi",
-        body: "Bấm nút ở cột \"Gửi lại & theo dõi\" để mở popup chi tiết request đó — bấm \"Xem tracking\" để mở popup thứ 2 liệt kê tất cả hop qua từng service, chọn 1 hop để quay lại popup chính xem body/status của đúng hop đó. Sau khi bấm Gửi, popup tự chuyển sang theo dõi kết quả của lần gửi mới.",
-      },
-      {
-        n: 5,
-        title: "Kiểm tra case pass/failed",
-        body: "Bấm mũi tên đầu dòng để mở rộng danh sách case (vd endpoint /auth/login có thể có case đăng nhập thành công, sai email, sai mật khẩu...) đã quan sát được từ log của endpoint đó trên trang hiện tại — bấm \"Kiểm tra\" ở từng case để gửi thật lại request đó và xác nhận Pass/Failed dựa trên kết quả sống từ service.",
+        title: "Xem chi tiết luồng qua từng service",
+        body: "Bấm 1 dòng để mở popup — waterfall hiển thị toàn bộ hop xuyên các microservice (dựng từ dữ liệu thật ghi ở bảng request_logs), bấm 1 hop để xem body request/response thật ở 2 tab Request/Response, hoặc xem thời điểm/tỷ lệ thời gian ở tab Xử lý. Dùng nút Trước/Sau để chuyển sang request khác trong danh sách đang lọc.",
       },
     ],
     warning:
-      "BE `/logs` không hỗ trợ filter theo lỗi hay sort theo thời lượng — \"Chỉ hiện lỗi\" và sắp xếp cột Thời lượng chỉ áp dụng trên dữ liệu trang hiện tại, không phải toàn bộ dataset.",
+      "Danh sách chỉ hiển thị request HTTP đi vào qua API Gateway — các lệnh RPC nội bộ giữa các service chỉ xuất hiện trong luồng waterfall của request cha, không phải dòng riêng ở danh sách.",
   },
 };
 
 const en: LoggerDictionary = {
   page: {
-    title: "Request logs",
-    subtitle:
-      "List of HTTP requests coming in through the gateway — click \"Resend & track\" on one to see the full hop chain across other services.",
-    totalSuffix: (count) => `${count} records`,
+    title: "Request Monitoring",
+    subtitle: "Track requests across microservices · distributed tracing · realtime",
   },
-  filters: {
-    searchPlaceholder: "Search by path...",
-    errorOnlyLabel: "Errors only (current page)",
+  list: {
+    title: (count) => `Request list · ${count} results`,
+    searchPlaceholder: "Search endpoint...",
+    filters: {
+      all: "All",
+      err: "5xx errors",
+      warn: "4xx errors",
+      slow: "Slow",
+      ok: "Successful",
+    },
+    columns: {
+      result: "Result",
+      method: "Method",
+      endpoint: "Endpoint",
+      duration: "Duration",
+    },
+    resultBadge: { ok: "Passed", warn: "Failed", err: "Failed", slow: "Slow" },
+    subline: (dateTime, ip) => `${dateTime} · ${ip}`,
+    empty: "No request matches the current filter.",
+    loading: "Loading requests...",
+    error: "Failed to load the request list.",
   },
-  table: {
-    index: "No.",
-    request: "Request",
-    occurrenceHint: (count) =>
-      `This endpoint appears ${count} times in the current page's data — only the most recent record is shown.`,
-    status: "Status code",
-    duration: "Duration",
-    durationSortHint: "Click to sort by duration (current page)",
-    replayColumn: "Resend & track",
-    hasRedactedToast:
-      "This request has a sensitive field redacted in the log (e.g. password) — open its trace to enter the real value and send it manually.",
-    loading: "Loading logs...",
-    error: "Failed to load request logs.",
-    empty: "No matching records found.",
-    expandHint: "View pass/failed cases for this endpoint",
-    subCaseSectionTitle: (count) =>
-      `${count} case(s) observed in the log (current page) — click Check to send a real request and reconfirm`,
-    subCaseSuccessLabel: "Success",
-    subCaseCheckButton: "Check",
-    subCaseNone: "No case recorded for this endpoint on the current page.",
-  },
-  badge: {
-    error: "Error",
-    slowest: "Slowest",
-    pass: "Pass",
-    failed: "Failed",
-  },
-  trace: {
-    title: "Trace detail",
-    subtitle: (correlationId) => `Correlation ID: ${correlationId}`,
-    closeButton: "Close",
-    loading: "Loading trace...",
-    error: "Failed to load trace.",
-    empty: "No hops found for this correlation ID.",
-    hopCountSuffix: (count) => `${count} hops`,
-    requestBodyLabel: "Request body sent",
-    noBody: "No body",
-    refresh: "Refresh",
-    viewTracking: "View tracking",
-    trackingTitle: "Cross-service tracking",
-  },
-  replay: {
-    sectionTitle: "Resend to test",
-    warning:
-      "This is a REAL request — it calls the gateway directly using your current login token. Only available for HTTP hops (internal RPC hops between services can't be replayed).",
-    bodyLabel: "Body fields (edit each field before sending)",
-    sendButton: (method) => `Send ${method}`,
-    confirmSend: (method, path) =>
-      `Really send ${method} ${path}? This may change real data and cannot be undone.`,
-    invalidJson: "Not valid JSON.",
-    sendFailed: "Failed to send request.",
-    resultSuccess: (statusCode) => `Success (status ${statusCode ?? "—"})`,
-    resultError: (statusCode) => `Error (status ${statusCode ?? "—"})`,
-    fieldsTitle: "Field",
-    noBodyFields: "This request has no body fields.",
-    rawBodyLabel: "Raw body (not a flat object)",
-    fieldRequired: "Can't be empty.",
-    invalidNumber: "Must be a number.",
-    sensitiveFieldHint:
-      "The backend redacts this field's real value to \"[REDACTED]\" before storing the log (correct security practice) — it can't be recovered, so type the real value to send successfully.",
-    sensitiveFieldPlaceholder: (key) => `Enter the real ${key}...`,
-    showValue: "Show value",
-    hideValue: "Hide value",
-    viewNewTrace: "View tracking for this send",
+  detail: {
+    headerTitle: "Request detail",
+    headerPosition: (index, total) => `Request ${index} / ${total}`,
+    escHint: "Esc to close",
+    prev: "Previous",
+    next: "Next",
+    close: "Close",
+    traceIdLabel: "Correlation ID",
+    copyTraceId: "Copy Correlation ID",
+    traceIdCopied: "Correlation ID copied",
+    loadingTrace: "Loading the flow across services...",
+    summary: {
+      totalTime: "Total time",
+      servicesPassedLabel: "Services passed",
+      servicesPassed: (count) => `${count} services`,
+      spanCountLabel: "Hops / errors",
+      spanCount: (total, errorCount) => `${total} hops · ${errorCount} errors`,
+      clientIp: "Client IP",
+    },
+    errorBox: (service) => `Error originated at ${service}`,
+    waterfall: {
+      title: "Flow across microservices",
+      timeStart: "0ms",
+      timeEnd: (totalMs) => `${totalMs}ms`,
+    },
+    span: {
+      noBody: "(no body)",
+      tabs: { req: "Request", res: "Response", processing: "Processing" },
+      callFlow: { client: "Client (Web / App)" },
+      requestTab: { body: "Body" },
+      responseTab: { responseTime: "Response time", size: "Size", body: "Body" },
+      processingTab: {
+        metrics: { start: "Start", duration: "Duration", percentOfTrace: "% of trace" },
+        childrenTitle: "Child hops",
+        noChildren: "This hop doesn't call any other service.",
+      },
+    },
   },
   usageGuide: {
     steps: [
       {
         n: 1,
-        title: "Only HTTP requests at the gateway",
-        body: "The list only shows HTTP requests coming in through the gateway, one row per endpoint (method + path) representing its most recent call — the \"×N\" badge shows how many times that endpoint appears on the current page. Type part of a path into the search box to narrow it further.",
+        title: "Filter by status",
+        body: "Use the \"5xx errors\" / \"4xx errors\" / \"Slow\" / \"Successful\" chips to narrow the list, or type in the search box to filter by endpoint. New requests appear at the top of the list live, no reload needed.",
       },
       {
         n: 2,
-        title: "Find failed requests",
-        body: "Toggle \"Errors only\" to filter rows with status code ≥ 400 or an error message on the current page.",
-      },
-      {
-        n: 3,
-        title: "Find slow hops",
-        body: "Click the Duration column header to sort the currently displayed rows by processing time.",
-      },
-      {
-        n: 4,
-        title: "Resend & track",
-        body: "Click the \"Resend & track\" button to open that request's detail popup — click \"View tracking\" to open a second popup listing every hop across services, pick one to go back to the main popup with that hop's body/status. After you click Send, the popup automatically switches to tracking the result of the new call.",
-      },
-      {
-        n: 5,
-        title: "Check pass/failed cases",
-        body: "Click the arrow at the start of a row to expand the cases observed for that endpoint in the current page's log (e.g. /auth/login might have a successful login, wrong email, wrong password case...) — click \"Check\" on any case to actually resend it and confirm Pass/Failed from the service's live response.",
+        title: "Inspect the flow across services",
+        body: "Click a row to open the detail popup — the waterfall shows every hop across microservices (built from real request_logs data); click a hop to see its real request/response body in the Request/Response tabs, or timing in the Processing tab. Use Previous/Next to move to another request in the currently filtered list.",
       },
     ],
     warning:
-      "The `/logs` backend doesn't support filtering by error or sorting by duration — \"Errors only\" and the Duration column sort only apply to the current page's data, not the whole dataset.",
+      "The list only shows HTTP requests coming in through the API Gateway — internal RPC calls between services only appear inside their parent request's waterfall, not as their own row in the list.",
   },
 };
 
-export const loggerDictionary: Record<Language, LoggerDictionary> = {
-  vi,
-  en,
-};
+export const loggerDictionary: Record<Language, LoggerDictionary> = { vi, en };

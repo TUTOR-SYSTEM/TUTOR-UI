@@ -232,7 +232,8 @@ Uses CVA variants. Key props:
 
 | Variable              | Description          | Default                 |
 | --------------------- | -------------------- | ----------------------- |
-| `NEXT_PUBLIC_API_URL` | Backend API base URL | `http://localhost:8888` |
+| `NEXT_PUBLIC_API_URL` | Backend API base URL (gateway) | `http://localhost:8888` |
+| `NEXT_PUBLIC_THIRD_SERVICE_URL` | THIRD_SERVICE base URL — sockets aren't proxied through the gateway, so the `/logs` realtime feed (`hooks/useLogSocket.hook.ts`) connects here directly | `http://localhost:4000` |
 
 ## Git Remote
 

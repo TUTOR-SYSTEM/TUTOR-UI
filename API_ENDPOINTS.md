@@ -605,6 +605,15 @@ filter theo `statusCode`/lỗi hay `sort` param — FE tự lọc/sắp xếp cl
 tại (xem `components/logger/logger-page.tsx`). `serviceName` thực tế: `gateway`, `tutor-service`,
 `user-service`, `third-service`.
 
+**Realtime**: THIRD_SERVICE mở thêm websocket namespace `/logs` (Socket.IO, `LogGateway` —
+`THIRD_SERVICE/src/features/log/log.gateway.ts`) — emit event `log:new` (payload = 1 hàng
+`RequestLogRow` vừa insert) ngay sau khi `LogRepository.create()` thành công. Auth qua JWT trong
+`handshake.auth.token` (như `ChatGateway` ở tutor-service) + bắt buộc `role === 'ADMIN'`. Vì socket
+không đi qua gateway, FE nối thẳng tới THIRD_SERVICE (`NEXT_PUBLIC_THIRD_SERVICE_URL`, mặc định
+`http://localhost:4000`) qua `hooks/useLogSocket.hook.ts` — chỉ mở khi trang `/logger` đang mount
+(không phải socket toàn app như `/chat`). `logger-page.tsx` chỉ chèn thêm hàng mới vào trang 1 của
+danh sách khi `serviceName === "gateway" && type === "HTTP"` (khớp filter mặc định của list).
+
 Envelope (mọi endpoint, không riêng `/logs`): cả response thành công (`ApiResponse<T>`) lẫn lỗi
 (`ApiErrorResponse`) đều có sẵn field `correlationId` (gateway `ResponseInterceptor`/error filter tự
 gắn từ `RequestContext`) — FE dùng field này để, sau khi tự gọi lại (`Send`) một request đã log ở

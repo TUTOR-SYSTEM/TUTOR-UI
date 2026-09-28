@@ -1,12 +1,7 @@
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { useGet } from "@/lib/axios/query";
 import type { UseQueryOptions } from "@tanstack/react-query";
-import type {
-  ApiResponse,
-  ApiRequestLog,
-  RequestLogsApiPayload,
-  LogType,
-} from "@/types";
+import type { ApiRequestLog, ApiResponse, LogType, RequestLogsApiPayload } from "@/types";
 
 // ─── Query keys ──────────────────────────────────────────────────────────────
 
@@ -14,11 +9,8 @@ export const LOGS_QUERY_KEY = ["logs", "list"] as const;
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
-/**
- * Log monitoring — read-only (không có mutation). Gộp query list (`/logs`,
- * phân trang + filter) và query trace (`/logs/trace/:correlationId`, mảng
- * phẳng toàn bộ hop cùng correlationId, đã sort theo `createdAt` ở BE).
- */
+/** Logs only reads (admin-only monitoring) — `list` for `GET /logs`, `trace` for
+ * `GET /logs/trace/:correlationId` (all hops sharing one correlationId, for the waterfall). */
 export function useLogActions(args?: {
   list?: {
     page?: number;

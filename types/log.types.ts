@@ -1,39 +1,46 @@
-/** Loại lời gọi được ghi log — khớp `type` trong `request_logs` (THIRD_SERVICE). */
+/**
+ * "Giám sát Request" (Admin) — distributed tracing cho request đi qua từng microservice, chạy
+ * trên dữ liệu THẬT từ bảng `request_logs` (THIRD_SERVICE), lấy qua gateway `GET /logs` +
+ * `GET /logs/trace/:correlationId` (xem `API_ENDPOINTS.md` mục 22) và cập nhật realtime qua
+ * websocket `/logs` (THIRD_SERVICE, event `log:new`, admin-only).
+ */
+
 export type LogType = "HTTP" | "RPC";
 
-/** Tên service thực tế đang ghi log qua gateway (BE chưa có enum riêng cho field này). */
-export type LogServiceName =
-  | "gateway"
-  | "tutor-service"
-  | "user-service"
-  | "third-service";
+/** `serviceName` thực tế ghi vào `request_logs` — chỉ đúng 4 giá trị này. */
+export type LoggerServiceKey = "gateway" | "tutor-service" | "third-service" | "user-service";
 
-/** Một dòng log request/RPC — shape `request_logs` (THIRD_SERVICE `database/schema.ts`). */
+/** 1 hàng `request_logs` — 1 hop (HTTP vào gateway, hoặc 1 lệnh RPC nội bộ). */
 export type ApiRequestLog = {
   id: string;
   serviceName: string;
   type: LogType;
-  method?: string | null;
+  method: string | null;
   path: string;
-  statusCode?: number | null;
+  statusCode: number | null;
   durationMs: number;
   correlationId: string;
   traceId: string;
-  parentTraceId?: string | null;
-  userId?: string | null;
-  ip?: string | null;
-  requestBody?: string | null;
-  errorMessage?: string | null;
+  parentTraceId: string | null;
+  userId: string | null;
+  ip: string | null;
+  requestBody: string | null;
+  responseBody: string | null;
+  errorMessage: string | null;
   createdAt: string;
 };
 
-/** `GET /logs` — list có phân trang, key `data` (KHÔNG phải `logs`/`requestLogs`). */
 export type RequestLogsApiPayload = {
+  /** Key list BE trả là `data`, không phải `logs`/`requestLogs` — không đúng quy ước chung. */
   data: ApiRequestLog[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+  pagination: { total: number; page: number; limit: number; totalPages: number };
 };
+
+export type LoggerRequestFilter = "all" | "err" | "warn" | "slow" | "ok";
+
+export type LoggerSpanTab = "req" | "res" | "processing";
+
+/** 1 hàng trong cây trace của 1 correlationId, đã tính `depth` (qua `parentTraceId`) và `startMs`
+ * (mốc thời gian tương đối so với hàng gốc) để vẽ waterfall — xem `buildTraceTree` trong
+ * `components/logger/logger-utils.ts`. */
+export type LoggerTraceNode = ApiRequestLog & { depth: number; startMs: number };
