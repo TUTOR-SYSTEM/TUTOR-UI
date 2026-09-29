@@ -120,9 +120,18 @@
 | `/settings` | `app/(app)/settings/page.tsx` |
 
 
+### Monitoring (ADMIN only — `(admin)` route group)
+
+
+| Route           | File                                         |
+| --------------- | -------------------------------------------- |
+| `/logger`       | `app/(app)/(admin)/logger/page.tsx`          |
+| `/test-monitor` | `app/(app)/(admin)/test-monitor/page.tsx`    |
+
+
 ---
 
-**Total: 34 pages** — Auth: 6 | App: 28
+**Total: 36 pages** — Auth: 6 | App: 30
 
 ---
 

@@ -599,6 +599,7 @@ read access follows the same rule as `GET /sessions/:id` (owner, enrolled studen
 | --- | ------------------------------ | ---- | -------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----- | ------ |
 | GET | `/logs`                       | JWT  | success  | Query: `page?`, `limit?` (default 1/20, max 100), `serviceName?`, `type?` (`HTTP`/`RPC`), `correlationId?`, `search?` (substring match trên `path`) | `{ data: RequestLogRow[], pagination: { total, page, limit, totalPages } }` — key list là `data`, không phải `logs` | ADMIN |        |
 | GET | `/logs/trace/:correlationId`  | JWT  | success  | —                                                                                                    | `RequestLogRow[]` — mảng phẳng, KHÔNG có pagination, toàn bộ hop cùng correlationId, ORDER BY `createdAt` ASC     | ADMIN |        |
+| GET | `/logs/stats`                 | JWT  | success  | —                                                                                                    | `EndpointStats[]` = `{ method, path, calls24h, errorCount24h, p95Ms }` — chỉ hop HTTP ở gateway, 24h gần nhất, gộp theo `(method, path)`; `p95Ms` = `percentile_cont(0.95)` làm tròn ms | ADMIN |        |
 
 Notes: gateway expose module logging tập trung (bảng `request_logs` ở THIRD_SERVICE). Không hỗ trợ
 filter theo `statusCode`/lỗi hay `sort` param — FE tự lọc/sắp xếp client-side trên dữ liệu trang hiện
@@ -622,6 +623,42 @@ trang `/logs`, mở đúng trace của lần gọi MỚI thay vì trace cũ (xem
 "HTTP" | "RPC"`: chỉ hop `HTTP` (luôn qua `gateway`) mới gọi lại được từ FE — hop `RPC` giữa các
 service nội bộ (vd `curriculum.getById`, `redis.get`) không có route HTTP tương ứng nên không thể
 replay.
+
+
+---
+
+## 23. Test Scenarios — `/test-scenarios`
+
+Kịch bản test theo từng endpoint (admin). **Chạy** 1 kịch bản = bắn request THẬT tới gateway kèm
+`x-correlation-id` mới → đi qua toàn bộ hệ thống và cũng hiện ở `/logs`; kết quả đạt/lỗi lưu ở
+`test_runs`. FE: `lib/services/test-scenario.service.ts` (`useTestScenarioActions`), trang
+`/test-monitor` (`components/test-monitor/*`) và nút "Chạy realtime" trong `components/logger/request-detail-dialog.tsx`.
+
+
+| M      | Path                                 | Auth | Scenario | Payload                                                                                                                       | Response                                                                                                                                          | Roles | Status |
+| ------ | ------------------------------------ | ---- | -------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
+| POST   | `/test-scenarios`                    | JWT  | success  | `{ service, method, path, name, description?, requestTemplate?: { headers?, body? }, expectedStatus, category? }`             | `ApiTestScenario` (chưa có UI tạo/sửa — hiện seed bằng script)                                                                                   | ADMIN |        |
+| GET    | `/test-scenarios`                    | JWT  | success  | Query: `service?`, `method?`, `path?`, `category?`                                                                            | `ApiTestScenario[]` (mảng phẳng, không pagination) — mỗi phần tử có `lastRun: TestScenarioLastRun \| null`                                        | ADMIN |        |
+| GET    | `/test-scenarios/stats`              | JWT  | success  | —                                                                                                                             | `ScenarioStats[]` = `{ method, path, casesPassed, casesTotal }` — case tính là đạt khi lần chạy **mới nhất** đạt; chưa chạy thì chỉ tính vào tổng | ADMIN |        |
+| PATCH  | `/test-scenarios/:id`                | JWT  | success  | Một phần của body tạo                                                                                                         | Row đã cập nhật                                                                                                                                   | ADMIN |        |
+| DELETE | `/test-scenarios/:id`                | JWT  | success  | —                                                                                                                             | Row đã xoá (cascade `test_runs`)                                                                                                                  | ADMIN |        |
+| POST   | `/test-scenarios/:id/run`            | JWT  | success  | —                                                                                                                             | `ApiTestRun` — chờ có response rồi mới trả (nút **Test** ở `/test-monitor`)                                                                      | ADMIN |        |
+| POST   | `/test-scenarios/:id/run?async=true` | JWT  | success  | —                                                                                                                             | `RunRealtimeResult` = `{ correlationId, scenarioId }` **trả ngay**; run hoàn tất ở nền — FE theo dõi qua socket `log:new` rồi gọi `GET /logs/trace/:correlationId` 1 lần chốt (`hooks/useLiveTrace.hook.ts`) | ADMIN |        |
+| POST   | `/test-scenarios/:id/run`            | JWT  | 404      | id không tồn tại                                                                                                              | `"Test scenario not found"`                                                                                                                       | ADMIN |        |
+
+Notes: header trong `requestTemplate` có thể chứa `{{accessToken}}` (thay bằng token của admin đang
+bấm chạy; không có token thì header bị bỏ → đúng cho case "thiếu token"). Ngoài ra, nếu template không tự khai
+`authorization` và case không thuộc `category: "auth"`, BE **luôn** gắn `Authorization: Bearer <token
+của admin gọi /run>` (kịch bản tạo từ `request_logs` không lưu header). Case `auth` giữ nguyên để test
+thiếu/sai token. Kịch bản có thể sinh từ `request_logs` bằng `bun run db:seed:test-scenarios-from-logs`
+(THIRD_SERVICE; bỏ qua mẫu có body bị `[REDACTED]`/cắt) hoặc seed tay `db:seed:test-scenarios`. Đạt ⇔ `actualStatus ===
+expectedStatus`; lỗi mạng/timeout 15s ghi thành run lỗi (`actualStatus: null`). Case ghi
+(POST/PUT/DELETE) thay đổi dữ liệu thật của môi trường. Nút "Chạy realtime" (`?async=true`): log chỉ
+được ghi khi từng hop xong nên FE chờ trace đủ (`hooks/useLiveTrace.hook.ts`) rồi **phát lại** từng
+bước vào/ra service ở nhịp chậm (`hooks/useTracePlayback.hook.ts`, `buildPlaybackEvents` trong
+`components/logger/logger-utils.ts`) — không phải tiến trình trực tiếp từng ms. Trang `/test-monitor` ghép 3 nguồn theo
+`(method, path)`: `GET /test-scenarios` (các case) + `/test-scenarios/stats` (case đạt) + `GET
+/logs/stats` (Gọi/24h, P95) — xem `buildEndpointRows` trong `components/test-monitor/test-monitor-utils.ts`.
 
 
 ---
@@ -652,7 +689,9 @@ replay.
 | 19        | ReportController       | `/reports/learning`| 3       | 0      | 3 (ADMIN)       |
 | 20        | EmailController        | `/emails`          | 1       | 1      | 0               |
 | 21        | AttendanceController   | `/attendances`     | 2       | 0      | 0               |
-| **Total** |                        |                    | **115** | **14** | **16**          |
+| 22        | LogController          | `/logs`            | 3       | 0      | 3 (ADMIN)       |
+| 23        | TestScenarioController | `/test-scenarios`  | 6       | 0      | 6 (ADMIN)       |
+| **Total** |                        |                    | **124** | **14** | **25**          |
 
 
 ---

@@ -35,6 +35,7 @@ export type AppShellDictionary = {
     settings: string;
     flowRequests: string;
     logger: string;
+    testMonitor: string;
     curriculumOfChild: string;
     gradesOfChild: string;
   };
@@ -101,6 +102,7 @@ const vi: AppShellDictionary = {
     settings: "Cài đặt",
     flowRequests: "Flow Requests",
     logger: "Nhật ký request",
+    testMonitor: "Kiểm thử endpoint",
     curriculumOfChild: "Chương trình của con",
     gradesOfChild: "Điểm số của con",
   },
@@ -167,6 +169,7 @@ const en: AppShellDictionary = {
     settings: "Settings",
     flowRequests: "Flow Requests",
     logger: "Request logs",
+    testMonitor: "Endpoint testing",
     curriculumOfChild: "Child's Curriculum",
     gradesOfChild: "Child's Grades",
   },

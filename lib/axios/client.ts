@@ -98,7 +98,7 @@ export const redirectToLogin = (): void => {
   window.location.assign("/login");
 };
 
-const API_BASE_URL =
+export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:8888";
 
 export const axiosInstance = axios.create({

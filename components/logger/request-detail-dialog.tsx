@@ -3,33 +3,64 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowLeft, ArrowRight, Copy, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, Copy, Loader2, Play, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button.ui";
+import { API_BASE_URL } from "@/lib/axios/client";
 import {
+  CLIENT_KEY,
   STATUS_TONE_STYLE,
+  buildCurl,
+  buildPlaybackEvents,
+  buildPlaybackLines,
   buildTraceTree,
   directChildIndexes,
   distinctServicesCount,
+  errorCodeOf,
+  errorKindOf,
   errorNodeCount,
+  formatDuration,
   formatBytes,
   httpStatusText,
   httpStatusTone,
+  methodColorOf,
   nodeStatusTone,
   parentIndexOf,
+  pipelineHops,
+  playbackFrontier,
+  prettyBody,
   serviceColorOf,
   serviceNameOf,
 } from "./logger-utils";
+import { LiveTracePanel } from "./live-trace-panel";
+import { TracePipeline, type TracePipelineProgress } from "./trace-pipeline";
+import { useTracePlayback } from "@/hooks/useTracePlayback.hook";
 import type { LoggerDictionary } from "@/lib/i18n/logger.dictionary";
-import type { ApiRequestLog, LoggerSpanTab, LoggerTraceNode } from "@/types";
+import type {
+  ApiRequestLog,
+  ApiTestScenario,
+  LiveTraceState,
+  LoggerTraceNode,
+} from "@/types";
+
+/** "Chạy realtime": kịch bản sẽ chạy cho request đang xem + trạng thái theo dõi live hiện tại. */
+export type RequestDetailRealtime = {
+  scenario: ApiTestScenario | null;
+  live: LiveTraceState | null;
+  isStarting: boolean;
+  onRun: () => void;
+  onStop?: () => void;
+  /** Request đang xem sinh ra từ một lần "Chạy realtime" của trang này. */
+  hasRun?: boolean;
+};
 
 function CodeBlock({ text, tone }: { text: string; tone?: "err" }) {
   return (
     <pre
       className={cn(
-        "max-h-56 overflow-auto whitespace-pre-wrap break-all rounded-lg p-2.5 font-mono text-xs",
-        tone === "err" ? "bg-red-50 text-red-600" : "bg-[#F3F7F5] text-[#16302b]",
+        "max-h-56 overflow-auto whitespace-pre-wrap break-all rounded-lg p-3 font-mono text-xs leading-relaxed",
+        tone === "err" ? "bg-[#0F1F1C] text-[#F4A593]" : "bg-[#0F1F1C] text-[#D5E6E2]",
       )}
     >
       {text}
@@ -44,10 +75,9 @@ export function RequestDetailDialog({
   onClose,
   spanIdx,
   onSpanIdxChange,
-  spanTab,
-  onSpanTabChange,
   trace,
   isTraceLoading,
+  realtime,
   copy,
 }: {
   filteredRequests: ApiRequestLog[];
@@ -56,10 +86,9 @@ export function RequestDetailDialog({
   onClose: () => void;
   spanIdx: number;
   onSpanIdxChange: (index: number) => void;
-  spanTab: LoggerSpanTab;
-  onSpanTabChange: (tab: LoggerSpanTab) => void;
   trace: ApiRequestLog[] | undefined;
   isTraceLoading: boolean;
+  realtime?: RequestDetailRealtime;
   copy: LoggerDictionary;
 }) {
   const isOpen = !!selectedCorrelationId;
@@ -70,9 +99,77 @@ export function RequestDetailDialog({
   );
   const listRequest = positionIndex >= 0 ? filteredRequests[positionIndex] : null;
 
-  const nodes = useMemo(() => buildTraceTree(trace ?? []), [trace]);
-  const rootNode = nodes[0];
-  const request = rootNode ?? listRequest;
+  const traceNodes = useMemo(() => buildTraceTree(trace ?? []), [trace]);
+
+  // A "Chạy realtime" run is replayed step by step (`useTracePlayback`): hops are only logged once
+  // they finish and a whole run takes a few ms, so nothing is drawn until the run is complete, then
+  // the trace is walked through service by service at a readable pace.
+  const liveView =
+    realtime?.live && realtime.live.correlationId === selectedCorrelationId ? realtime.live : null;
+  const liveNodes = useMemo(() => buildTraceTree(liveView?.rows ?? []), [liveView?.rows]);
+  const liveDone = liveView?.phase === "done";
+
+  // Last fully settled trace. A re-run starts with no hops at all, so without this the span detail /
+  // waterfall would vanish and pop back in; instead the old trace stays (dimmed) and its services
+  // give the pipeline its ghost path until the new run is ready to replay.
+  const [settled, setSettled] = useState<LoggerTraceNode[]>([]);
+  const expectedServices = useMemo(() => pipelineHops(settled).map((h) => h.service), [settled]);
+  // The path to compare a run against is frozen when the run starts — `settled` moves on to the new
+  // trace once it finishes, which would otherwise drop the "skipped" lines of a failed run.
+  const [expectedSnap, setExpectedSnap] = useState<{ key: string; services: string[] }>({
+    key: "",
+    services: [],
+  });
+  if (liveView && expectedSnap.key !== liveView.correlationId) {
+    setExpectedSnap({ key: liveView.correlationId, services: expectedServices });
+  }
+  const runExpected =
+    liveView && expectedSnap.key === liveView.correlationId ? expectedSnap.services : expectedServices;
+  const playbackEvents = useMemo(
+    () => buildPlaybackEvents(liveNodes, runExpected),
+    [liveNodes, runExpected],
+  );
+  const playbackTotal = playbackEvents.length + 2; // "sent" line + one per event + result line
+  const playback = useTracePlayback({
+    total: playbackTotal,
+    active: liveDone,
+    resetKey: liveView?.correlationId ?? "",
+  });
+  const runInFlight = !!liveView && (!liveDone || playback.playing);
+  const persistedNodes = traceNodes.length > 0 ? traceNodes : liveNodes;
+  const liveNodesOnly = runInFlight ? (liveDone ? liveNodes : []) : persistedNodes;
+
+  if (liveNodesOnly.length > 0 && !runInFlight && settled !== liveNodesOnly) setSettled(liveNodesOnly);
+  const stale = runInFlight && liveNodesOnly.length === 0 && settled.length > 0;
+  const nodes = stale ? settled : liveNodesOnly;
+  const gatewayRoot = stale ? undefined : nodes.find((n) => n.serviceName === "gateway" && n.type === "HTTP");
+  const rootNode = stale ? undefined : nodes[0];
+
+  // Until the gateway's own row arrives, the first live row is an RPC hop — not the request.
+  const livePlaceholder = useMemo<ApiRequestLog | null>(() => {
+    const scenario = liveView?.scenario;
+    if (!liveView || !scenario) return null;
+    const body = scenario.requestTemplate.body;
+    return {
+      id: `live-${liveView.correlationId}`,
+      serviceName: "gateway",
+      type: "HTTP",
+      method: scenario.method,
+      path: scenario.path,
+      statusCode: null,
+      durationMs: 0,
+      correlationId: liveView.correlationId,
+      traceId: "",
+      parentTraceId: null,
+      userId: null,
+      ip: null,
+      requestBody: body === undefined ? null : JSON.stringify(body),
+      responseBody: null,
+      errorMessage: null,
+      createdAt: new Date().toISOString(),
+    };
+  }, [liveView]);
+  const request = liveView && !gatewayRoot ? livePlaceholder : (rootNode ?? listRequest);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -88,6 +185,15 @@ export function RequestDetailDialog({
     };
   }, [isOpen, onClose]);
 
+  // Service being tracked live (click a box in the pipeline); reset whenever another request opens.
+  const [focus, setFocus] = useState<{ correlationId: string | null; service: string | null }>({
+    correlationId: null,
+    service: null,
+  });
+  const focusService = focus.correlationId === selectedCorrelationId ? focus.service : null;
+  const setFocusService = (service: string | null) =>
+    setFocus({ correlationId: selectedCorrelationId, service });
+
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -97,8 +203,35 @@ export function RequestDetailDialog({
 
   if (!isOpen || typeof document === "undefined" || !selectedCorrelationId || !request) return null;
 
-  const totalMs = Math.max(1, rootNode?.durationMs ?? request.durationMs);
-  const activeNode: LoggerTraceNode | undefined = nodes[spanIdx];
+  const nodesEndMs = nodes.reduce((max, n) => Math.max(max, n.startMs + n.durationMs), 0);
+  const totalMs = Math.max(1, rootNode?.durationMs ?? request.durationMs, nodesEndMs);
+
+  // Where the replayed request is right now (only while a run is being replayed).
+  const applied = Math.max(0, Math.min(playbackEvents.length, playback.visible - 1));
+  const replaying = !!liveView && runInFlight && !!liveDone;
+  const frontier = playbackFrontier(nodes, playbackEvents, replaying ? applied : 0);
+  const currentIdx = replaying ? (applied === 0 ? (nodes.length > 0 ? 0 : null) : frontier.current) : null;
+  const shownIdx = replaying ? (currentIdx ?? 0) : spanIdx;
+  const activeNode: LoggerTraceNode | undefined = nodes[shownIdx];
+  const exitedIdx = new Set(
+    playbackEvents.slice(0, applied).filter((e) => e.kind === "exit").map((e) => e.index),
+  );
+
+  const skippedServices = replaying
+    ? frontier.skipped
+    : liveView && !runInFlight
+      ? playbackEvents.flatMap((e) => (e.kind === "skip" ? [e.service] : []))
+      : [];
+
+  let progress: TracePipelineProgress | undefined;
+  if (liveView && runInFlight) {
+    progress = replaying
+      ? {
+          entered: [...new Set([...frontier.entered].map((i) => nodes[i].serviceName))],
+          current: currentIdx === null ? CLIENT_KEY : nodes[currentIdx].serviceName,
+        }
+      : { entered: [], current: runExpected[0] ?? null };
+  }
   const errorNode = nodes.find((n) => n.errorMessage) ?? (request.errorMessage ? request : null);
 
   const goTo = (delta: 1 | -1) => {
@@ -108,6 +241,56 @@ export function RequestDetailDialog({
     onSelectCorrelationId(filteredRequests[next].correlationId);
     onSpanIdxChange(0);
   };
+
+  const copyCurl = () => {
+    void navigator.clipboard.writeText(buildCurl(request, API_BASE_URL)).then(() => {
+      toast.success(copy.detail.actions.curlCopied);
+    });
+  };
+
+
+  // Verdict of a run started from this page: root status vs the scenario's expected status. A
+  // request merely opened from the list has no verdict — the picked scenario may be another case.
+  const scenario = realtime?.scenario ?? null;
+  const verdictScenario = liveView?.scenario ?? (realtime?.hasRun ? scenario : null);
+  const actualStatus = gatewayRoot?.statusCode ?? liveView?.rootStatus ?? null;
+  const verdict = verdictScenario
+    ? runInFlight || (actualStatus === null && liveView?.phase !== "done")
+      ? "pending"
+      : actualStatus === verdictScenario.expectedStatus
+        ? "pass"
+        : "fail"
+    : null;
+  const verdictTone = verdict === "pass" ? "ok" : verdict === "fail" ? "err" : "warn";
+  const methodStyle = methodColorOf(request.method);
+
+  const liveCopy = copy.detail.live;
+  const playbackLines =
+    liveView && verdictScenario
+      ? buildPlaybackLines({
+          nodes: liveNodes,
+          events: playbackEvents,
+          scenario: verdictScenario,
+          correlationId: liveView.correlationId,
+          actualStatus,
+          copy: liveCopy,
+        })
+      : [];
+  const shownLines = playbackLines.slice(0, playback.visible).map((line, i) => ({
+    line,
+    time: i === 0 ? (liveView?.startedAt ?? 0) : (playback.times[i - 1] ?? liveView?.startedAt ?? 0),
+  }));
+  const liveSubtitle = !liveView
+    ? liveCopy.idle
+    : !runInFlight
+      ? liveCopy.status.last
+      : !replaying
+        ? runExpected[0]
+          ? liveCopy.status.toService(serviceNameOf(runExpected[0]))
+          : liveCopy.status.sending
+        : frontier.direction === "returning" && applied > 0
+          ? liveCopy.status.returning
+          : liveCopy.status.toService(serviceNameOf(nodes[currentIdx ?? 0]?.serviceName ?? "gateway"));
 
   const copyCorrelationId = () => {
     void navigator.clipboard.writeText(selectedCorrelationId).then(() => {
@@ -128,121 +311,220 @@ export function RequestDetailDialog({
     >
       <div className="absolute inset-0 bg-foreground/40 backdrop-blur-[3px]" aria-hidden="true" />
 
-      <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-[980px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-[#E7EEEC] bg-[#F4F8F7] shadow-xl">
+      <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-[1040px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-[#E7EEEC] bg-[#F4F8F7] shadow-xl">
         {/* ── Top bar ── */}
-        <header className="flex shrink-0 items-center gap-3 border-b border-[#E7EEEC] bg-white px-5 py-3.5">
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate text-sm font-bold text-[#16302b]">{copy.detail.headerTitle}</h2>
-            <p className="truncate text-xs text-[#8AA09B]">
-              {positionIndex >= 0
-                ? `${copy.detail.headerPosition(positionIndex + 1, filteredRequests.length)} · `
-                : ""}
-              {copy.detail.escHint}
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-auto! gap-1"
-            disabled={positionIndex < 0}
-            onClick={() => goTo(-1)}
-          >
-            <ArrowLeft className="size-3.5" />
-            {copy.detail.prev}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-auto! gap-1"
-            disabled={positionIndex < 0}
-            onClick={() => goTo(1)}
-          >
-            {copy.detail.next}
-            <ArrowRight className="size-3.5" />
-          </Button>
-          <Button type="button" variant="ghost" size="icon-sm" title={copy.detail.close} onClick={onClose}>
-            <X className="size-4" />
-          </Button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          {/* ── Summary ── */}
-          <div className="rounded-xl border border-[#E7EEEC] bg-white p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-md bg-[#F3F7F5] px-2 py-0.5 font-mono text-xs font-bold text-[#16302b]">
+        <header className="flex shrink-0 flex-wrap items-start gap-x-3 gap-y-2 border-b border-[#E7EEEC] bg-white px-5 py-4">
+          <div className="min-w-0 flex-1 basis-72">
+            <div className="flex items-center gap-2">
+              <span
+                className="shrink-0 rounded-md px-2 py-0.5 font-mono text-xs font-bold"
+                style={{ background: methodStyle.bg, color: methodStyle.text }}
+              >
                 {request.method ?? request.type}
               </span>
-              <span className="min-w-0 truncate font-mono text-sm font-semibold text-[#16302b]">
-                {request.path}
-              </span>
-              <span
-                className="ml-auto shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold"
-                style={{
-                  background: STATUS_TONE_STYLE[httpStatusTone(request.statusCode)].bg,
-                  color: STATUS_TONE_STYLE[httpStatusTone(request.statusCode)].text,
-                }}
-              >
-                {request.statusCode} {httpStatusText(request.statusCode)}
-              </span>
+              <h2 className="min-w-0 truncate font-mono text-base font-bold text-[#16302b]">{request.path}</h2>
             </div>
-
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#8AA09B]">
-              <span>{new Date(request.createdAt).toLocaleString()}</span>
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-[#8AA09B]">
+              {scenario && (
+                <>
+                  {scenario.category && (
+                    <span
+                      className="rounded px-1.5 py-px text-[10px] font-bold"
+                      style={{
+                        background: STATUS_TONE_STYLE[scenario.category === "valid" ? "ok" : "warn"].bg,
+                        color: STATUS_TONE_STYLE[scenario.category === "valid" ? "ok" : "warn"].text,
+                      }}
+                    >
+                      {scenario.category === "valid" ? "SUCCESS" : scenario.category.toUpperCase()}
+                    </span>
+                  )}
+                  {scenario.name && <span className="font-semibold text-[#16302b]">{scenario.name}</span>}
+                  <span>· {copy.detail.expected(scenario.expectedStatus)} ·</span>
+                </>
+              )}
               <button
                 type="button"
                 onClick={copyCorrelationId}
-                className="flex items-center gap-1 font-mono text-[#0E9F8E] hover:underline"
+                className="flex max-w-56 items-center gap-1 font-mono text-[#0E9F8E] hover:underline"
                 title={copy.detail.copyTraceId}
               >
-                {copy.detail.traceIdLabel}: {selectedCorrelationId}
-                <Copy className="size-3" />
+                <span className="truncate">
+                  {copy.detail.traceIdLabel}: {selectedCorrelationId}
+                </span>
+                <Copy className="size-3 shrink-0" />
                 {copied && <span className="text-[#0B7A6D]">✓</span>}
               </button>
-            </div>
+              <span>· {new Date(request.createdAt).toLocaleString()}</span>
+            </p>
+          </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-              <div className="rounded-lg bg-[#F8FAF9] p-2.5">
-                <p className="text-[11px] text-[#8AA09B]">{copy.detail.summary.totalTime}</p>
-                <p className="text-sm font-bold text-[#16302b]">{request.durationMs}ms</p>
-              </div>
-              <div className="rounded-lg bg-[#F8FAF9] p-2.5">
-                <p className="text-[11px] text-[#8AA09B]">{copy.detail.summary.servicesPassedLabel}</p>
-                <p className="text-sm font-bold text-[#16302b]">
-                  {copy.detail.summary.servicesPassed(distinctServicesCount(nodes))}
-                </p>
-              </div>
-              <div className="rounded-lg bg-[#F8FAF9] p-2.5">
-                <p className="text-[11px] text-[#8AA09B]">{copy.detail.summary.spanCountLabel}</p>
-                <p className="text-sm font-bold text-[#16302b]">
-                  {copy.detail.summary.spanCount(nodes.length, errorNodeCount(nodes))}
-                </p>
-              </div>
-              <div className="rounded-lg bg-[#F8FAF9] p-2.5">
-                <p className="text-[11px] text-[#8AA09B]">{copy.detail.summary.clientIp}</p>
-                <p className="font-mono text-sm font-bold text-[#16302b]">{request.ip ?? "—"}</p>
-              </div>
-            </div>
-
-            {errorNode && (
-              <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5">
-                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-red-500" />
-                <div>
-                  <p className="text-xs font-semibold text-red-600">
-                    {copy.detail.errorBox(serviceNameOf(errorNode.serviceName))}
-                  </p>
-                  <p className="text-xs text-red-500">{errorNode.errorMessage}</p>
-                </div>
-              </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {verdict && verdictScenario && (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
+                style={{ background: STATUS_TONE_STYLE[verdictTone].bg, color: STATUS_TONE_STYLE[verdictTone].text }}
+              >
+                <span className="size-1.5 rounded-full bg-current" />
+                <span>
+                  {verdict === "pass"
+                    ? copy.detail.verdict.pass
+                    : verdict === "fail"
+                      ? copy.detail.verdict.fail(verdictScenario.expectedStatus, actualStatus)
+                      : copy.detail.verdict.pending}
+                </span>
+                {verdict === "pass" && (
+                  <span className="font-mono">
+                    · {actualStatus} {httpStatusText(actualStatus)} · {request.durationMs}ms
+                  </span>
+                )}
+              </span>
             )}
+            {realtime && (
+              <Button
+                type="button"
+                size="sm"
+                className="w-auto! gap-1.5"
+                loading={realtime.isStarting}
+                disabled={!realtime.scenario || runInFlight}
+                title={realtime.scenario ? undefined : copy.detail.actions.runRealtimeNoScenario}
+                onClick={realtime.onRun}
+              >
+                <Play className="size-3.5" />
+                {runInFlight
+                  ? copy.detail.verdict.pending
+                  : liveView || realtime.hasRun
+                    ? copy.detail.actions.rerunRealtime
+                    : copy.detail.actions.runRealtime}
+              </Button>
+            )}
+            <Button type="button" variant="outline" size="sm" className="w-auto! gap-1.5" onClick={copyCurl}>
+              <Copy className="size-3.5" />
+              {copy.detail.actions.copyCurl}
+            </Button>
+            <div className="flex items-center gap-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                title={copy.detail.prev}
+                aria-label={copy.detail.prev}
+                disabled={positionIndex < 0}
+                onClick={() => goTo(-1)}
+              >
+                <ArrowLeft className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                title={copy.detail.next}
+                aria-label={copy.detail.next}
+                disabled={positionIndex < 0}
+                onClick={() => goTo(1)}
+              >
+                <ArrowRight className="size-4" />
+              </Button>
+            </div>
+            <Button type="button" size="icon-sm" title={copy.detail.close} aria-label={copy.detail.close} onClick={onClose}>
+              <X className="size-4" />
+            </Button>
+          </div>
+        </header>
+
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
+          {positionIndex >= 0 && (
+            <p className="-mb-2 text-[11px] text-[#8AA09B]">
+              {copy.detail.headerPosition(positionIndex + 1, filteredRequests.length)} · {copy.detail.escHint}
+            </p>
+          )}
+
+          {errorNode && (
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-red-500" />
+              <div>
+                <p className="text-xs font-semibold text-red-600">
+                  {copy.detail.errorBox(serviceNameOf(errorNode.serviceName))}
+                </p>
+                <p className="text-xs text-red-500">{errorNode.errorMessage}</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Pipeline ── */}
+          {(nodes.length > 0 || runInFlight) && (
+            <section>
+              <h3 className="mb-2 text-[11px] font-bold tracking-wide text-[#8AA09B] uppercase">
+                {copy.detail.pipeline.title}
+                <span className="ml-1 font-medium normal-case"> · {copy.detail.live.clickToTrack}</span>
+              </h3>
+              <TracePipeline
+                nodes={stale ? [] : nodes}
+                copy={copy}
+                activeService={stale || replaying ? null : activeNode?.serviceName}
+                expectedServices={runInFlight || skippedServices.length > 0 ? runExpected : undefined}
+                skipped={skippedServices}
+                progress={progress}
+                focusService={focusService}
+                onSelectService={(service) => {
+                  setFocusService(service);
+                  const first = service ? nodes.findIndex((n) => n.serviceName === service) : -1;
+                  if (first >= 0) onSpanIdxChange(first);
+                }}
+              />
+            </section>
+          )}
+
+          {realtime && (
+            <LiveTracePanel
+              live={liveView}
+              running={runInFlight}
+              subtitle={liveSubtitle}
+              lines={shownLines}
+              copy={copy}
+              onStop={realtime.onStop}
+              focusService={focusService}
+              onClearFocus={() => setFocusService(null)}
+            />
+          )}
+
+          <div className={cn("flex flex-col gap-4 transition-opacity duration-300", stale && "pointer-events-none opacity-50")}>
+          {/* ── Span detail ── */}
+          {activeNode && (
+            <SpanDetail
+              node={activeNode}
+              spanIdx={shownIdx}
+              pending={replaying && !exitedIdx.has(shownIdx)}
+              nodes={nodes}
+              totalMs={totalMs}
+              onJump={onSpanIdxChange}
+              copy={copy}
+            />
+          )}
+
+          {/* ── Summary ── */}
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            {[
+              [copy.detail.summary.totalTime, `${request.durationMs}ms`, false],
+              [copy.detail.summary.servicesPassedLabel, copy.detail.summary.servicesPassed(distinctServicesCount(nodes)), false],
+              [
+                copy.detail.summary.spanCountLabel,
+                copy.detail.summary.spanCount(nodes.length, errorNodeCount(nodes)),
+                false,
+              ],
+              [copy.detail.summary.clientIp, request.ip ?? "—", true],
+            ].map(([label, value, mono]) => (
+              <div key={String(label)} className="rounded-xl border border-[#E7EEEC] bg-white p-3">
+                <p className="text-[11px] text-[#8AA09B]">{label}</p>
+                <p className={cn("text-sm font-bold text-[#16302b]", mono && "font-mono")}>{value}</p>
+              </div>
+            ))}
           </div>
 
           {/* ── Waterfall ── */}
-          <div className="mt-3 rounded-xl border border-[#E7EEEC] bg-white p-4">
+          <div className="rounded-xl border border-[#E7EEEC] bg-white p-4">
             <h3 className="text-sm font-bold text-[#16302b]">{copy.detail.waterfall.title}</h3>
 
-            {isTraceLoading ? (
+            {isTraceLoading && nodes.length === 0 ? (
               <p className="mt-3 text-xs text-[#8AA09B]">{copy.detail.loadingTrace}</p>
             ) : (
               <>
@@ -260,7 +542,7 @@ export function RequestDetailDialog({
 
                   <div className="relative flex flex-col">
                     {nodes.map((node, i) => {
-                      const active = i === spanIdx;
+                      const active = i === shownIdx;
                       const tone = nodeStatusTone(node);
                       const barColor = tone === "ok" ? serviceColorOf(node.serviceName) : STATUS_TONE_STYLE[tone].text;
                       const left = (node.startMs / totalMs) * 100;
@@ -274,6 +556,7 @@ export function RequestDetailDialog({
                           className={cn(
                             "flex items-center gap-2 rounded-md py-1.5 pr-2 text-left transition-colors",
                             active ? "bg-[#EAF6F2]" : "hover:bg-[#F8FAF9]",
+                            focusService && node.serviceName !== focusService && "opacity-40",
                           )}
                           style={{ paddingLeft: `${node.depth * 14 + 4}px` }}
                         >
@@ -306,20 +589,7 @@ export function RequestDetailDialog({
               </>
             )}
           </div>
-
-          {/* ── Span detail ── */}
-          {activeNode && (
-            <SpanDetail
-              node={activeNode}
-              spanIdx={spanIdx}
-              nodes={nodes}
-              totalMs={totalMs}
-              onJump={onSpanIdxChange}
-              spanTab={spanTab}
-              onSpanTabChange={onSpanTabChange}
-              copy={copy}
-            />
-          )}
+          </div>
         </div>
       </div>
     </div>,
@@ -330,25 +600,26 @@ export function RequestDetailDialog({
 function SpanDetail({
   node,
   spanIdx,
+  pending,
   nodes,
   totalMs,
   onJump,
-  spanTab,
-  onSpanTabChange,
   copy,
 }: {
   node: LoggerTraceNode;
   spanIdx: number;
+  /** Replay đang dừng ở hop này, chưa có kết quả trả về. */
+  pending: boolean;
   nodes: LoggerTraceNode[];
   totalMs: number;
   onJump: (index: number) => void;
-  spanTab: LoggerSpanTab;
-  onSpanTabChange: (tab: LoggerSpanTab) => void;
   copy: LoggerDictionary;
 }) {
   const parentIdx = parentIndexOf(nodes, spanIdx);
   const tone = nodeStatusTone(node);
-  const operation = node.type === "HTTP" ? `${node.method} ${node.path}` : node.path;
+  const isHttp = node.type === "HTTP";
+  const operation = isHttp ? `${node.method} ${node.path}` : node.path;
+  const methodStyle = methodColorOf(node.method);
 
   const callerLabel =
     parentIdx !== null ? serviceNameOf(nodes[parentIdx].serviceName) : copy.detail.span.callFlow.client;
@@ -356,146 +627,175 @@ function SpanDetail({
   const reqSize = formatBytes(node.requestBody);
   const resSize = formatBytes(node.responseBody);
   const children = directChildIndexes(nodes, spanIdx);
+  const failed = tone === "err";
+  const statusTone = failed ? "err" : httpStatusTone(node.statusCode);
+  const errorKind = errorKindOf(node);
+  const serviceLabel = serviceNameOf(node.serviceName);
+  const hint = errorKind
+    ? errorKind === "timeout"
+      ? copy.detail.span.hints.timeout(serviceLabel, node.path.split("/").pop() || node.path)
+      : copy.detail.span.hints[errorKind](serviceLabel)
+    : null;
 
   return (
-    <div className="mt-3 rounded-xl border border-[#E7EEEC] bg-white p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="size-2.5 shrink-0 rounded-full" style={{ background: serviceColorOf(node.serviceName) }} />
-        <span className="text-sm font-bold text-[#16302b]">{serviceNameOf(node.serviceName)}</span>
-        <span className="font-mono text-xs text-[#8AA09B]">{operation}</span>
+    <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-[#EEF3F1] px-4 py-3">
+        <span className="size-2.5 shrink-0 rounded-[3px]" style={{ background: serviceColorOf(node.serviceName) }} />
+        <span className="text-base font-bold text-[#16302b]">{serviceNameOf(node.serviceName)}</span>
+        <span className="font-mono text-xs text-[#8AA09B]">
+          · {copy.detail.span.calledFrom}{" "}
+          <span className="font-sans font-bold text-[#16302b]">{callerLabel}</span> {copy.detail.span.via}{" "}
+          {node.type}
+        </span>
         <span
           className="ml-auto rounded-md px-2 py-0.5 text-xs font-semibold"
           style={{ background: STATUS_TONE_STYLE[tone].bg, color: STATUS_TONE_STYLE[tone].text }}
         >
           {tone.toUpperCase()}
         </span>
-      </div>
-
-      {/* Call flow */}
-      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-[#F8FAF9] p-3 text-xs">
-        <span className="rounded-md bg-white px-2 py-1 font-semibold text-[#16302b] shadow-sm">
-          {callerLabel}
-        </span>
-        <span className="flex flex-col items-center text-[10px] text-[#8AA09B]">
-          <span>{reqSize} · {resSize}</span>
-          <span>→</span>
-        </span>
         <span
-          className="rounded-md px-2 py-1 font-semibold text-white shadow-sm"
-          style={{ background: serviceColorOf(node.serviceName) }}
+          className="font-mono text-sm font-bold"
+          style={{ color: failed ? STATUS_TONE_STYLE.err.text : "#16302b" }}
         >
-          {serviceNameOf(node.serviceName)}
+          {formatDuration(node.durationMs)}
         </span>
       </div>
 
-      {/* Tabs */}
-      <div className="mt-3 flex items-center gap-1 border-b border-[#EEF3F1]">
-        {(
-          [
-            ["req", copy.detail.span.tabs.req, reqSize],
-            ["res", copy.detail.span.tabs.res, String(node.statusCode ?? "—")],
-            ["processing", copy.detail.span.tabs.processing, String(children.length)],
-          ] as [LoggerSpanTab, string, string][]
-        ).map(([key, label, badge]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onSpanTabChange(key)}
-            className={cn(
-              "flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition-colors",
-              spanTab === key
-                ? "border-[#0E9F8E] text-[#0E9F8E]"
-                : "border-transparent text-[#8AA09B] hover:text-[#16302b]",
+      {failed && !pending && (
+        <div className="flex items-start gap-2.5 border-b border-[#F6D9D2] bg-[#FEF1EE] px-4 py-3">
+          <AlertCircle className="mt-0.5 size-4 shrink-0 text-[#C2412B]" />
+          <div className="min-w-0 text-xs leading-relaxed text-[#C2412B]">
+            <p className="break-words">
+              <span className="font-bold">{copy.detail.span.errorTitle}</span>{" "}
+              <span className="font-mono font-semibold">{node.errorMessage ?? errorCodeOf(node) ?? node.statusCode}</span>
+            </p>
+            {hint && (
+              <p className="mt-0.5 text-[#8A3A2B]">
+                <span className="font-bold">{copy.detail.span.hintTitle}</span> {hint}
+              </p>
             )}
-          >
-            {label}
-            <span className="rounded-full bg-[#F3F7F5] px-1.5 py-px text-[10px] font-bold text-[#5C726D]">
-              {badge}
+          </div>
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 md:divide-x md:divide-[#EEF3F1]">
+        {/* Request */}
+        <div className="flex min-w-0 flex-col gap-2.5 p-4">
+          <div className="flex items-center gap-2">
+            <span className="rounded-md bg-[#E3EDFF] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#2563EB] uppercase">
+              {copy.detail.span.tabs.req}
             </span>
-          </button>
-        ))}
+            <span className="text-[11px] text-[#8AA09B]">{reqSize}</span>
+          </div>
+          <div className="flex min-w-0 items-center gap-2 rounded-lg border border-[#E7EEEC] bg-[#F8FAF9] px-2.5 py-2">
+            {isHttp && (
+              <span
+                className="shrink-0 rounded px-1.5 py-px font-mono text-[11px] font-bold"
+                style={{ background: methodStyle.bg, color: methodStyle.text }}
+              >
+                {node.method}
+              </span>
+            )}
+            <span className="min-w-0 truncate font-mono text-xs text-[#16302b]" title={operation}>
+              {isHttp ? `${API_BASE_URL.replace(/\/$/, "")}${node.path}` : node.path}
+            </span>
+          </div>
+          <div>
+            <p className="mb-1 text-xs font-semibold text-[#8AA09B]">{copy.detail.span.requestTab.body}</p>
+            <CodeBlock text={node.requestBody ? prettyBody(node.requestBody) : copy.detail.span.noBody} />
+          </div>
+        </div>
+
+        {/* Response */}
+        <div className="flex min-w-0 flex-col gap-2.5 border-t border-[#EEF3F1] p-4 md:border-t-0">
+          <div className="flex items-center gap-2">
+            <span
+              className="rounded-md px-2 py-0.5 text-[11px] font-bold tracking-wide uppercase"
+              style={
+                failed && !pending
+                  ? { background: STATUS_TONE_STYLE.err.bg, color: STATUS_TONE_STYLE.err.text }
+                  : { background: "#E4F6EF", color: "#0B7A6D" }
+              }
+            >
+              {copy.detail.span.tabs.res}
+            </span>
+            {!pending && <span className="text-[11px] text-[#8AA09B]">{resSize}</span>}
+          </div>
+          {pending ? (
+            <div className="flex min-h-40 flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[#C9D6D2] text-xs text-[#8AA09B]">
+              <Loader2 className="size-4 animate-spin text-[#0E9F8E]" />
+              <span>{copy.detail.span.processingHint(serviceNameOf(node.serviceName))}</span>
+            </div>
+          ) : (
+            <>
+              <div
+                className="flex items-center justify-between rounded-lg px-2.5 py-2 font-mono text-xs font-semibold"
+                style={{ background: STATUS_TONE_STYLE[statusTone].bg, color: STATUS_TONE_STYLE[statusTone].text }}
+              >
+                <span>
+                  {node.statusCode !== null
+                    ? `${node.statusCode} ${httpStatusText(node.statusCode)}`
+                    : (errorCodeOf(node) ?? "—")}
+                </span>
+                <span>{formatDuration(node.durationMs)}</span>
+              </div>
+              <div>
+                <p className="mb-1 text-xs font-semibold text-[#8AA09B]">{copy.detail.span.responseTab.body}</p>
+                <CodeBlock
+                  text={node.responseBody ? prettyBody(node.responseBody) : copy.detail.span.noBody}
+                  tone={tone === "err" ? "err" : undefined}
+                />
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="mt-3">
-        {spanTab === "req" && (
-          <div className="flex flex-col gap-2.5">
-            <p className="font-mono text-xs font-semibold text-[#16302b]">{operation}</p>
-            <div>
-              <p className="mb-1 text-xs font-semibold text-[#8AA09B]">{copy.detail.span.requestTab.body}</p>
-              <CodeBlock text={node.requestBody ?? copy.detail.span.noBody} />
+      {/* Processing */}
+      <div className="flex flex-col gap-3 border-t border-[#EEF3F1] p-4">
+        <h4 className="text-xs font-bold tracking-wide text-[#8AA09B] uppercase">{copy.detail.span.tabs.processing}</h4>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {[
+            [copy.detail.span.processingTab.metrics.start, `${node.startMs}ms`],
+            [copy.detail.span.processingTab.metrics.duration, formatDuration(node.durationMs)],
+            [copy.detail.span.processingTab.metrics.percentOfTrace, `${((node.durationMs / totalMs) * 100).toFixed(1)}%`],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-lg bg-[#F8FAF9] p-2">
+              <p className="text-[10px] text-[#8AA09B]">{label}</p>
+              <p className="truncate font-mono text-xs font-semibold text-[#16302b]" title={value}>
+                {value}
+              </p>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
 
-        {spanTab === "res" && (
-          <div className="flex flex-col gap-2.5">
-            <div className="flex flex-wrap items-center gap-3 text-xs">
-              <span className="font-mono font-semibold text-[#16302b]">
-                {node.statusCode ?? httpStatusText(node.statusCode)}
-              </span>
-              <span className="text-[#8AA09B]">
-                {copy.detail.span.responseTab.responseTime}: {node.durationMs}ms
-              </span>
-              <span className="text-[#8AA09B]">{copy.detail.span.responseTab.size}: {resSize}</span>
-            </div>
-            <div>
-              <p className="mb-1 text-xs font-semibold text-[#8AA09B]">{copy.detail.span.responseTab.body}</p>
-              <CodeBlock text={node.responseBody ?? copy.detail.span.noBody} tone={tone === "err" ? "err" : undefined} />
-            </div>
-          </div>
-        )}
-
-        {spanTab === "processing" && (
-          <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {[
-                [copy.detail.span.processingTab.metrics.start, `${node.startMs}ms`],
-                [copy.detail.span.processingTab.metrics.duration, `${node.durationMs}ms`],
-                [
-                  copy.detail.span.processingTab.metrics.percentOfTrace,
-                  `${((node.durationMs / totalMs) * 100).toFixed(1)}%`,
-                ],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-lg bg-[#F8FAF9] p-2">
-                  <p className="text-[10px] text-[#8AA09B]">{label}</p>
-                  <p className="truncate font-mono text-xs font-semibold text-[#16302b]" title={value}>
-                    {value}
-                  </p>
-                </div>
+        <div>
+          <p className="mb-1 text-xs font-semibold text-[#8AA09B]">{copy.detail.span.processingTab.childrenTitle}</p>
+          {children.length === 0 ? (
+            <p className="text-xs text-muted-foreground">{copy.detail.span.processingTab.noChildren}</p>
+          ) : (
+            <div className="flex flex-col gap-1">
+              {children.map((ci) => (
+                <button
+                  key={nodes[ci].id}
+                  type="button"
+                  onClick={() => onJump(ci)}
+                  className="flex items-center gap-2 rounded-lg border border-[#E7EEEC] bg-white p-2 text-left text-xs hover:bg-[#F8FAF9]"
+                >
+                  <span
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ background: serviceColorOf(nodes[ci].serviceName) }}
+                  />
+                  <span className="font-semibold text-[#16302b]">{serviceNameOf(nodes[ci].serviceName)}</span>
+                  <span className="truncate font-mono text-[#8AA09B]">
+                    {nodes[ci].type === "HTTP" ? `${nodes[ci].method} ${nodes[ci].path}` : nodes[ci].path}
+                  </span>
+                  <span className="ml-auto shrink-0 font-mono text-[#8AA09B]">{nodes[ci].durationMs}ms</span>
+                </button>
               ))}
             </div>
-
-            <div>
-              <p className="mb-1 text-xs font-semibold text-[#8AA09B]">
-                {copy.detail.span.processingTab.childrenTitle}
-              </p>
-              {children.length === 0 ? (
-                <p className="text-xs text-muted-foreground">{copy.detail.span.processingTab.noChildren}</p>
-              ) : (
-                <div className="flex flex-col gap-1">
-                  {children.map((ci) => (
-                    <button
-                      key={nodes[ci].id}
-                      type="button"
-                      onClick={() => onJump(ci)}
-                      className="flex items-center gap-2 rounded-lg border border-[#E7EEEC] bg-white p-2 text-left text-xs hover:bg-[#F8FAF9]"
-                    >
-                      <span
-                        className="size-2 shrink-0 rounded-full"
-                        style={{ background: serviceColorOf(nodes[ci].serviceName) }}
-                      />
-                      <span className="font-semibold text-[#16302b]">{serviceNameOf(nodes[ci].serviceName)}</span>
-                      <span className="truncate font-mono text-[#8AA09B]">
-                        {nodes[ci].type === "HTTP" ? `${nodes[ci].method} ${nodes[ci].path}` : nodes[ci].path}
-                      </span>
-                      <span className="ml-auto shrink-0 font-mono text-[#8AA09B]">{nodes[ci].durationMs}ms</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,16 +1,24 @@
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { useGet } from "@/lib/axios/query";
 import type { UseQueryOptions } from "@tanstack/react-query";
-import type { ApiRequestLog, ApiResponse, LogType, RequestLogsApiPayload } from "@/types";
+import type {
+  ApiRequestLog,
+  ApiResponse,
+  EndpointStats,
+  LogType,
+  RequestLogsApiPayload,
+} from "@/types";
 
 // ─── Query keys ──────────────────────────────────────────────────────────────
 
 export const LOGS_QUERY_KEY = ["logs", "list"] as const;
+export const LOGS_STATS_QUERY_KEY = ["logs", "stats"] as const;
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 /** Logs only reads (admin-only monitoring) — `list` for `GET /logs`, `trace` for
- * `GET /logs/trace/:correlationId` (all hops sharing one correlationId, for the waterfall). */
+ * `GET /logs/trace/:correlationId` (all hops sharing one correlationId, for the waterfall),
+ * `stats` for `GET /logs/stats` (calls/24h + P95 per endpoint, for the summary table). */
 export function useLogActions(args?: {
   list?: {
     page?: number;
@@ -27,6 +35,11 @@ export function useLogActions(args?: {
   traceCorrelationId?: string;
   traceOptions?: Omit<
     UseQueryOptions<ApiResponse<ApiRequestLog[]>, Error, ApiRequestLog[]>,
+    "queryKey" | "queryFn"
+  >;
+  stats?: boolean;
+  statsOptions?: Omit<
+    UseQueryOptions<ApiResponse<EndpointStats[]>, Error, EndpointStats[]>,
     "queryKey" | "queryFn"
   >;
 }) {
@@ -51,5 +64,15 @@ export function useLogActions(args?: {
     },
   );
 
-  return { list, trace };
+  const stats = useGet<ApiResponse<EndpointStats[]>, EndpointStats[]>(
+    LOGS_STATS_QUERY_KEY,
+    "/logs/stats",
+    {
+      enabled: !!args?.stats,
+      select: (raw) => unwrapApiData<EndpointStats[]>(raw),
+      ...args?.statsOptions,
+    },
+  );
+
+  return { list, trace, stats };
 }

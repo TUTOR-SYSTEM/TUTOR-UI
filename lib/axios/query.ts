@@ -18,7 +18,10 @@ export async function apiPost<TData, TPayload = unknown>(
   url: string,
   payload: TPayload,
 ) {
-  const response = await axiosInstance.post<TData>(url, payload);
+  // A bare string payload is only ever a URL param (e.g. `/x/${id}/run`); sent as a JSON body it
+  // would be `"<id>"`, which the gateway's strict body parser rejects with a 400.
+  const body = typeof payload === "string" ? undefined : payload;
+  const response = await axiosInstance.post<TData>(url, body);
   return response.data;
 }
 

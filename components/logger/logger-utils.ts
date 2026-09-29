@@ -1,8 +1,12 @@
+import type { LoggerDictionary } from "@/lib/i18n/logger.dictionary";
 import type {
   ApiRequestLog,
+  ApiTestScenario,
   LoggerRequestFilter,
   LoggerServiceKey,
   LoggerTraceNode,
+  PlaybackEvent,
+  PlaybackLine,
 } from "@/types";
 
 // ─── Services & colors (real `serviceName` values — see API_ENDPOINTS.md #22) ──────────────
@@ -114,6 +118,16 @@ export function formatBytes(text: string | null | undefined): string {
   return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
 }
 
+/** Body log dạng JSON → in thụt lề cho dễ đọc; không phải JSON (hoặc bị cắt `…(truncated)`) thì
+ * giữ nguyên. */
+export function prettyBody(text: string): string {
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2);
+  } catch {
+    return text;
+  }
+}
+
 /** Trạng thái 1 hàng trong trace (dùng cho màu bar waterfall + badge span) — dựa trên
  * `errorMessage`/`statusCode` thật, không có khái niệm "skip" (mock cũ) vì dữ liệu thật không mô
  * phỏng nhánh lỗi lan truyền — nếu 1 hop cha lỗi, các hop con thật đơn giản là không tồn tại. */
@@ -195,4 +209,255 @@ export function directChildIndexes(nodes: LoggerTraceNode[], index: number): num
     if (n.parentTraceId === traceId) result.push(i);
   });
   return result;
+}
+
+/** Đơn vị hiển thị của pipeline ngang: mỗi service đi qua đúng 1 ô (theo thứ tự xuất hiện đầu
+ * tiên), `tone` là mức xấu nhất trong mọi hop của service đó. */
+export function pipelineHops(
+  nodes: LoggerTraceNode[],
+): { service: string; tone: "ok" | "warn" | "err"; durationMs: number }[] {
+  const rank = { ok: 0, warn: 1, err: 2 } as const;
+  const hops = new Map<string, { service: string; tone: "ok" | "warn" | "err"; durationMs: number }>();
+  for (const node of nodes) {
+    const tone = nodeStatusTone(node);
+    const hop = hops.get(node.serviceName);
+    if (!hop) {
+      hops.set(node.serviceName, { service: node.serviceName, tone, durationMs: node.durationMs });
+    } else {
+      if (rank[tone] > rank[hop.tone]) hop.tone = tone;
+      hop.durationMs = Math.max(hop.durationMs, node.durationMs);
+    }
+  }
+  return [...hops.values()];
+}
+
+const shellQuote = (value: string) => `'${value.replace(/'/g, `'\\''`)}'`;
+
+/** Dựng lệnh cURL từ hop gốc. `request_logs` không lưu header nên chỉ dựng được `Content-Type`
+ * (khi có body) và một placeholder `Authorization` để người dùng tự điền token. */
+export function buildCurl(
+  node: Pick<ApiRequestLog, "method" | "path" | "requestBody">,
+  baseUrl: string,
+): string {
+  const method = node.method ?? "GET";
+  const parts = [`curl -X ${method} ${shellQuote(`${baseUrl.replace(/\/$/, "")}${node.path}`)}`];
+  parts.push(`-H ${shellQuote("Authorization: Bearer <ACCESS_TOKEN>")}`);
+  if (node.requestBody) {
+    parts.push(`-H ${shellQuote("Content-Type: application/json")}`);
+    parts.push(`--data-raw ${shellQuote(node.requestBody)}`);
+  }
+  return parts.join(" \\\n  ");
+}
+
+/** Chọn kịch bản để "Chạy realtime" cho request đang xem: cùng `method + path` (bỏ query);
+ * ưu tiên kịch bản đã sinh ra chính request này, rồi case `valid`, rồi case đầu tiên. */
+export function pickScenarioFor(
+  scenarios: ApiTestScenario[],
+  request: Pick<ApiRequestLog, "method" | "path" | "correlationId">,
+): ApiTestScenario | null {
+  const segmentsOf = (p: string) => p.split("?")[0].split("/").filter(Boolean);
+  // A path parameter in a scenario template (":id" / "{id}") or an id-like segment in a real
+  // request (UUID / number) matches any single segment, so "/students/9f2…" hits "/students/:id".
+  const isParam = (seg: string) => /^(:|\{)/.test(seg);
+  const isIdLike = (seg: string) =>
+    /^\d+$/.test(seg) || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg);
+  const samePath = (scenarioPath: string, requestPath: string) => {
+    const a = segmentsOf(scenarioPath);
+    const b = segmentsOf(requestPath);
+    // Compare from the end so a global prefix on one side only ("/api/students" vs "/students")
+    // doesn't break the match.
+    const n = Math.min(a.length, b.length);
+    if (n === 0) return false;
+    const tailA = a.slice(a.length - n);
+    const tailB = b.slice(b.length - n);
+    return tailA.every((seg, i) => seg === tailB[i] || isParam(seg) || (isIdLike(seg) && isIdLike(tailB[i])));
+  };
+  const method = request.method?.toUpperCase();
+  const matches = scenarios.filter(
+    (s) => s.method.toUpperCase() === method && samePath(s.path, request.path),
+  );
+  return (
+    matches.find((s) => s.lastRun?.correlationId === request.correlationId) ??
+    matches.find((s) => s.category === "valid") ??
+    matches[0] ??
+    null
+  );
+}
+
+// ─── Playback (replay của 1 lần "Chạy realtime") ─────────────────────────────
+
+/** Khoá đại diện ô CLIENT trong `frontier`/`progress` của pipeline. */
+export const CLIENT_KEY = "__client__";
+
+/** Chuỗi sự kiện của cây trace (`nodes` đã ở thứ tự duyệt trước): request vào hop cha rồi mới vào
+ * con, kết quả trả ngược từ con về cha, root cuối cùng trả về client. Hop có lỗi thêm 1 sự kiện
+ * `error` ngay sau khi vào; ở hop lỗi đầu tiên, các service của đường đi cũ (`expectedServices`) mà
+ * lần chạy này không chạm tới được đánh dấu `skip`. */
+export function buildPlaybackEvents(
+  nodes: LoggerTraceNode[],
+  expectedServices: string[] = [],
+): PlaybackEvent[] {
+  const events: PlaybackEvent[] = [];
+  const stack: number[] = [];
+  const reached = new Set(nodes.map((n) => n.serviceName));
+  let skipped = false;
+  nodes.forEach((node, index) => {
+    while (stack.length > 0 && nodes[stack[stack.length - 1]].depth >= node.depth) {
+      events.push({ kind: "exit", index: stack.pop()! });
+    }
+    events.push({ kind: "enter", index });
+    stack.push(index);
+    if (node.errorMessage) {
+      events.push({ kind: "error", index });
+      if (!skipped) {
+        skipped = true;
+        for (const service of expectedServices) {
+          if (!reached.has(service)) events.push({ kind: "skip", index: -1, service });
+        }
+      }
+    }
+  });
+  while (stack.length > 0) events.push({ kind: "exit", index: stack.pop()! });
+  return events;
+}
+
+/** Trạng thái sau khi đã áp `applied` sự kiện đầu: hop đang "cầm" request (`current`), các hop đã
+ * được request chạm tới (`entered`), service bị bỏ qua (`skipped`) và request đang đi hay trả về. */
+export function playbackFrontier(
+  nodes: LoggerTraceNode[],
+  events: PlaybackEvent[],
+  applied: number,
+): {
+  current: number | null;
+  entered: Set<number>;
+  skipped: string[];
+  direction: "going" | "returning";
+} {
+  const entered = new Set<number>();
+  const skipped: string[] = [];
+  let current: number | null = null;
+  let direction: "going" | "returning" = "going";
+  for (const event of events.slice(0, applied)) {
+    if (event.kind === "enter") {
+      entered.add(event.index);
+      current = event.index;
+      direction = "going";
+    } else if (event.kind === "exit") {
+      current = parentIndexOf(nodes, event.index);
+      direction = "returning";
+    } else if (event.kind === "skip") {
+      skipped.push(event.service);
+    }
+  }
+  return { current, entered, skipped, direction };
+}
+
+/** Mã lỗi ngắn của 1 hop lỗi: phần trước " — " của `errorMessage` (vd `4 DEADLINE_EXCEEDED`). */
+export function errorCodeOf(node: Pick<ApiRequestLog, "errorMessage">): string | null {
+  if (!node.errorMessage) return null;
+  return node.errorMessage.split(" — ")[0].trim();
+}
+
+/** Nhóm nguyên nhân để chọn gợi ý xử lý cho hop lỗi. */
+export function errorKindOf(
+  node: Pick<ApiRequestLog, "errorMessage" | "statusCode">,
+): "timeout" | "unavailable" | "server" | "client" | null {
+  const message = node.errorMessage ?? "";
+  if (/DEADLINE_EXCEEDED|timeout|timed out/i.test(message)) return "timeout";
+  if (/UNAVAILABLE|ECONNREFUSED|ENOTFOUND/i.test(message)) return "unavailable";
+  if ((node.statusCode ?? 0) >= 500 || (message && node.statusCode === null)) return "server";
+  if ((node.statusCode ?? 0) >= 400) return "client";
+  return null;
+}
+
+function statusLabelOf(node: ApiRequestLog): string {
+  const code = errorCodeOf(node);
+  if (code) return code;
+  if (node.statusCode !== null) return String(node.statusCode);
+  return nodeStatusTone(node) === "ok" ? "OK" : "ERR";
+}
+
+/** Toàn bộ dòng LIVE TRACE của 1 lần chạy, theo đúng thứ tự phát: [gửi, ...sự kiện, kết quả] —
+ * đúng 1 dòng cho mỗi sự kiện nên số dòng hiện ra khớp bước phát lại. */
+export function buildPlaybackLines({
+  nodes,
+  events,
+  scenario,
+  correlationId,
+  actualStatus,
+  copy,
+}: {
+  nodes: LoggerTraceNode[];
+  events: PlaybackEvent[];
+  scenario: ApiTestScenario;
+  correlationId: string;
+  actualStatus: number | null;
+  copy: LoggerDictionary["detail"]["live"];
+}): PlaybackLine[] {
+  const lines: PlaybackLine[] = [
+    {
+      key: "sent",
+      text: `▶ ${copy.sent(scenario.method, scenario.path, scenario.name, correlationId)}`,
+      tone: "plain",
+      services: [],
+    },
+  ];
+
+  events.forEach((event, i) => {
+    const key = `${event.kind}-${i}`;
+    if (event.kind === "skip") {
+      lines.push({ key, text: `○ ${copy.skipped(serviceNameOf(event.service))}`, tone: "muted", services: [] });
+      return;
+    }
+    const node = nodes[event.index];
+    const tone = nodeStatusTone(node);
+    if (event.kind === "enter") {
+      const operation = node.type === "HTTP" ? `${node.method ?? ""} ${node.path}`.trim() : node.path;
+      lines.push({
+        key,
+        text: `→ ${serviceNameOf(node.serviceName)} · ${node.type} ${operation}`,
+        tone: "plain",
+        services: [node.serviceName],
+      });
+      return;
+    }
+    if (event.kind === "error") {
+      lines.push({
+        key,
+        text: `✕ ${copy.error(serviceNameOf(node.serviceName), node.errorMessage ?? "")}`,
+        tone: "err",
+        services: [node.serviceName],
+      });
+      return;
+    }
+    const parentIdx = parentIndexOf(nodes, event.index);
+    if (parentIdx === null) {
+      lines.push({
+        key,
+        text: copy.received(node.statusCode, httpStatusText(node.statusCode), formatDuration(node.durationMs)),
+        tone: tone === "ok" ? "plain" : tone,
+        services: [node.serviceName],
+      });
+      return;
+    }
+    lines.push({
+      key,
+      text: `← ${serviceNameOf(node.serviceName)} → ${serviceNameOf(nodes[parentIdx].serviceName)} · ${statusLabelOf(node)} · ${formatDuration(node.durationMs)}`,
+      tone,
+      services: [node.serviceName, nodes[parentIdx].serviceName],
+    });
+  });
+
+  const pass = actualStatus === scenario.expectedStatus;
+  lines.push({
+    key: "result",
+    text: `● ${copy.result}: ${
+      pass
+        ? copy.resultPass(scenario.expectedStatus, actualStatus)
+        : copy.resultFail(scenario.expectedStatus, actualStatus)
+    }`,
+    tone: pass ? "pass" : "fail",
+    services: [],
+  });
+  return lines;
 }

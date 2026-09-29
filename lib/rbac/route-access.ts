@@ -23,6 +23,7 @@ export const ROUTE_ACCESS: readonly RouteAccessRule[] = [
   { prefix: "/tutors", allow: ["ADMIN"] },
   { prefix: "/users", allow: ["ADMIN"] },
   { prefix: "/logger", allow: ["ADMIN"] },
+  { prefix: "/test-monitor", allow: ["ADMIN"] },
   { prefix: "/students", allow: ["ADMIN", "TUTOR"] },
   { prefix: "/sessions", allow: ["TUTOR", "STUDENT"] },
   { prefix: "/curriculum", allow: ["TUTOR", "PARENT"] },
