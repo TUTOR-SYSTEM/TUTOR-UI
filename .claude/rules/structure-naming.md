@@ -8,6 +8,17 @@
   — không khai báo inline trong component/service/hook (xem [[api-integration]] mục Type conventions).
   Barrel `types/index.ts` re-export hết → import qua `@/types` hoặc `@/types/{name}.types`.
   Ngoại lệ: component props type chỉ dùng 1 file thì khai báo inline trong file đó.
+  **Trước khi thêm type mới**, grep tên type định đặt (vd `FlowRequest`) trong `types/` — hai feature
+  tên gần giống nhau (khác số ít/nhiều, khác domain) dễ chọn trùng tên type dù shape khác hẳn, barrel
+  `export *` không báo lỗi tới khi cả hai cùng tồn tại. Đã xảy ra thật: feature diagram kiến trúc
+  `components/flow-request/` (số ít — map luồng request FE→gateway→Kafka→service) định nghĩa lại
+  `FlowRequest`/`FlowRequestMethod` trùng tên với type đã có của feature CRUD cũ
+  `components/flow-requests/` (số nhiều — quản lý entity "flow request") trong
+  `types/flow-request.types.ts`, gây lỗi build `Module '"@/types"' has no exported member 'FlowId'`
+  (type mới của feature diagram chưa từng được thêm vào `types/`) kèm xung đột tên nếu khai trùng.
+  Sửa bằng cách tạo file riêng `types/flow-diagram.types.ts` và đổi tên 2 type trùng thành
+  `DiagramRequest`/`DiagramRequestMethod` cho feature diagram — không đổi type gốc của feature CRUD
+  cũ (đã có component khác phụ thuộc).
 - **Feature folder** (`components/{name}/`): tách file theo trách nhiệm — list/table component
   riêng, mỗi dialog/modal thêm/sửa/xoá riêng, data constants riêng (nếu có). Không nhồi list +
   dialog + form vào cùng 1 file. Xem `components/students/` (add/edit/delete dialog tách riêng) và
