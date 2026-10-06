@@ -12,6 +12,7 @@ export function TestMonitorHeader({
   progress,
   disabled,
   onRunAll,
+  demo = false,
   copy,
 }: {
   endpointCount: number;
@@ -23,6 +24,8 @@ export function TestMonitorHeader({
   /** Khoá nút khi đang chạy 1 case lẻ hoặc chưa có case nào. */
   disabled: boolean;
   onRunAll: () => void;
+  /** Đang ở chế độ dữ liệu demo (`?mock=1`). */
+  demo?: boolean;
   copy: TestMonitorDictionary;
 }) {
   const lastRun = lastRunAt ? describeRunAt(lastRunAt) : null;
@@ -35,7 +38,17 @@ export function TestMonitorHeader({
   return (
     <header className="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-[#16302b]">{copy.page.title}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-bold text-[#16302b]">{copy.page.title}</h1>
+          {demo && (
+            <span
+              title={copy.page.demoHint}
+              className="rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-xs font-bold text-[#B45309]"
+            >
+              {copy.page.demoBadge}
+            </span>
+          )}
+        </div>
         <p className="mt-0.5 text-sm text-[#8AA09B]">{copy.page.subtitle(endpointCount, caseCount)}</p>
       </div>
       <div className="flex flex-wrap items-center gap-4">

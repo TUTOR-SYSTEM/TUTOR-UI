@@ -12,6 +12,8 @@ export type TestMonitorDictionary = {
     runAllProgress: (done: number, total: number) => string;
     runAllDone: (passed: number, total: number) => string;
     runAllError: string;
+    demoBadge: string;
+    demoHint: string;
   };
   filters: {
     title: string;
@@ -71,6 +73,8 @@ const vi: TestMonitorDictionary = {
     runAllProgress: (done, total) => `Đang chạy ${done}/${total}...`,
     runAllDone: (passed, total) => `Đã chạy xong: ${passed}/${total} case đạt`,
     runAllError: "Không chạy được toàn bộ kịch bản test.",
+    demoBadge: "Dữ liệu demo",
+    demoHint: "Đang hiển thị dữ liệu giả lập, không gọi API thật.",
   },
   filters: {
     title: "Danh sách request",
@@ -155,6 +159,8 @@ const en: TestMonitorDictionary = {
     runAllProgress: (done, total) => `Running ${done}/${total}...`,
     runAllDone: (passed, total) => `Finished: ${passed}/${total} cases passed`,
     runAllError: "Could not run all test scenarios.",
+    demoBadge: "Demo data",
+    demoHint: "Showing simulated data; no real API calls are made.",
   },
   filters: {
     title: "Request list",

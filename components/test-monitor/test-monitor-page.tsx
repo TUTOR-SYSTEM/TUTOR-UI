@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { RequestDetailDialog } from "@/components/logger/request-detail-dialog";
 import UsageGuides from "@/components/ui/usage-guide.ui";
 import { useTestMonitorCopy } from "@/hooks/useTestMonitorCopy.hook";
+import { useTestMonitorMock } from "@/hooks/useTestMonitorMock.hook";
 import { useTestMonitorTrace } from "@/hooks/useTestMonitorTrace.hook";
 import { getErrorMessage } from "@/lib/axios";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
@@ -14,6 +15,12 @@ import { useTestScenarioActions } from "@/lib/services/test-scenario.service";
 import { TestMonitorFilters } from "./test-monitor-filters";
 import { TestMonitorHeader } from "./test-monitor-header";
 import { TestMonitorList } from "./test-monitor-list";
+import {
+  MOCK_LOG_STATS,
+  MOCK_SCENARIOS,
+  buildMockScenarioStats,
+  mockRunScenario,
+} from "./test-monitor-mock-data";
 import {
   buildEndpointRows,
   latestRunAt,
@@ -30,7 +37,8 @@ import type {
 
 export function TestMonitorPage() {
   const copy = useTestMonitorCopy();
-  const traceView = useTestMonitorTrace();
+  const mock = useTestMonitorMock();
+  const traceView = useTestMonitorTrace(mock);
 
   const [service, setService] = useState<string | null>(null);
   const [result, setResult] = useState<TestMonitorResultFilter>("all");
@@ -38,13 +46,29 @@ export function TestMonitorPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState<TestMonitorRunAllProgress | null>(null);
 
-  const { list, stats, run } = useTestScenarioActions({ list: true, stats: true });
-  const { stats: logStats } = useLogActions({ stats: true });
+  // Demo mode (`?mock=1`): hooks stay mounted but disabled, and the page reads/updates local mock
+  // state instead — nothing here ever reaches the real API.
+  const [mockScenarios, setMockScenarios] = useState<ApiTestScenario[]>(MOCK_SCENARIOS);
+  const [mockRunningId, setMockRunningId] = useState<string | null>(null);
 
-  const scenarios = useMemo(() => list.data ?? [], [list.data]);
+  const { list, stats, run } = useTestScenarioActions({
+    list: true,
+    stats: true,
+    listOptions: { enabled: !mock },
+    statsOptions: { enabled: !mock },
+  });
+  const { stats: logStats } = useLogActions({ stats: true, statsOptions: { enabled: !mock } });
+
+  const scenarios = useMemo(
+    () => (mock ? mockScenarios : (list.data ?? [])),
+    [mock, mockScenarios, list.data],
+  );
   const allRows = useMemo(
-    () => buildEndpointRows(scenarios, stats.data ?? [], logStats.data ?? []),
-    [scenarios, stats.data, logStats.data],
+    () =>
+      mock
+        ? buildEndpointRows(mockScenarios, buildMockScenarioStats(mockScenarios), MOCK_LOG_STATS)
+        : buildEndpointRows(scenarios, stats.data ?? [], logStats.data ?? []),
+    [mock, mockScenarios, scenarios, stats.data, logStats.data],
   );
 
   const services = useMemo(
@@ -76,7 +100,42 @@ export function TestMonitorPage() {
       return next;
     });
 
+  const runMock = useCallback(async (scenario: ApiTestScenario): Promise<ApiTestRun> => {
+    const testRun = await mockRunScenario(scenario.id);
+    setMockScenarios((prev) =>
+      prev.map((s) =>
+        s.id === scenario.id
+          ? {
+              ...s,
+              lastRun: {
+                correlationId: testRun.correlationId,
+                actualStatus: testRun.actualStatus,
+                passed: testRun.passed,
+                durationMs: testRun.durationMs,
+                runAt: testRun.createdAt,
+              },
+            }
+          : s,
+      ),
+    );
+    return testRun;
+  }, []);
+
   const runScenario = (scenario: ApiTestScenario) => {
+    if (mock) {
+      setMockRunningId(scenario.id);
+      runMock(scenario)
+        .then((testRun) => {
+          if (testRun.passed) toast.success(copy.list.runPassed(scenario.name));
+          else
+            toast.error(
+              copy.list.runFailed(scenario.name, testRun.expectedStatus, testRun.actualStatus),
+            );
+        })
+        .catch((err) => toast.error(getErrorMessage(err, copy.list.runError)))
+        .finally(() => setMockRunningId(null));
+      return;
+    }
     run.mutate(scenario.id, {
       onSuccess: (raw) => {
         const testRun = unwrapApiData<ApiTestRun>(raw);
@@ -98,8 +157,10 @@ export function TestMonitorPage() {
     setProgress({ done: 0, total: targets.length });
     try {
       for (const [index, scenario] of targets.entries()) {
-        const raw = await run.mutateAsync(scenario.id);
-        if (unwrapApiData<ApiTestRun>(raw).passed) passed += 1;
+        const testRun = mock
+          ? await runMock(scenario)
+          : unwrapApiData<ApiTestRun>(await run.mutateAsync(scenario.id));
+        if (testRun.passed) passed += 1;
         setProgress({ done: index + 1, total: targets.length });
       }
       toast.success(copy.page.runAllDone(passed, targets.length));
@@ -119,8 +180,9 @@ export function TestMonitorPage() {
         caseCount={scenarios.length}
         lastRunAt={latestRunAt(scenarios)}
         progress={progress}
-        disabled={scenarios.length === 0 || run.isPending}
+        disabled={scenarios.length === 0 || run.isPending || mockRunningId !== null}
         onRunAll={() => void runMany(scenarios)}
+        demo={mock}
         copy={copy}
       />
 
@@ -147,10 +209,16 @@ export function TestMonitorPage() {
           onRun={runScenario}
           onRunEndpoint={runEndpoint}
           onOpenTrace={traceView.open}
-          runningScenarioId={run.isPending && progress === null ? (run.variables ?? null) : null}
-          busy={progress !== null}
-          isLoading={list.isLoading}
-          isError={list.isError}
+          runningScenarioId={
+            mock
+              ? mockRunningId
+              : run.isPending && progress === null
+                ? (run.variables ?? null)
+                : null
+          }
+          busy={progress !== null || mockRunningId !== null}
+          isLoading={!mock && list.isLoading}
+          isError={!mock && list.isError}
           copy={copy}
         />
       </div>
