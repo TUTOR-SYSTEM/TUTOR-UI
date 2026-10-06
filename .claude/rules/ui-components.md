@@ -167,3 +167,10 @@
     tạo barrel根 `@/components` (xem [[structure-naming]]).
   - Xem `components/students/` (add/edit/delete dialog tách riêng) và `components/users/`
     (users-page.tsx + create/edit/delete dialog + role-options.ts) làm mẫu.
+- **`RequestDetailDialog` (`components/logger/request-detail-dialog.tsx`) dùng chung logger và
+  test-monitor**: prop `variant?: "full" | "services"` — mặc định `"full"` (trang logger: span chọn
+  + waterfall + summary + Processing + mũi tên prev/next); `"services"` (trang `/test-monitor`:
+  panel Request/Response cho **từng** service, ẩn Processing/prev-next, nút luôn là "Chạy realtime").
+  Sửa dialog này phải giữ nguyên hành vi `"full"` cho logger. Trang `/test-monitor` chỉ hiển thị
+  field mà `/test-scenarios` + `/logs/stats` thật sự trả (không có env, chuỗi service đầy đủ, header
+  request/response) — đừng bịa field khi UI mẫu có mà BE chưa có nguồn.

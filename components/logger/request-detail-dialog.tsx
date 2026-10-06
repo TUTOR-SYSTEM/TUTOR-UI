@@ -78,6 +78,7 @@ export function RequestDetailDialog({
   trace,
   isTraceLoading,
   realtime,
+  variant = "full",
   copy,
 }: {
   filteredRequests: ApiRequestLog[];
@@ -89,6 +90,9 @@ export function RequestDetailDialog({
   trace: ApiRequestLog[] | undefined;
   isTraceLoading: boolean;
   realtime?: RequestDetailRealtime;
+  /** `full` (trang logger): span đang chọn + tổng quan + waterfall. `services` (trang test-monitor):
+   * mỗi service một khung Request/Response, LIVE TRACE hiện cả lần chạy gần nhất đã lưu. */
+  variant?: "full" | "services";
   copy: LoggerDictionary;
 }) {
   const isOpen = !!selectedCorrelationId;
@@ -129,6 +133,38 @@ export function RequestDetailDialog({
     () => buildPlaybackEvents(liveNodes, runExpected),
     [liveNodes, runExpected],
   );
+  // A run opened from a stored trace (not started on this page) has no replay: its LIVE TRACE lines
+  // are built once from the persisted hops, stamped with each hop's own `createdAt`.
+  const staticLines = useMemo(() => {
+    const scenarioForRun = realtime?.scenario;
+    if (
+      variant !== "services" ||
+      liveView ||
+      !scenarioForRun ||
+      !realtime?.hasRun ||
+      !selectedCorrelationId ||
+      traceNodes.length === 0
+    )
+      return [];
+    const events = buildPlaybackEvents(traceNodes);
+    const root = traceNodes.find((n) => n.serviceName === "gateway" && n.type === "HTTP");
+    const lines = buildPlaybackLines({
+      nodes: traceNodes,
+      events,
+      scenario: scenarioForRun,
+      correlationId: selectedCorrelationId,
+      actualStatus: root?.statusCode ?? null,
+      copy: copy.detail.live,
+    });
+    const stamp = (i: number) => Date.parse(traceNodes[Math.max(0, i)]?.createdAt ?? "") || 0;
+    let last = 0;
+    return lines.map((line, i) => {
+      const event = events[i - 1];
+      if (i === 0) last = 0;
+      else if (event && event.index >= 0) last = event.index;
+      return { line, time: stamp(i === lines.length - 1 ? traceNodes.length - 1 : last) };
+    });
+  }, [variant, liveView, realtime?.scenario, realtime?.hasRun, selectedCorrelationId, traceNodes, copy.detail.live]);
   const playbackTotal = playbackEvents.length + 2; // "sent" line + one per event + result line
   const playback = useTracePlayback({
     total: playbackTotal,
@@ -276,12 +312,16 @@ export function RequestDetailDialog({
           copy: liveCopy,
         })
       : [];
-  const shownLines = playbackLines.slice(0, playback.visible).map((line, i) => ({
-    line,
-    time: i === 0 ? (liveView?.startedAt ?? 0) : (playback.times[i - 1] ?? liveView?.startedAt ?? 0),
-  }));
+  const shownLines = liveView
+    ? playbackLines.slice(0, playback.visible).map((line, i) => ({
+        line,
+        time: i === 0 ? (liveView.startedAt ?? 0) : (playback.times[i - 1] ?? liveView.startedAt ?? 0),
+      }))
+    : staticLines;
   const liveSubtitle = !liveView
-    ? liveCopy.idle
+    ? staticLines.length > 0
+      ? liveCopy.status.last
+      : liveCopy.idle
     : !runInFlight
       ? liveCopy.status.last
       : !replaying
@@ -342,10 +382,11 @@ export function RequestDetailDialog({
                   <span>· {copy.detail.expected(scenario.expectedStatus)} ·</span>
                 </>
               )}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={copyCorrelationId}
-                className="flex max-w-56 items-center gap-1 font-mono text-[#0E9F8E] hover:underline"
+                className="h-auto! w-auto! max-w-56 gap-1 p-0! font-mono text-xs font-normal text-[#0E9F8E] hover:bg-transparent! hover:underline"
                 title={copy.detail.copyTraceId}
               >
                 <span className="truncate">
@@ -353,7 +394,7 @@ export function RequestDetailDialog({
                 </span>
                 <Copy className="size-3 shrink-0" />
                 {copied && <span className="text-[#0B7A6D]">✓</span>}
-              </button>
+              </Button>
               <span>· {new Date(request.createdAt).toLocaleString()}</span>
             </p>
           </div>
@@ -392,7 +433,7 @@ export function RequestDetailDialog({
                 <Play className="size-3.5" />
                 {runInFlight
                   ? copy.detail.verdict.pending
-                  : liveView || realtime.hasRun
+                  : variant === "full" && (liveView || realtime.hasRun)
                     ? copy.detail.actions.rerunRealtime
                     : copy.detail.actions.runRealtime}
               </Button>
@@ -401,6 +442,7 @@ export function RequestDetailDialog({
               <Copy className="size-3.5" />
               {copy.detail.actions.copyCurl}
             </Button>
+            {(variant === "full" || positionIndex >= 0) && (
             <div className="flex items-center gap-0.5">
               <Button
                 type="button"
@@ -425,6 +467,7 @@ export function RequestDetailDialog({
                 <ArrowRight className="size-4" />
               </Button>
             </div>
+            )}
             <Button type="button" size="icon-sm" title={copy.detail.close} aria-label={copy.detail.close} onClick={onClose}>
               <X className="size-4" />
             </Button>
@@ -488,8 +531,26 @@ export function RequestDetailDialog({
           )}
 
           <div className={cn("flex flex-col gap-4 transition-opacity duration-300", stale && "pointer-events-none opacity-50")}>
+          {/* ── Per-service Request / Response ── */}
+          {variant === "services" &&
+            nodes.map((node, i) =>
+              replaying && !frontier.entered.has(i) ? null : (
+                <SpanDetail
+                  key={node.id}
+                  node={node}
+                  spanIdx={i}
+                  pending={replaying && !exitedIdx.has(i)}
+                  nodes={nodes}
+                  totalMs={totalMs}
+                  onJump={onSpanIdxChange}
+                  showProcessing={false}
+                  copy={copy}
+                />
+              ),
+            )}
+
           {/* ── Span detail ── */}
-          {activeNode && (
+          {variant === "full" && activeNode && (
             <SpanDetail
               node={activeNode}
               spanIdx={shownIdx}
@@ -502,6 +563,7 @@ export function RequestDetailDialog({
           )}
 
           {/* ── Summary ── */}
+          {variant === "full" && (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             {[
               [copy.detail.summary.totalTime, `${request.durationMs}ms`, false],
@@ -519,8 +581,10 @@ export function RequestDetailDialog({
               </div>
             ))}
           </div>
+          )}
 
           {/* ── Waterfall ── */}
+          {variant === "full" && (
           <div className="rounded-xl border border-[#E7EEEC] bg-white p-4">
             <h3 className="text-sm font-bold text-[#16302b]">{copy.detail.waterfall.title}</h3>
 
@@ -589,6 +653,7 @@ export function RequestDetailDialog({
               </>
             )}
           </div>
+          )}
           </div>
         </div>
       </div>
@@ -604,6 +669,7 @@ function SpanDetail({
   nodes,
   totalMs,
   onJump,
+  showProcessing = true,
   copy,
 }: {
   node: LoggerTraceNode;
@@ -613,6 +679,8 @@ function SpanDetail({
   nodes: LoggerTraceNode[];
   totalMs: number;
   onJump: (index: number) => void;
+  /** Khối "Xử lý" (số liệu + hop con) — ẩn ở bản `services` của dialog. */
+  showProcessing?: boolean;
   copy: LoggerDictionary;
 }) {
   const parentIdx = parentIndexOf(nodes, spanIdx);
@@ -752,6 +820,7 @@ function SpanDetail({
       </div>
 
       {/* Processing */}
+      {showProcessing && (
       <div className="flex flex-col gap-3 border-t border-[#EEF3F1] p-4">
         <h4 className="text-xs font-bold tracking-wide text-[#8AA09B] uppercase">{copy.detail.span.tabs.processing}</h4>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -797,6 +866,7 @@ function SpanDetail({
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

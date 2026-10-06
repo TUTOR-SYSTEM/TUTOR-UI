@@ -2,6 +2,7 @@ import { durationTone } from "@/components/logger/logger-utils";
 import type {
   ApiTestScenario,
   EndpointStats,
+  TestMonitorCaseResult,
   ScenarioStats,
   TestMonitorEndpointRow,
   TestMonitorResultFilter,
@@ -76,4 +77,55 @@ export function resultOf(row: TestMonitorEndpointRow): Exclude<TestMonitorResult
 
 export function matchesResult(row: TestMonitorEndpointRow, filter: TestMonitorResultFilter): boolean {
   return filter === "all" || resultOf(row) === filter;
+}
+
+/** Kết quả của 1 case con theo lần chạy gần nhất: lỗi nếu không đạt, chậm nếu đạt nhưng vượt
+ * ngưỡng thời lượng (cùng ngưỡng với `resultOf`), `never` nếu chưa chạy. */
+export function caseResultOf(scenario: ApiTestScenario): TestMonitorCaseResult {
+  const last = scenario.lastRun;
+  if (!last) return "never";
+  if (!last.passed) return "err";
+  return durationTone(last.durationMs) !== null ? "slow" : "ok";
+}
+
+/** Lọc theo ô tìm kiếm: khớp path, method hoặc tên case (không phân biệt hoa thường). */
+export function matchesSearch(row: TestMonitorEndpointRow, search: string): boolean {
+  const q = search.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    row.path.toLowerCase().includes(q) ||
+    row.method.toLowerCase().includes(q) ||
+    row.cases.some((c) => c.name.toLowerCase().includes(q))
+  );
+}
+
+/** Mốc `lastRun.runAt` mới nhất của mọi case; `null` khi chưa case nào chạy. */
+export function latestRunAt(scenarios: ApiTestScenario[]): string | null {
+  let best: string | null = null;
+  for (const s of scenarios) {
+    const at = s.lastRun?.runAt;
+    if (at && (best === null || Date.parse(at) > Date.parse(best))) best = at;
+  }
+  return best;
+}
+
+/** `runAt` → `{ isToday, date: "DD/MM/YYYY", time: "HH:mm" }` giờ local; `now` tiêm vào để test. */
+export function describeRunAt(
+  iso: string,
+  now: Date = new Date(),
+): { isToday: boolean; date: string; time: string } {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return {
+    isToday: d.toDateString() === now.toDateString(),
+    date: `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`,
+    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+  };
+}
+
+/** Số lượt gọi gọn cho cột Gọi/24h: `640`, `4.8K`, `1.2M`. */
+export function formatCompact(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) return `${(n / 1000).toFixed(1)}K`;
+  return `${(n / 1_000_000).toFixed(1)}M`;
 }

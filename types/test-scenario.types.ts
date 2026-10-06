@@ -70,3 +70,15 @@ export type TestMonitorEndpointRow = {
 
 /** Kết quả `POST /test-scenarios/:id/run?async=true` — trả ngay, không đợi trace hoàn tất. */
 export type RunRealtimeResult = { correlationId: string; scenarioId: string };
+
+/** Kết quả hiển thị của 1 case con: theo lần chạy gần nhất (`never` = chưa chạy lần nào). */
+export type TestMonitorCaseResult = "ok" | "err" | "slow" | "never";
+
+/** Case đang mở trong dialog trace: correlationId của lần chạy đang xem + kịch bản tương ứng. */
+export type TestMonitorTraceSelection = {
+  correlationId: string;
+  scenario: ApiTestScenario;
+};
+
+/** Tiến độ "Test toàn bộ N case" (chạy tuần tự từng case). */
+export type TestMonitorRunAllProgress = { done: number; total: number };
