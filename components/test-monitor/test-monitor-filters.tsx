@@ -1,110 +1,150 @@
 "use client";
 
+import { ChevronsDownUp, ChevronsUpDown, Search } from "lucide-react";
+
 import { Button } from "@/components/ui/button.ui";
-import { SERVICE_STYLES } from "@/components/flow-requests/flow-request-data";
+import { Input } from "@/components/ui/input.ui";
+import { Label } from "@/components/ui/label.ui";
+import { serviceColorOf, serviceNameOf } from "@/components/logger/logger-utils";
 import { cn } from "@/lib/utils";
 import type { TestMonitorDictionary } from "@/lib/i18n/test-monitor.dictionary";
 import type { TestMonitorResultFilter } from "@/types";
 
 const RESULT_KEYS: TestMonitorResultFilter[] = ["all", "err", "slow", "ok"];
 
-function serviceColorOf(service: string): string {
-  const styles = SERVICE_STYLES as Record<string, { color: string; bg: string }>;
-  return (styles[service] ?? SERVICE_STYLES.direct).color;
-}
-
 function Chip({
   active,
   onClick,
   count,
   children,
+  variant,
 }: {
   active: boolean;
   onClick: () => void;
-  count: number;
+  count?: number;
   children: React.ReactNode;
+  variant: "tab" | "service";
 }) {
   return (
     <Button
       type="button"
       variant="ghost"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
-        "h-8! w-auto! gap-1.5 rounded-full! px-3! text-xs font-semibold",
-        active
-          ? "bg-[#0E9F8E]! text-white!"
-          : "bg-[#F3F7F5] text-[#5C726D] hover:bg-[#E7EEEC]!",
+        "h-8! w-auto! gap-1.5 rounded-lg! px-3! text-xs font-semibold",
+        variant === "tab"
+          ? active
+            ? "bg-[#10302B]! text-white!"
+            : "bg-[#F3F7F5] text-[#5C726D] hover:bg-[#E7EEEC]!"
+          : active
+            ? "border-[#0E9F8E]! bg-[#E4F6EF]! text-[#0B7A6D]!"
+            : "border-[#E7EEEC]! bg-white text-[#16302b] hover:bg-[#F3F7F5]!",
       )}
     >
       {children}
-      <span
-        className={cn(
-          "rounded-full px-1.5 py-px text-[10px] font-bold",
-          active ? "bg-white/25" : "bg-white text-[#8AA09B]",
-        )}
-      >
-        {count}
-      </span>
+      {count !== undefined && (
+        <span className={cn("text-[11px] font-bold", active ? "text-white/70" : "text-[#8AA09B]")}>{count}</span>
+      )}
     </Button>
   );
 }
 
+/** Thanh công cụ của card "Danh sách request": tab kết quả + mở/thu case + tìm kiếm, và hàng chip
+ * lọc theo service. */
 export function TestMonitorFilters({
+  endpointCount,
   services,
-  serviceCounts,
-  totalCount,
   service,
   onServiceChange,
   resultCounts,
   result,
   onResultChange,
+  allExpanded,
+  onToggleExpandAll,
+  search,
+  onSearchChange,
   copy,
 }: {
+  endpointCount: number;
   services: string[];
-  serviceCounts: Record<string, number>;
-  totalCount: number;
   /** `null` = mọi service. */
   service: string | null;
   onServiceChange: (service: string | null) => void;
   resultCounts: Record<TestMonitorResultFilter, number>;
   result: TestMonitorResultFilter;
   onResultChange: (result: TestMonitorResultFilter) => void;
+  allExpanded: boolean;
+  onToggleExpandAll: () => void;
+  search: string;
+  onSearchChange: (value: string) => void;
   copy: TestMonitorDictionary;
 }) {
+  const ExpandIcon = allExpanded ? ChevronsDownUp : ChevronsUpDown;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Chip active={service === null} onClick={() => onServiceChange(null)} count={totalCount}>
-          {copy.filters.serviceAll}
-        </Chip>
-        {services.map((name) => (
-          <Chip
-            key={name}
-            active={service === name}
-            onClick={() => onServiceChange(name)}
-            count={serviceCounts[name] ?? 0}
+    <div className="flex flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-base font-bold text-[#16302b]">
+            {copy.filters.title} <span className="font-medium text-[#8AA09B]">· {endpointCount}</span>
+          </h2>
+          {RESULT_KEYS.map((key) => (
+            <Chip
+              key={key}
+              variant="tab"
+              active={result === key}
+              onClick={() => onResultChange(key)}
+              count={resultCounts[key]}
+            >
+              {copy.filters.result[key]}
+            </Chip>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onToggleExpandAll}
+            className="h-9! w-auto! gap-1.5 rounded-lg! px-3! text-xs font-semibold"
           >
-            <span
-              className="size-2 shrink-0 rounded-full"
-              style={{ background: serviceColorOf(name) }}
+            <ExpandIcon className="size-3.5" />
+            {allExpanded ? copy.filters.collapseAll : copy.filters.expandAll}
+          </Button>
+          <div className="relative">
+            <Label htmlFor="test-monitor-search" className="sr-only">
+              {copy.filters.searchLabel}
+            </Label>
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#8AA09B]" />
+            <Input
+              id="test-monitor-search"
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder={copy.filters.searchPlaceholder}
+              className="h-9! w-60 rounded-lg! pl-9 text-sm"
             />
-            {name}
-          </Chip>
-        ))}
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        {RESULT_KEYS.map((key) => (
-          <Chip
-            key={key}
-            active={result === key}
-            onClick={() => onResultChange(key)}
-            count={resultCounts[key]}
-          >
-            {copy.filters.result[key]}
-          </Chip>
-        ))}
-      </div>
+      {services.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-[#EEF3F1] px-5 py-3">
+          <span className="mr-1 text-[11px] font-bold tracking-wide text-[#8AA09B] uppercase">
+            {copy.filters.serviceLabel}
+          </span>
+          {services.map((name) => (
+            <Chip
+              key={name}
+              variant="service"
+              active={service === name}
+              onClick={() => onServiceChange(service === name ? null : name)}
+            >
+              <span className="size-2 shrink-0 rounded-full" style={{ background: serviceColorOf(name) }} />
+              {serviceNameOf(name)}
+            </Chip>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
