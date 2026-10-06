@@ -12,7 +12,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Biến NEXT_PUBLIC_* được "đóng" vào JS lúc build, nên phải có ở đây
 ARG NEXT_PUBLIC_API_URL=https://tutor.haiphan.org/api
+ARG NEXT_PUBLIC_THIRD_SERVICE_URL=http://localhost:4001
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+ NEXT_PUBLIC_THIRD_SERVICE_URL=$NEXT_PUBLIC_THIRD_SERVICE_URL \
  NEXT_TELEMETRY_DISABLED=1 \
  DOCKER_BUILD=1
 RUN npm run build
