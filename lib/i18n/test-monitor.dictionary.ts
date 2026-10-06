@@ -4,6 +4,7 @@ export type TestMonitorDictionary = {
   page: {
     title: string;
     subtitle: (endpoints: number, cases: number) => string;
+    environment: (name: string) => string;
     lastRun: string;
     lastRunNever: string;
     lastRunToday: (time: string) => string;
@@ -43,6 +44,11 @@ export type TestMonitorDictionary = {
     openTrace: (name: string) => string;
     expandRow: (path: string) => string;
     neverRun: string;
+    flow: {
+      passes: (services: number) => string;
+      stoppedAt: (service: string, status: number | null) => string;
+      slowAt: (service: string, duration: string) => string;
+    };
     result: Record<"ok" | "err" | "slow", string>;
     categoryBadge: Record<"valid" | "other", string>;
     testButton: string;
@@ -65,6 +71,7 @@ const vi: TestMonitorDictionary = {
   page: {
     title: "Kiểm thử API Gateway",
     subtitle: (endpoints, cases) => `${endpoints} endpoint · ${cases} test case`,
+    environment: (name) => `môi trường ${name}`,
     lastRun: "Lần chạy gần nhất:",
     lastRunNever: "Chưa chạy",
     lastRunToday: (time) => `Hôm nay ${time}`,
@@ -104,6 +111,11 @@ const vi: TestMonitorDictionary = {
     openTrace: (name) => `Xem trace của "${name}"`,
     expandRow: (path) => `Mở các case của ${path}`,
     neverRun: "Chưa chạy",
+    flow: {
+      passes: (services) => `Qua ${services} service`,
+      stoppedAt: (service, status) => `Dừng tại ${service} · ${status ?? "không phản hồi"}`,
+      slowAt: (service, duration) => `chậm ở ${service} (${duration})`,
+    },
     result: { ok: "Đạt", err: "Lỗi", slow: "Chậm" },
     categoryBadge: { valid: "SUCCESS", other: "ERROR" },
     testButton: "Test",
@@ -151,6 +163,7 @@ const en: TestMonitorDictionary = {
     title: "API Gateway testing",
     subtitle: (endpoints, cases) =>
       `${endpoints} ${endpoints === 1 ? "endpoint" : "endpoints"} · ${cases} test ${cases === 1 ? "case" : "cases"}`,
+    environment: (name) => `${name} environment`,
     lastRun: "Last run:",
     lastRunNever: "Never run",
     lastRunToday: (time) => `Today ${time}`,
@@ -190,6 +203,11 @@ const en: TestMonitorDictionary = {
     openTrace: (name) => `View trace of "${name}"`,
     expandRow: (path) => `Expand cases of ${path}`,
     neverRun: "Never run",
+    flow: {
+      passes: (services) => `Through ${services} ${services === 1 ? "service" : "services"}`,
+      stoppedAt: (service, status) => `Stopped at ${service} · ${status ?? "no response"}`,
+      slowAt: (service, duration) => `slow at ${service} (${duration})`,
+    },
     result: { ok: "Pass", err: "Fail", slow: "Slow" },
     categoryBadge: { valid: "SUCCESS", other: "ERROR" },
     testButton: "Test",

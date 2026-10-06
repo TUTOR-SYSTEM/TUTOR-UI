@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import type { TestMonitorDictionary } from "@/lib/i18n/test-monitor.dictionary";
 import type { ApiTestScenario } from "@/types";
 import { ResultPill } from "./test-monitor-badges";
-import { caseResultOf } from "./test-monitor-utils";
+import { caseResultOf, describeCaseFlow } from "./test-monitor-utils";
 
 const toneText = (tone: "ok" | "warn" | "err") => STATUS_TONE_STYLE[tone].text;
 
@@ -32,6 +32,8 @@ export function TestMonitorCaseRow({
   const result = caseResultOf(scenario);
   const durationColor = last && durationTone(last.durationMs);
   const isValid = scenario.category === "valid";
+  const flowSummary = describeCaseFlow(scenario, copy.list.flow);
+  const summary = flowSummary ?? scenario.description;
   const badgeTone = STATUS_TONE_STYLE[isValid ? "ok" : "warn"];
 
   return (
@@ -61,8 +63,8 @@ export function TestMonitorCaseRow({
       </TableCell>
       <TableCell className="px-3 py-2.5 text-sm font-semibold text-[#16302b]">{scenario.name}</TableCell>
       <TableCell className="max-w-72 px-3 py-2.5">
-        <p className="truncate font-mono text-xs text-[#5C726D]" title={scenario.description ?? undefined}>
-          {scenario.description ?? "—"}
+        <p className="truncate font-mono text-xs text-[#5C726D]" title={summary ?? undefined}>
+          {summary ?? "—"}
         </p>
       </TableCell>
       <TableCell colSpan={2} className="px-3 py-2.5 text-right text-xs text-[#8AA09B]">

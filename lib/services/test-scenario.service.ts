@@ -7,17 +7,20 @@ import type {
   ApiTestScenario,
   RunRealtimeResult,
   ScenarioStats,
+  TestScenarioMeta,
 } from "@/types";
 
 // ─── Query keys ──────────────────────────────────────────────────────────────
 
 export const TEST_SCENARIOS_QUERY_KEY = ["test-scenarios", "list"] as const;
 export const TEST_SCENARIOS_STATS_QUERY_KEY = ["test-scenarios", "stats"] as const;
+export const TEST_SCENARIOS_META_QUERY_KEY = ["test-scenarios", "meta"] as const;
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 /** Test scenarios (admin only): `list` for `GET /test-scenarios` (each case + its latest run),
- * `stats` for `GET /test-scenarios/stats` (cases passed/total per endpoint) and `run` for
+ * `stats` for `GET /test-scenarios/stats` (cases passed/total per endpoint), `meta` for
+ * `GET /test-scenarios/meta` (environment name) and `run` for
  * `POST /test-scenarios/:id/run` — the id is the mutation payload, and a settled run refreshes
  * both queries. `runRealtime` fires the same run without waiting (see below). */
 export function useTestScenarioActions(args?: {
@@ -29,6 +32,11 @@ export function useTestScenarioActions(args?: {
   stats?: boolean;
   statsOptions?: Omit<
     UseQueryOptions<ApiResponse<ScenarioStats[]>, Error, ScenarioStats[]>,
+    "queryKey" | "queryFn"
+  >;
+  /** `GET /test-scenarios/meta` (environment name) — runs unless `metaOptions.enabled` is false. */
+  metaOptions?: Omit<
+    UseQueryOptions<ApiResponse<TestScenarioMeta>, Error, TestScenarioMeta>,
     "queryKey" | "queryFn"
   >;
 }) {
@@ -54,6 +62,16 @@ export function useTestScenarioActions(args?: {
     },
   );
 
+  const meta = useGet<ApiResponse<TestScenarioMeta>, TestScenarioMeta>(
+    TEST_SCENARIOS_META_QUERY_KEY,
+    "/test-scenarios/meta",
+    {
+      select: (raw) => unwrapApiData<TestScenarioMeta>(raw),
+      retry: false,
+      ...args?.metaOptions,
+    },
+  );
+
   const run = usePost<ApiResponse<ApiTestRun>, string>((id) => `/test-scenarios/${id}/run`, {
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: TEST_SCENARIOS_QUERY_KEY });
@@ -67,5 +85,5 @@ export function useTestScenarioActions(args?: {
     (id) => `/test-scenarios/${id}/run?async=true`,
   );
 
-  return { list, stats, run, runRealtime };
+  return { list, stats, meta, run, runRealtime };
 }

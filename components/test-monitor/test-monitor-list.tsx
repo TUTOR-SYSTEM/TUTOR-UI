@@ -16,7 +16,7 @@ import { durationTone, formatDuration } from "@/components/logger/logger-utils";
 import { cn } from "@/lib/utils";
 import type { TestMonitorDictionary } from "@/lib/i18n/test-monitor.dictionary";
 import type { ApiTestScenario, TestMonitorEndpointRow } from "@/types";
-import { MethodTag, ResultPill, ServiceTag } from "./test-monitor-badges";
+import { MethodTag, ResultPill, ServiceFlow, ServiceTag } from "./test-monitor-badges";
 import { TestMonitorCaseRow } from "./test-monitor-case-row";
 import { formatCompact, resultOf } from "./test-monitor-utils";
 
@@ -155,7 +155,13 @@ export function TestMonitorList({
                       </p>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      {row.service ? <ServiceTag service={row.service} /> : <span className="text-sm text-[#8AA09B]">—</span>}
+                      {row.flowServices.length > 0 ? (
+                        <ServiceFlow services={row.flowServices} />
+                      ) : row.service ? (
+                        <ServiceTag service={row.service} />
+                      ) : (
+                        <span className="text-sm text-[#8AA09B]">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="px-3 py-3 text-right">
                       <CasesProgress passed={row.casesPassed} total={row.casesTotal} />

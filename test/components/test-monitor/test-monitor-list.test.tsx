@@ -21,6 +21,7 @@ const scenario = (over: Partial<ApiTestScenario>): ApiTestScenario => ({
   createdAt: "",
   updatedAt: null,
   lastRun: null,
+  flow: [],
   ...over,
 });
 
@@ -32,6 +33,7 @@ const row = (over: Partial<TestMonitorEndpointRow> = {}): TestMonitorEndpointRow
   method: "POST",
   path: "/auth/login",
   service: "user-service",
+  flowServices: [],
   cases: [
     scenario({ id: "s1", name: "Request hợp lệ", lastRun: passedRun }),
     scenario({ id: "s2", name: "Sai mật khẩu", expectedStatus: 400, category: "domain", lastRun: failedRun }),

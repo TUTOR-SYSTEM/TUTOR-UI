@@ -17,15 +17,20 @@ import { TestMonitorHeader } from "./test-monitor-header";
 import { TestMonitorList } from "./test-monitor-list";
 import {
   MOCK_LOG_STATS,
+  MOCK_META,
   MOCK_SCENARIOS,
+  MOCK_TRACES,
   buildMockScenarioStats,
+  flowFromTrace,
   mockRunScenario,
 } from "./test-monitor-mock-data";
 import {
   buildEndpointRows,
   latestRunAt,
   matchesResult,
+  matchesService,
   matchesSearch,
+  servicesOfRow,
 } from "./test-monitor-utils";
 import type {
   ApiTestRun,
@@ -51,12 +56,14 @@ export function TestMonitorPage() {
   const [mockScenarios, setMockScenarios] = useState<ApiTestScenario[]>(MOCK_SCENARIOS);
   const [mockRunningId, setMockRunningId] = useState<string | null>(null);
 
-  const { list, stats, run } = useTestScenarioActions({
+  const { list, stats, meta, run } = useTestScenarioActions({
     list: true,
     stats: true,
     listOptions: { enabled: !mock },
     statsOptions: { enabled: !mock },
+    metaOptions: { enabled: !mock },
   });
+  const environment = mock ? MOCK_META.environment : (meta.data?.environment ?? null);
   const { stats: logStats } = useLogActions({ stats: true, statsOptions: { enabled: !mock } });
 
   const scenarios = useMemo(
@@ -72,14 +79,14 @@ export function TestMonitorPage() {
   );
 
   const services = useMemo(
-    () => [...new Set(allRows.map((r) => r.service).filter((s): s is string => !!s))].sort(),
+    () => [...new Set(allRows.flatMap(servicesOfRow))].sort(),
     [allRows],
   );
 
   // Tab counts respect the service chip and the search box, so a tab's number is what you'd get
   // by clicking it.
   const inScope = allRows.filter(
-    (r) => (service === null || r.service === service) && matchesSearch(r, search),
+    (r) => matchesService(r, service) && matchesSearch(r, search),
   );
   const rows = inScope.filter((r) => matchesResult(r, result));
   const resultCounts: Record<TestMonitorResultFilter, number> = {
@@ -114,6 +121,7 @@ export function TestMonitorPage() {
                 durationMs: testRun.durationMs,
                 runAt: testRun.createdAt,
               },
+              flow: flowFromTrace(MOCK_TRACES[testRun.correlationId] ?? []),
             }
           : s,
       ),
@@ -182,6 +190,7 @@ export function TestMonitorPage() {
         progress={progress}
         disabled={scenarios.length === 0 || run.isPending || mockRunningId !== null}
         onRunAll={() => void runMany(scenarios)}
+        environment={environment}
         demo={mock}
         copy={copy}
       />

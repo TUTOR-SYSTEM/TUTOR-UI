@@ -24,6 +24,9 @@ const log = (over: Partial<ApiRequestLog>): ApiRequestLog => ({
   responseBody: '{"ok":true}',
   errorMessage: null,
   createdAt: "2030-01-01T10:00:00.300Z",
+  host: "gw-pod-1",
+  requestHeaders: '{"x-correlation-id":"c1","accept":"application/json"}',
+  responseHeaders: "not json",
   ...over,
 });
 
@@ -41,6 +44,9 @@ const trace = [
     requestBody: '{"rpc":1}',
     responseBody: '{"user":2}',
     createdAt: "2030-01-01T10:00:00.250Z",
+    host: "user-pod-9",
+    requestHeaders: null,
+    responseHeaders: null,
   }),
 ];
 
@@ -93,5 +99,18 @@ describe("RequestDetailDialog — services variant", () => {
     expect(screen.getByText(copy.detail.verdict.pass)).toBeInTheDocument();
     expect(screen.getByText(copy.detail.live.status.last)).toBeInTheDocument();
     expect(screen.getByText(new RegExp(copy.detail.live.result))).toBeInTheDocument();
+  });
+
+  it("shows host, HTTPS/RMQ labels and parsed header tables (hidden when null or invalid)", () => {
+    renderServices();
+
+    expect(screen.getByText("(gw-pod-1)")).toBeInTheDocument();
+    expect(screen.getByText("(user-pod-9)")).toBeInTheDocument();
+    expect(screen.getByText(/HTTPS/)).toBeInTheDocument();
+    expect(screen.getByText(/RMQ\/RPC/)).toBeInTheDocument();
+    expect(screen.getByText(copy.detail.span.headers.request)).toBeInTheDocument();
+    expect(screen.getByText("x-correlation-id")).toBeInTheDocument();
+    // gateway response headers are invalid JSON, RPC hop has none -> no response table
+    expect(screen.queryByText(copy.detail.span.headers.response)).not.toBeInTheDocument();
   });
 });

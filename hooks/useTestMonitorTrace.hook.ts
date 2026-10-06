@@ -38,7 +38,7 @@ export function useTestMonitorTrace(mock = false) {
     traceCorrelationId: selected?.correlationId,
     traceOptions: { enabled: !!selected && !traceHeld && !mock },
   });
-  const { runRealtime } = useTestScenarioActions();
+  const { runRealtime } = useTestScenarioActions({ metaOptions: { enabled: false } });
 
   useLogSocket({ enabled: !!selected && !mock, onNewLog: liveTrace.feed });
 

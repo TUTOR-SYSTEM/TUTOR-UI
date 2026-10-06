@@ -5,6 +5,8 @@ import type {
   EndpointStats,
   ScenarioStats,
   TestScenarioCategory,
+  TestScenarioFlowHop,
+  TestScenarioMeta,
 } from "@/types";
 
 /**
@@ -37,6 +39,16 @@ type MockDef = {
 const NOW = Date.now();
 const MIN = 60_000;
 const iso = (ms: number) => new Date(ms).toISOString();
+
+/** `GET /test-scenarios/meta` giả lập. */
+export const MOCK_META: TestScenarioMeta = { environment: "staging" };
+
+const HOSTS: Record<string, string> = {
+  gateway: "api-gateway-7d9f6c5b8-x2k4m",
+  "user-service": "user-service-5c8b7f9d4-q8w2n",
+  "tutor-service": "tutor-service-6b7d8c9f5-m4t7p",
+  "third-service": "third-service-84c6d7b5f-h9v3c",
+};
 
 const USER_ID = "7c1f0b52-3a1e-4d8a-9a57-5e2b6f1d0c01";
 
@@ -247,9 +259,22 @@ function buildTrace(def: MockDef, correlationId: string, endMs: number, duration
   const svcTraceId = `${correlationId}-t1`;
   const base = { correlationId, userId: def.category === "auth" && actual === 401 ? null : USER_ID, ip: "113.161.24.18" };
 
+  const requestHeaders = JSON.stringify({
+    host: "api.staging.tutorpro.vn",
+    "user-agent": "tutor-pro-test-runner/1.0",
+    accept: "application/json",
+    "content-type": "application/json",
+    authorization: "[REDACTED]",
+    "x-correlation-id": correlationId,
+  });
+  const responseHeaders = JSON.stringify({
+    "content-type": "application/json; charset=utf-8",
+    "x-correlation-id": correlationId,
+    "cache-control": "no-store",
+  });
   const rows: ApiRequestLog[] = [
     {
-      ...base, id: `${correlationId}-r0`, serviceName: "gateway", type: "HTTP", method: def.method,
+      ...base, requestHeaders, responseHeaders, host: HOSTS.gateway, id: `${correlationId}-r0`, serviceName: "gateway", type: "HTTP", method: def.method,
       path: def.path, statusCode: actual, durationMs, traceId: rootTraceId, parentTraceId: null,
       requestBody: json(def.requestBody), responseBody: json(def.responseBody),
       errorMessage: failed ? "Internal server error" : null, createdAt: iso(endMs),
@@ -259,20 +284,30 @@ function buildTrace(def: MockDef, correlationId: string, endMs: number, duration
 
   const svcDuration = Math.max(1, durationMs - 8);
   rows.push({
-    ...base, id: `${correlationId}-r1`, serviceName: def.service, type: "RPC", method: null,
+    ...base, requestHeaders: null, responseHeaders: null, host: HOSTS[def.service],
+    id: `${correlationId}-r1`, serviceName: def.service, type: "RPC", method: null,
     path: rpcName(def.path), statusCode: actual, durationMs: svcDuration, traceId: svcTraceId,
     parentTraceId: rootTraceId, requestBody: json(def.requestBody), responseBody: json(def.responseBody),
     errorMessage, createdAt: iso(endMs - 3),
   });
   if (def.downstream) {
     rows.push({
-      ...base, id: `${correlationId}-r2`, serviceName: def.downstream.service, type: "RPC", method: null,
+      ...base, requestHeaders: null, responseHeaders: null, host: HOSTS[def.downstream.service],
+      id: `${correlationId}-r2`, serviceName: def.downstream.service, type: "RPC", method: null,
       path: def.downstream.path, statusCode: 200, durationMs: Math.max(1, Math.round(svcDuration * 0.35)),
       traceId: `${correlationId}-t2`, parentTraceId: svcTraceId, requestBody: json({ correlationId }),
       responseBody: json({ ok: true }), errorMessage: null, createdAt: iso(endMs - 6),
     });
   }
   return rows;
+}
+
+/** Các hop của 1 trace theo thứ tự thời gian (`createdAt` tăng dần) — đúng shape `flow` mà
+ * `GET /test-scenarios` trả cho `lastRun`. */
+export function flowFromTrace(trace: ApiRequestLog[]): TestScenarioFlowHop[] {
+  return [...trace]
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
+    .map((r) => ({ serviceName: r.serviceName, type: r.type, statusCode: r.statusCode, durationMs: r.durationMs }));
 }
 
 function toScenario(def: MockDef): ApiTestScenario {
@@ -292,6 +327,11 @@ function toScenario(def: MockDef): ApiTestScenario {
     category: def.category,
     createdAt: iso(NOW - 20 * 24 * 60 * MIN),
     updatedAt: null,
+    flow: ran
+      ? flowFromTrace(
+          buildTrace(def, correlationOf(def), NOW - (def.ranMinAgo as number) * MIN, def.durationMs, def.actual),
+        )
+      : [],
     lastRun: ran
       ? {
           correlationId: correlationOf(def),

@@ -5,7 +5,8 @@ import { ChevronsDownUp, ChevronsUpDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button.ui";
 import { Input } from "@/components/ui/input.ui";
 import { Label } from "@/components/ui/label.ui";
-import { serviceColorOf, serviceNameOf } from "@/components/logger/logger-utils";
+import { serviceColorOf } from "@/components/logger/logger-utils";
+import { flowServiceLabel } from "./test-monitor-utils";
 import { cn } from "@/lib/utils";
 import type { TestMonitorDictionary } from "@/lib/i18n/test-monitor.dictionary";
 import type { TestMonitorResultFilter } from "@/types";
@@ -140,7 +141,7 @@ export function TestMonitorFilters({
               onClick={() => onServiceChange(service === name ? null : name)}
             >
               <span className="size-2 shrink-0 rounded-full" style={{ background: serviceColorOf(name) }} />
-              {serviceNameOf(name)}
+              {flowServiceLabel(name)}
             </Chip>
           ))}
         </div>
