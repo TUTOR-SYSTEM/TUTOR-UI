@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   MOCK_LOG_STATS,
+  MOCK_META,
   MOCK_SCENARIOS,
   MOCK_SCENARIO_STATS,
   MOCK_TRACES,
@@ -20,6 +21,32 @@ describe("test-monitor mock data", () => {
       const ids = new Set(trace.map((r) => r.traceId));
       expect(trace.every((r) => r.parentTraceId === null || ids.has(r.parentTraceId))).toBe(true);
     }
+  });
+
+  it("gives every ran case a flow consistent with its trace, and none otherwise", () => {
+    for (const s of MOCK_SCENARIOS) {
+      if (!s.lastRun) {
+        expect(s.flow).toEqual([]);
+        continue;
+      }
+      expect(s.flow.length, s.name).toBe(MOCK_TRACES[s.lastRun.correlationId].length);
+      expect(s.flow[s.flow.length - 1].serviceName).toBe("gateway");
+    }
+  });
+
+  it("stores headers on the gateway hop only and a host on every hop; meta is staging", () => {
+    const trace = MOCK_TRACES[MOCK_SCENARIOS[0].lastRun!.correlationId];
+    for (const r of trace) {
+      expect(r.host).toBeTruthy();
+      if (r.serviceName === "gateway") {
+        expect(JSON.parse(r.requestHeaders as string)).toHaveProperty("x-correlation-id");
+        expect(JSON.parse(r.responseHeaders as string)).toBeTypeOf("object");
+      } else {
+        expect(r.requestHeaders).toBeNull();
+        expect(r.responseHeaders).toBeNull();
+      }
+    }
+    expect(MOCK_META.environment).toBe("staging");
   });
 
   it("keeps endpoint stats consistent with the scenarios", () => {

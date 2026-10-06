@@ -112,6 +112,9 @@ export type LoggerDictionary = {
       tabs: { req: string; res: string; processing: string };
       callFlow: { client: string };
       requestTab: { body: string };
+      protocol: { HTTP: string; RPC: string };
+      hostLabel: string;
+      headers: { request: string; response: string; name: string; value: string };
       responseTab: { responseTime: string; size: string; body: string };
       processingTab: {
         metrics: { start: string; duration: string; percentOfTrace: string };
@@ -250,6 +253,9 @@ const vi: LoggerDictionary = {
       tabs: { req: "Request", res: "Response", processing: "Xử lý" },
       callFlow: { client: "Client (Web / App)" },
       requestTab: { body: "Body" },
+      protocol: { HTTP: "HTTPS", RPC: "RMQ/RPC" },
+      hostLabel: "host",
+      headers: { request: "Header request", response: "Header phản hồi", name: "Tên", value: "Giá trị" },
       responseTab: { responseTime: "Thời gian phản hồi", size: "Kích thước", body: "Body" },
       processingTab: {
         metrics: { start: "Bắt đầu", duration: "Thời lượng", percentOfTrace: "% trace" },
@@ -400,6 +406,9 @@ const en: LoggerDictionary = {
       tabs: { req: "Request", res: "Response", processing: "Processing" },
       callFlow: { client: "Client (Web / App)" },
       requestTab: { body: "Body" },
+      protocol: { HTTP: "HTTPS", RPC: "RMQ/RPC" },
+      hostLabel: "host",
+      headers: { request: "Request headers", response: "Response headers", name: "Name", value: "Value" },
       responseTab: { responseTime: "Response time", size: "Size", body: "Body" },
       processingTab: {
         metrics: { start: "Start", duration: "Duration", percentOfTrace: "% of trace" },

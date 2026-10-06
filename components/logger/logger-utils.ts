@@ -461,3 +461,19 @@ export function buildPlaybackLines({
   });
   return lines;
 }
+
+/** `requestHeaders`/`responseHeaders` (JSON-string map) → các cặp `[tên, giá trị]` đã sắp theo tên.
+ * `null` khi rỗng, không phải JSON object hoặc parse lỗi — UI ẩn bảng header trong các trường hợp đó. */
+export function parseHeaders(raw: string | null | undefined): [string, string][] | null {
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const entries = Object.entries(parsed as Record<string, unknown>).map(
+      ([k, v]): [string, string] => [k, typeof v === "string" ? v : JSON.stringify(v)],
+    );
+    return entries.length > 0 ? entries.sort(([a], [b]) => a.localeCompare(b)) : null;
+  } catch {
+    return null;
+  }
+}

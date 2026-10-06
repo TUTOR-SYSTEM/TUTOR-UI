@@ -7,6 +7,7 @@ import { AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, Copy, Loader2, Play,
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button.ui";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.ui";
 import { API_BASE_URL } from "@/lib/axios/client";
 import {
   CLIENT_KEY,
@@ -27,6 +28,7 @@ import {
   methodColorOf,
   nodeStatusTone,
   parentIndexOf,
+  parseHeaders,
   pipelineHops,
   playbackFrontier,
   prettyBody,
@@ -544,6 +546,7 @@ export function RequestDetailDialog({
                   totalMs={totalMs}
                   onJump={onSpanIdxChange}
                   showProcessing={false}
+                  showTransport
                   copy={copy}
                 />
               ),
@@ -662,6 +665,40 @@ export function RequestDetailDialog({
   );
 }
 
+function HeadersTable({
+  title,
+  entries,
+  copy,
+}: {
+  title: string;
+  entries: [string, string][];
+  copy: LoggerDictionary;
+}) {
+  return (
+    <div>
+      <p className="mb-1 text-xs font-semibold text-[#8AA09B]">{title}</p>
+      <div className="max-h-40 overflow-y-auto rounded-lg border border-[#E7EEEC]">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="h-8 px-2 text-[11px]">{copy.detail.span.headers.name}</TableHead>
+              <TableHead className="h-8 px-2 text-[11px]">{copy.detail.span.headers.value}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {entries.map(([name, value]) => (
+              <TableRow key={name}>
+                <TableCell className="px-2 py-1 font-mono text-[11px] font-semibold text-[#16302b]">{name}</TableCell>
+                <TableCell className="px-2 py-1 font-mono text-[11px] break-all text-[#5C726D]">{value}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 function SpanDetail({
   node,
   spanIdx,
@@ -670,6 +707,7 @@ function SpanDetail({
   totalMs,
   onJump,
   showProcessing = true,
+  showTransport = false,
   copy,
 }: {
   node: LoggerTraceNode;
@@ -681,6 +719,8 @@ function SpanDetail({
   onJump: (index: number) => void;
   /** Khối "Xử lý" (số liệu + hop con) — ẩn ở bản `services` của dialog. */
   showProcessing?: boolean;
+  /** Bản `services`: hiện host cạnh tên service, nhãn giao thức (HTTPS / RMQ/RPC) và bảng header. */
+  showTransport?: boolean;
   copy: LoggerDictionary;
 }) {
   const parentIdx = parentIndexOf(nodes, spanIdx);
@@ -699,6 +739,8 @@ function SpanDetail({
   const statusTone = failed ? "err" : httpStatusTone(node.statusCode);
   const errorKind = errorKindOf(node);
   const serviceLabel = serviceNameOf(node.serviceName);
+  const reqHeaders = showTransport ? parseHeaders(node.requestHeaders) : null;
+  const resHeaders = showTransport ? parseHeaders(node.responseHeaders) : null;
   const hint = errorKind
     ? errorKind === "timeout"
       ? copy.detail.span.hints.timeout(serviceLabel, node.path.split("/").pop() || node.path)
@@ -710,10 +752,15 @@ function SpanDetail({
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-[#EEF3F1] px-4 py-3">
         <span className="size-2.5 shrink-0 rounded-[3px]" style={{ background: serviceColorOf(node.serviceName) }} />
         <span className="text-base font-bold text-[#16302b]">{serviceNameOf(node.serviceName)}</span>
+        {showTransport && node.host && (
+          <span className="font-mono text-xs text-[#8AA09B]" title={copy.detail.span.hostLabel}>
+            ({node.host})
+          </span>
+        )}
         <span className="font-mono text-xs text-[#8AA09B]">
           · {copy.detail.span.calledFrom}{" "}
           <span className="font-sans font-bold text-[#16302b]">{callerLabel}</span> {copy.detail.span.via}{" "}
-          {node.type}
+          {showTransport ? copy.detail.span.protocol[node.type] : node.type}
         </span>
         <span
           className="ml-auto rounded-md px-2 py-0.5 text-xs font-semibold"
@@ -768,6 +815,7 @@ function SpanDetail({
               {isHttp ? `${API_BASE_URL.replace(/\/$/, "")}${node.path}` : node.path}
             </span>
           </div>
+          {reqHeaders && <HeadersTable title={copy.detail.span.headers.request} entries={reqHeaders} copy={copy} />}
           <div>
             <p className="mb-1 text-xs font-semibold text-[#8AA09B]">{copy.detail.span.requestTab.body}</p>
             <CodeBlock text={node.requestBody ? prettyBody(node.requestBody) : copy.detail.span.noBody} />
@@ -807,6 +855,7 @@ function SpanDetail({
                 </span>
                 <span>{formatDuration(node.durationMs)}</span>
               </div>
+              {resHeaders && <HeadersTable title={copy.detail.span.headers.response} entries={resHeaders} copy={copy} />}
               <div>
                 <p className="mb-1 text-xs font-semibold text-[#8AA09B]">{copy.detail.span.responseTab.body}</p>
                 <CodeBlock

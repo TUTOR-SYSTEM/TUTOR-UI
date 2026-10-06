@@ -68,7 +68,7 @@ export function LoggerPage() {
     stats: true,
   });
 
-  const { list: scenarios, runRealtime } = useTestScenarioActions({ list: true });
+  const { list: scenarios, runRealtime } = useTestScenarioActions({ list: true, metaOptions: { enabled: false } });
 
   const requests = list.data?.data ?? [];
   const pagination = list.data?.pagination;

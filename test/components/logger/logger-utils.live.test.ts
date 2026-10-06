@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  parseHeaders,
   buildCurl,
   buildPlaybackEvents,
   buildPlaybackLines,
@@ -78,6 +79,7 @@ describe("pickScenarioFor", () => {
     createdAt: "",
     updatedAt: null,
     lastRun: null,
+    flow: [],
     ...over,
   });
   const req = { method: "POST", path: "/auth/login", correlationId: "c1" };
@@ -185,5 +187,15 @@ describe("playback of a failed run", () => {
     expect(errorKindOf({ errorMessage: null, statusCode: 500 })).toBe("server");
     expect(errorKindOf({ errorMessage: null, statusCode: 403 })).toBe("client");
     expect(errorKindOf({ errorMessage: null, statusCode: 200 })).toBeNull();
+  });
+});
+
+describe("parseHeaders", () => {
+  it("parses a JSON map into sorted pairs and returns null for empty/invalid input", () => {
+    expect(parseHeaders('{"b":"2","a":1}')).toEqual([["a", "1"], ["b", "2"]]);
+    expect(parseHeaders(null)).toBeNull();
+    expect(parseHeaders("{}")).toBeNull();
+    expect(parseHeaders("[1]")).toBeNull();
+    expect(parseHeaders("nope")).toBeNull();
   });
 });

@@ -12,6 +12,7 @@ export function TestMonitorHeader({
   progress,
   disabled,
   onRunAll,
+  environment = null,
   demo = false,
   copy,
 }: {
@@ -24,6 +25,8 @@ export function TestMonitorHeader({
   /** Khoá nút khi đang chạy 1 case lẻ hoặc chưa có case nào. */
   disabled: boolean;
   onRunAll: () => void;
+  /** Tên môi trường từ `GET /test-scenarios/meta`; `null`/rỗng (lỗi hoặc chưa có) thì ẩn. */
+  environment?: string | null;
   /** Đang ở chế độ dữ liệu demo (`?mock=1`). */
   demo?: boolean;
   copy: TestMonitorDictionary;
@@ -49,7 +52,9 @@ export function TestMonitorHeader({
             </span>
           )}
         </div>
-        <p className="mt-0.5 text-sm text-[#8AA09B]">{copy.page.subtitle(endpointCount, caseCount)}</p>
+        <p className="mt-0.5 text-sm text-[#8AA09B]">{copy.page.subtitle(endpointCount, caseCount)}
+          {environment ? ` · ${copy.page.environment(environment)}` : ""}
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-4">
         <p className="text-sm text-[#8AA09B]">

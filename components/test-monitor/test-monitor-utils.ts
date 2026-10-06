@@ -1,4 +1,5 @@
-import { durationTone } from "@/components/logger/logger-utils";
+import { durationTone, formatDuration, serviceNameOf } from "@/components/logger/logger-utils";
+import type { TestMonitorDictionary } from "@/lib/i18n/test-monitor.dictionary";
 import type {
   ApiTestScenario,
   EndpointStats,
@@ -29,6 +30,7 @@ export function buildEndpointRows(
         method,
         path,
         service,
+        flowServices: [],
         cases: [],
         casesPassed: 0,
         casesTotal: 0,
@@ -48,6 +50,7 @@ export function buildEndpointRows(
     row.casesTotal = row.cases.length;
     row.casesPassed = row.cases.filter((c) => c.lastRun?.passed).length;
   }
+  for (const row of rows.values()) row.flowServices = flowServicesOf(row.cases);
   for (const stat of scenarioStats) {
     const row = rows.get(endpointKey(stat.method, stat.path));
     if (row) {
@@ -128,4 +131,54 @@ export function formatCompact(n: number): string {
   if (n < 1000) return String(n);
   if (n < 1_000_000) return `${(n / 1000).toFixed(1)}K`;
   return `${(n / 1_000_000).toFixed(1)}M`;
+}
+
+/** Tên service hiển thị trong cột "Luồng service"/chip lọc: như logger nhưng tutor-service gọi là
+ * "Class/Tutor Service" (service quản lý lớp học + gia sư). */
+export function flowServiceLabel(service: string): string {
+  return service === "tutor-service" ? "Class/Tutor Service" : serviceNameOf(service);
+}
+
+/** Tên service duy nhất theo thứ tự xuất hiện trong `flow`. */
+export function uniqueFlowServices(scenario: ApiTestScenario): string[] {
+  return [...new Set((scenario.flow ?? []).map((hop) => hop.serviceName))];
+}
+
+/** Chuỗi service của 1 endpoint: lấy từ case ĐẦU TIÊN có flow (`[]` khi chưa case nào chạy). */
+export function flowServicesOf(cases: ApiTestScenario[]): string[] {
+  const first = cases.find((c) => (c.flow ?? []).length > 0);
+  return first ? uniqueFlowServices(first) : [];
+}
+
+/** Mọi service gắn với endpoint: service phụ trách + các service trong flow. */
+export function servicesOfRow(row: TestMonitorEndpointRow): string[] {
+  return [...new Set([...(row.service ? [row.service] : []), ...row.flowServices])];
+}
+
+export function matchesService(row: TestMonitorEndpointRow, service: string | null): boolean {
+  return service === null || servicesOfRow(row).includes(service);
+}
+
+/** Tóm tắt luồng của 1 case từ `flow` (lần chạy gần nhất): "Qua N service" hoặc "Dừng tại X ·
+ * status" khi hop đầu tiên lỗi (status null/>=400), kèm ghi chú hop chậm nhất nếu vượt ngưỡng.
+ * `null` khi chưa có flow. */
+export function describeCaseFlow(
+  scenario: ApiTestScenario,
+  copy: TestMonitorDictionary["list"]["flow"],
+): string | null {
+  const flow = scenario.flow ?? [];
+  if (flow.length === 0) return null;
+
+  const failing = flow.find((hop) => hop.statusCode === null || hop.statusCode >= 400);
+  const parts = [
+    failing
+      ? copy.stoppedAt(flowServiceLabel(failing.serviceName), failing.statusCode)
+      : copy.passes(uniqueFlowServices(scenario).length),
+  ];
+
+  const slowest = flow.reduce((a, b) => (b.durationMs > a.durationMs ? b : a));
+  if (durationTone(slowest.durationMs) !== null) {
+    parts.push(copy.slowAt(flowServiceLabel(slowest.serviceName), formatDuration(slowest.durationMs)));
+  }
+  return parts.join(" · ");
 }

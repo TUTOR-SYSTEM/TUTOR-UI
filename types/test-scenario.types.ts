@@ -14,6 +14,18 @@ export type TestScenarioLastRun = {
   runAt: string;
 };
 
+/** 1 hop của lần chạy gần nhất (theo thứ tự thời gian), đi kèm trong `GET /test-scenarios`. */
+export type TestScenarioFlowHop = {
+  /** `gateway` | `user-service` | `tutor-service` | `third-service`. */
+  serviceName: string;
+  type: "HTTP" | "RPC";
+  statusCode: number | null;
+  durationMs: number;
+};
+
+/** `GET /test-scenarios/meta` (admin) — thông tin môi trường đang được test. */
+export type TestScenarioMeta = { environment: string };
+
 export type ApiTestScenario = {
   id: string;
   service: string;
@@ -27,6 +39,8 @@ export type ApiTestScenario = {
   createdAt: string;
   updatedAt: string | null;
   lastRun: TestScenarioLastRun | null;
+  /** Các hop của `lastRun` theo thứ tự thời gian; `[]` khi chưa chạy lần nào. */
+  flow: TestScenarioFlowHop[];
 };
 
 /** 1 hàng `test_runs` — kết quả `POST /test-scenarios/:id/run`. */
@@ -60,6 +74,8 @@ export type TestMonitorEndpointRow = {
   path: string;
   /** `null` khi endpoint chỉ có traffic thật, chưa có kịch bản nào. */
   service: string | null;
+  /** Tên service duy nhất theo thứ tự đi qua, lấy từ `flow` của case đầu tiên có flow; `[]` nếu chưa có. */
+  flowServices: string[];
   cases: ApiTestScenario[];
   casesPassed: number;
   casesTotal: number;

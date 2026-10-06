@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 
+import { testMonitorDictionary } from "@/lib/i18n/test-monitor.dictionary";
+
 import {
   buildEndpointRows,
   caseResultOf,
+  describeCaseFlow,
   describeRunAt,
+  flowServicesOf,
+  matchesService,
   formatCompact,
   latestRunAt,
   matchesResult,
@@ -25,6 +30,7 @@ const scenario = (over: Partial<ApiTestScenario>): ApiTestScenario => ({
   createdAt: "2030-01-01T00:00:00Z",
   updatedAt: null,
   lastRun: null,
+  flow: [],
   ...over,
 });
 
@@ -135,5 +141,53 @@ describe("caseResultOf / matchesSearch / latestRunAt / describeRunAt / formatCom
     expect(formatCompact(640)).toBe("640");
     expect(formatCompact(4800)).toBe("4.8K");
     expect(formatCompact(2_300_000)).toBe("2.3M");
+  });
+});
+
+describe("service flow", () => {
+  const flowCopy = testMonitorDictionary.vi.list.flow;
+  const hop = (serviceName: string, statusCode: number | null, durationMs = 20) => ({
+    serviceName,
+    type: "RPC" as const,
+    statusCode,
+    durationMs,
+  });
+
+  it("takes the chain from the first case that has a flow, unique and in order", () => {
+    const cases = [
+      scenario({ id: "a" }),
+      scenario({ id: "b", flow: [hop("user-service", 200), hop("third-service", 200), hop("user-service", 200), hop("gateway", 200)] }),
+      scenario({ id: "c", flow: [hop("gateway", 401)] }),
+    ];
+    expect(flowServicesOf(cases)).toEqual(["user-service", "third-service", "gateway"]);
+    expect(flowServicesOf([scenario({})])).toEqual([]);
+  });
+
+  it("fills row.flowServices and lets the service filter match flow services", () => {
+    const rows = buildEndpointRows(
+      [scenario({ flow: [hop("user-service", 200), hop("gateway", 200)] })],
+      [],
+      [],
+    );
+    expect(rows[0].flowServices).toEqual(["user-service", "gateway"]);
+    expect(matchesService(rows[0], "gateway")).toBe(true);
+    expect(matchesService(rows[0], "tutor-service")).toBe(false);
+    expect(matchesService(rows[0], null)).toBe(true);
+  });
+
+  it("summarises a case's flow", () => {
+    expect(describeCaseFlow(scenario({}), flowCopy)).toBeNull();
+    expect(
+      describeCaseFlow(scenario({ flow: [hop("user-service", 200), hop("gateway", 200)] }), flowCopy),
+    ).toBe("Qua 2 service");
+    expect(describeCaseFlow(scenario({ flow: [hop("gateway", 401)] }), flowCopy)).toBe(
+      "Dừng tại API Gateway · 401",
+    );
+    expect(
+      describeCaseFlow(scenario({ flow: [hop("tutor-service", 404), hop("gateway", 404)] }), flowCopy),
+    ).toBe("Dừng tại Class/Tutor Service · 404");
+    expect(
+      describeCaseFlow(scenario({ flow: [hop("tutor-service", 200, 1200), hop("gateway", 200, 1250)] }), flowCopy),
+    ).toBe("Qua 2 service · chậm ở API Gateway (1.25s)");
   });
 });

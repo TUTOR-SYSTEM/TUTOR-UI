@@ -37,7 +37,7 @@ function setup(args?: Parameters<typeof useTestScenarioActions>[0]) {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
   const { result } = renderHook(() => useTestScenarioActions(args), { wrapper });
-  const actions = result.current as unknown as Record<"list" | "stats" | "run" | "runRealtime", Captured>;
+  const actions = result.current as unknown as Record<"list" | "stats" | "meta" | "run" | "runRealtime", Captured>;
   return { actions, invalidate };
 }
 
@@ -51,6 +51,16 @@ describe("useTestScenarioActions", () => {
     expect(actions.list.queryKey).toEqual(TEST_SCENARIOS_QUERY_KEY);
     expect(actions.stats.url).toBe("/test-scenarios/stats");
     expect(actions.stats.queryKey).toEqual(TEST_SCENARIOS_STATS_QUERY_KEY);
+  });
+
+  it("fetches /test-scenarios/meta unconditionally, with an escape hatch", () => {
+    const { actions } = setup();
+    expect(actions.meta.url).toBe("/test-scenarios/meta");
+    expect(actions.meta.options.enabled).toBeUndefined();
+    expect(actions.meta.options.select?.({ statusCode: 200, data: { environment: "staging" } })).toEqual({
+      environment: "staging",
+    });
+    expect(setup({ metaOptions: { enabled: false } }).actions.meta.options.enabled).toBe(false);
   });
 
   it("only enables the queries the caller asked for", () => {

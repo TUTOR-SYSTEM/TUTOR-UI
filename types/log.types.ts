@@ -27,6 +27,11 @@ export type ApiRequestLog = {
   requestBody: string | null;
   responseBody: string | null;
   errorMessage: string | null;
+  /** Header dạng JSON-string map; chỉ ghi ở hop HTTP của gateway (request) — hop RPC là `null`. */
+  requestHeaders?: string | null;
+  responseHeaders?: string | null;
+  /** Host xử lý hop (cả HTTP lẫn RPC). */
+  host?: string | null;
   createdAt: string;
 };
 
