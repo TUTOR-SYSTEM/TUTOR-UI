@@ -174,3 +174,12 @@
   Sửa dialog này phải giữ nguyên hành vi `"full"` cho logger. Trang `/test-monitor` chỉ hiển thị
   field mà `/test-scenarios` + `/logs/stats` thật sự trả (không có env, chuỗi service đầy đủ, header
   request/response) — đừng bịa field khi UI mẫu có mà BE chưa có nguồn.
+  **Chế độ dữ liệu demo của `/test-monitor`**: mở `/test-monitor?mock=1` (hoặc đặt env
+  `NEXT_PUBLIC_TEST_MONITOR_MOCK=true`) để xem UI bằng dữ liệu giả khi catalog BE chưa sẵn sàng.
+  `hooks/useTestMonitorMock.hook.ts` trả cờ; khi bật, trang vẫn gọi các hook service (không điều
+  kiện) nhưng truyền `enabled: false`, đọc `MOCK_SCENARIOS`/`MOCK_LOG_STATS`/`MOCK_TRACES` trong
+  `components/test-monitor/test-monitor-mock-data.ts` (giữ scenarios trong `useState` để nút Test
+  đổi `lastRun`), "Chạy" dùng `mockRunScenario`, "Chạy realtime" phát lại trace đã lưu qua
+  `useLiveTrace` — không gọi API thật, không mở socket `/logs`; header hiện badge "Dữ liệu demo".
+  Đổi shape type scenario/log thì cập nhật file mock cho khớp (test `test-monitor-mock-data.test.ts`
+  sẽ báo lệch).
