@@ -1,9 +1,16 @@
 import type {
+  ApiAuthProfileStatus,
   ApiRequestLog,
+  ApiRoute,
+  ApiTestFixture,
   ApiTestRun,
   ApiTestScenario,
   EndpointStats,
+  GenerateScenariosPayload,
+  GenerateScenariosResult,
+  GeneratedScenario,
   ScenarioStats,
+  TestAuthProfile,
   TestScenarioCategory,
   TestScenarioFlowHop,
   TestScenarioMeta,
@@ -325,6 +332,7 @@ function toScenario(def: MockDef): ApiTestScenario {
     },
     expectedStatus: def.expected,
     category: def.category,
+    authProfile: "caller",
     createdAt: iso(NOW - 20 * 24 * 60 * MIN),
     updatedAt: null,
     flow: ran
@@ -390,29 +398,184 @@ for (const def of DEFS) {
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/** `GET /test-scenarios/:id/runs` giả lập — các lần chạy trong phiên demo, mới nhất trước. */
+export const MOCK_RUNS: Record<string, ApiTestRun[]> = {};
+
+function recordMockRun(run: ApiTestRun): ApiTestRun {
+  MOCK_RUNS[run.scenarioId] = [run, ...(MOCK_RUNS[run.scenarioId] ?? [])];
+  return run;
+}
+
 /** Giả lập `POST /test-scenarios/:id/run`: trễ 400–800ms, kết quả giữ nguyên (đạt/không đạt) như
- * lần chạy gần nhất, thời lượng dao động nhẹ; không đụng mạng. */
-export async function mockRunScenario(id: string): Promise<ApiTestRun> {
+ * lần chạy gần nhất, thời lượng dao động nhẹ; không đụng mạng. Case tạo trong phiên demo (không có
+ * trong `DEFS`) cần truyền `scenario` và luôn đạt. */
+export async function mockRunScenario(id: string, scenario?: ApiTestScenario): Promise<ApiTestRun> {
   const def = defById.get(id);
-  if (!def) throw new Error(`Mock scenario not found: ${id}`);
+  if (!def && !scenario) throw new Error(`Mock scenario not found: ${id}`);
   await wait(400 + Math.round(Math.random() * 400));
+
+  if (!def) {
+    const expected = scenario!.expectedStatus;
+    const now = Date.now();
+    return recordMockRun({
+      id: `mock-run-${id}-${now}`,
+      scenarioId: id,
+      correlationId: `mock-corr-${id}-${now}`,
+      actualStatus: expected,
+      expectedStatus: expected,
+      passed: true,
+      durationMs: 80 + Math.round(Math.random() * 120),
+      errorMessage: null,
+      responseBody: null,
+      requestPath: scenario!.path,
+      triggeredBy: USER_ID,
+      createdAt: iso(now),
+    });
+  }
 
   const durationMs = Math.max(5, Math.round(def.durationMs * (0.9 + Math.random() * 0.2)));
   const correlationId = correlationOf(def);
   const now = Date.now();
   MOCK_TRACES[correlationId] = buildTrace(def, correlationId, now, durationMs, def.actual);
 
-  const passed = def.actual === def.expected;
-  return {
+  // A case edited in the demo keeps its canned response but is judged against the new expectation.
+  const expected = scenario?.expectedStatus ?? def.expected;
+  const passed = def.actual === expected;
+  return recordMockRun({
     id: `mock-run-${id}-${now}`,
     scenarioId: id,
     correlationId,
     actualStatus: def.actual,
-    expectedStatus: def.expected,
+    expectedStatus: expected,
     passed,
     durationMs,
-    errorMessage: passed ? null : `Expected ${def.expected}, got ${def.actual}`,
+    errorMessage: passed ? null : `Expected ${expected}, got ${def.actual}`,
+    responseBody: def.responseBody === undefined ? null : JSON.stringify(def.responseBody),
+    requestPath: scenario?.path ?? def.path,
     triggeredBy: USER_ID,
     createdAt: iso(now),
+  });
+}
+
+/** `GET /test-scenarios/auth-profiles` giả lập — phụ huynh chưa cấu hình để thấy trạng thái thiếu. */
+export const MOCK_AUTH_PROFILES: ApiAuthProfileStatus[] = [
+  { profile: "admin", configured: true, email: "dang04223@gmail.com" },
+  { profile: "tutor", configured: true, email: "tutor@finance.dev" },
+  { profile: "student", configured: true, email: "student@finance.dev" },
+  { profile: "parent", configured: false, email: null },
+];
+
+/** `GET /test-scenarios/fixtures` giả lập. */
+export const MOCK_FIXTURES: ApiTestFixture[] = [
+  {
+    id: "mock-fx-1",
+    key: "classId",
+    description: "Lớp đầu tiên của admin",
+    value: "3f6c2a9e-8b1d-4f7a-9c2e-1d5b7a3e9f01",
+    resolver: { method: "GET", path: "/classes?limit=1", authProfile: "admin", extract: "data.classes.0.id" },
+    resolvedAt: iso(NOW - 35 * MIN),
+    createdAt: iso(NOW - 3 * 24 * 60 * MIN),
+    updatedAt: null,
+  },
+  {
+    id: "mock-fx-2",
+    key: "studentCode",
+    description: null,
+    value: "ABC123",
+    resolver: null,
+    resolvedAt: null,
+    createdAt: iso(NOW - 2 * 24 * 60 * MIN),
+    updatedAt: null,
+  },
+];
+
+const mockRoute = (method: string, path: string, over: Partial<ApiRoute> = {}): ApiRoute => ({
+  method,
+  path,
+  summary: null,
+  tag: null,
+  params: [...path.matchAll(/:(\w+)/g)].map((m) => m[1]),
+  uuidParams: [],
+  isPublic: false,
+  roles: null,
+  bodySchema: null,
+  querySchema: null,
+  multipart: false,
+  oauth: false,
+  ...over,
+});
+
+/** `GET /test-scenarios/routes` giả lập — các endpoint của `DEFS` cộng vài route chưa có case để
+ * tab "Độ phủ" có ô thiếu. */
+export const MOCK_ROUTES: ApiRoute[] = [
+  mockRoute("POST", "/auth/login", { isPublic: true, bodySchema: { type: "object", required: ["email", "password"] } }),
+  mockRoute("POST", "/auth/refresh", { isPublic: true }),
+  mockRoute("GET", "/classes", { querySchema: { type: "object", properties: { page: { type: "integer" } } } }),
+  mockRoute("POST", "/classes", { bodySchema: { type: "object", required: ["name"] } }),
+  mockRoute("GET", "/classes/detail"),
+  mockRoute("GET", "/classes/members"),
+  mockRoute("GET", "/classes/:id", { uuidParams: ["id"] }),
+  mockRoute("DELETE", "/classes/:id", { uuidParams: ["id"], roles: ["ADMIN", "TUTOR"] }),
+  mockRoute("POST", "/notifications/send", { bodySchema: { type: "object", required: ["title"] } }),
+  mockRoute("GET", "/users/me"),
+  mockRoute("PATCH", "/users/profile", { bodySchema: { type: "object" } }),
+  mockRoute("GET", "/auth/google", { isPublic: true, oauth: true }),
+];
+
+/** Giả lập `POST /test-scenarios/generate` — bản rút gọn của bộ sinh case ở third-service (xác thực,
+ * UUID sai, 404, GET hợp lệ), đủ để duyệt luồng dialog ở chế độ demo. */
+export async function mockGenerateScenarios(
+  payload: GenerateScenariosPayload,
+  existing: ApiTestScenario[],
+): Promise<GenerateScenariosResult> {
+  await wait(300);
+  const wanted = new Set(payload.categories ?? ["valid", "auth", "validation", "not_found"]);
+  const scope = payload.routes
+    ? MOCK_ROUTES.filter((r) => payload.routes!.some((p) => p.method === r.method && p.path === r.path))
+    : MOCK_ROUTES;
+  const taken = new Set(existing.map((s) => `${s.method} ${s.path} ${s.name}`));
+  const scenarios: GeneratedScenario[] = [];
+  const add = (
+    route: ApiRoute,
+    category: TestScenarioCategory,
+    name: string,
+    expectedStatus: number,
+    path: string,
+    authProfile: TestAuthProfile = "caller",
+  ) =>
+    scenarios.push({
+      service: "tutor-service",
+      method: route.method as GeneratedScenario["method"],
+      path,
+      name,
+      requestTemplate: {},
+      expectedStatus,
+      category,
+      authProfile,
+      routePath: route.path,
+      exists: taken.has(`${route.method} ${path} ${name}`),
+    });
+
+  for (const route of scope.filter((r) => !r.oauth)) {
+    const unknown = route.path.replace(/:\w+/g, "{{unknownUuid}}");
+    if (wanted.has("valid") && route.method === "GET") {
+      add(route, "valid", "Request hợp lệ", 200, route.path.replace(":id", "{{fixture.classId}}"));
+    }
+    if (wanted.has("auth") && !route.isPublic) {
+      add(route, "auth", "Không có token", 401, unknown, "none");
+    }
+    for (const param of wanted.has("validation") ? (route.uuidParams ?? []) : []) {
+      add(route, "validation", `:${param} không phải UUID`, 400, route.path.replace(`:${param}`, "not-a-uuid"));
+    }
+    if (wanted.has("not_found") && (route.uuidParams ?? []).length > 0) {
+      add(route, "not_found", "UUID không tồn tại", 404, unknown);
+    }
+  }
+  const usesClassId = scenarios.some((s) => s.path.includes("{{fixture.classId}}"));
+  return {
+    scenarios,
+    fixtures: usesClassId
+      ? [{ key: "classId", exists: true, suggestion: MOCK_FIXTURES[0].resolver }]
+      : [],
   };
 }

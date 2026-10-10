@@ -1,6 +1,7 @@
 import { durationTone, formatDuration, serviceNameOf } from "@/components/logger/logger-utils";
 import type { TestMonitorDictionary } from "@/lib/i18n/test-monitor.dictionary";
 import type {
+  ApiRoute,
   ApiTestScenario,
   EndpointStats,
   TestMonitorCaseResult,
@@ -11,15 +12,49 @@ import type {
 
 const endpointKey = (method: string, path: string) => `${method} ${path}`;
 
-/** Ghép 3 nguồn theo `(method, path)`: các case (`GET /test-scenarios`), số case đạt
- * (`/test-scenarios/stats`) và lưu lượng/P95 24h (`GET /logs/stats`). Endpoint chỉ có traffic thật
- * mà chưa có kịch bản vẫn hiện (0 case). Endpoint không có traffic thì `calls24h`/`p95Ms` = 0. */
+/** `/classes/{{fixture.classId}}?page=1` → `["classes", "{{fixture.classId}}"]`. */
+const segmentsOf = (path: string) => path.split("?")[0].split("/").filter(Boolean);
+
+/**
+ * Ghép path cụ thể (của case hoặc của `request_logs`) về route khai báo của gateway:
+ * `/classes/3f6c…` hay `/classes/{{fixture.classId}}` → `/classes/:id`. Route tĩnh thắng route có
+ * param (`/classes/members` không bị hiểu là `/classes/:id`). Không khớp route nào → `null`.
+ */
+export function createRouteMatcher(routes: ApiRoute[]) {
+  const compiled = routes
+    .map((route) => ({ route, segments: segmentsOf(route.path) }))
+    // Fewer params first, so the most specific route wins.
+    .sort(
+      (a, b) =>
+        a.segments.filter((s) => s.startsWith(":")).length -
+        b.segments.filter((s) => s.startsWith(":")).length,
+    );
+
+  return (method: string, path: string): string | null => {
+    const segments = segmentsOf(path);
+    const hit = compiled.find(
+      ({ route, segments: pattern }) =>
+        route.method === method &&
+        pattern.length === segments.length &&
+        pattern.every((p, i) => p.startsWith(":") || p === segments[i]),
+    );
+    return hit?.route.path ?? null;
+  };
+}
+
+/** Ghép 4 nguồn theo endpoint: các route thật của gateway (`GET /test-scenarios/routes`), các case
+ * (`GET /test-scenarios`), số case đạt (`/test-scenarios/stats`) và lưu lượng/P95 24h
+ * (`GET /logs/stats`). Path cụ thể của case/log được gom về route khai báo (`/classes/:id`) khi
+ * khớp; không khớp thì giữ nguyên path. Route chưa có kịch bản hoặc traffic vẫn hiện. */
 export function buildEndpointRows(
   scenarios: ApiTestScenario[],
   scenarioStats: ScenarioStats[],
   logStats: EndpointStats[],
+  routes: ApiRoute[] = [],
 ): TestMonitorEndpointRow[] {
   const rows = new Map<string, TestMonitorEndpointRow>();
+  const match = createRouteMatcher(routes);
+  const routePathOf = (method: string, path: string) => match(method, path) ?? path;
 
   const ensure = (method: string, path: string, service: string | null) => {
     const key = endpointKey(method, path);
@@ -44,25 +79,33 @@ export function buildEndpointRows(
   };
 
   for (const scenario of scenarios) {
-    const row = ensure(scenario.method, scenario.path, scenario.service);
+    const row = ensure(scenario.method, routePathOf(scenario.method, scenario.path), scenario.service);
     row.cases.push(scenario);
     // Fallback so the header stays right even before `stats` arrives.
     row.casesTotal = row.cases.length;
     row.casesPassed = row.cases.filter((c) => c.lastRun?.passed).length;
   }
+  // Routes after scenarios: `ensure` keeps the scenario's service when the row already exists.
+  for (const route of routes) ensure(route.method, route.path, null);
   for (const row of rows.values()) row.flowServices = flowServicesOf(row.cases);
+  // Several concrete paths can land on one route: sum their counts.
+  const statsByRow = new Map<TestMonitorEndpointRow, { passed: number; total: number }>();
   for (const stat of scenarioStats) {
-    const row = rows.get(endpointKey(stat.method, stat.path));
-    if (row) {
-      row.casesPassed = stat.casesPassed;
-      row.casesTotal = stat.casesTotal;
-    }
+    const row = rows.get(endpointKey(stat.method, routePathOf(stat.method, stat.path)));
+    if (!row) continue;
+    const sum = statsByRow.get(row) ?? { passed: 0, total: 0 };
+    statsByRow.set(row, { passed: sum.passed + stat.casesPassed, total: sum.total + stat.casesTotal });
+  }
+  for (const [row, sum] of statsByRow) {
+    row.casesPassed = sum.passed;
+    row.casesTotal = sum.total;
   }
   for (const stat of logStats) {
-    const row = ensure(stat.method, stat.path, null);
-    row.calls24h = stat.calls24h;
-    row.errorCount24h = stat.errorCount24h;
-    row.p95Ms = stat.p95Ms;
+    const row = ensure(stat.method, routePathOf(stat.method, stat.path), null);
+    row.calls24h += stat.calls24h;
+    row.errorCount24h += stat.errorCount24h;
+    // A route's P95 is at least its slowest concrete path's; exact merging needs the raw samples.
+    row.p95Ms = Math.max(row.p95Ms, stat.p95Ms);
   }
 
   return [...rows.values()].sort(

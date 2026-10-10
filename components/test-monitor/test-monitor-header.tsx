@@ -1,4 +1,4 @@
-import { Play } from "lucide-react";
+import { KeyRound, Play, Plus, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button.ui";
 import type { TestMonitorDictionary } from "@/lib/i18n/test-monitor.dictionary";
@@ -12,6 +12,9 @@ export function TestMonitorHeader({
   progress,
   disabled,
   onRunAll,
+  onCreateCase,
+  onOpenFixtures,
+  onGenerate,
   environment = null,
   demo = false,
   copy,
@@ -25,6 +28,9 @@ export function TestMonitorHeader({
   /** Khoá nút khi đang chạy 1 case lẻ hoặc chưa có case nào. */
   disabled: boolean;
   onRunAll: () => void;
+  onCreateCase: () => void;
+  onOpenFixtures: () => void;
+  onGenerate: () => void;
   /** Tên môi trường từ `GET /test-scenarios/meta`; `null`/rỗng (lỗi hoặc chưa có) thì ẩn. */
   environment?: string | null;
   /** Đang ở chế độ dữ liệu demo (`?mock=1`). */
@@ -60,6 +66,33 @@ export function TestMonitorHeader({
         <p className="text-sm text-[#8AA09B]">
           {copy.page.lastRun} <span className="font-bold text-[#16302b]">{lastRunText}</span>
         </p>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onOpenFixtures}
+          className="h-11! w-auto! gap-2 rounded-xl! px-4! text-sm font-bold text-[#16302b]!"
+        >
+          <KeyRound className="size-4" />
+          {copy.page.fixturesButton}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onGenerate}
+          className="h-11! w-auto! gap-2 rounded-xl! px-4! text-sm font-bold text-[#0B7A6D]!"
+        >
+          <Sparkles className="size-4" />
+          {copy.page.generateButton}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCreateCase}
+          className="h-11! w-auto! gap-2 rounded-xl! px-4! text-sm font-bold text-[#0B7A6D]!"
+        >
+          <Plus className="size-4" />
+          {copy.page.createCase}
+        </Button>
         <Button
           type="button"
           loading={progress !== null}

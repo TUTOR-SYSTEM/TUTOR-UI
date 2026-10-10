@@ -4,24 +4,41 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { RequestDetailDialog } from "@/components/logger/request-detail-dialog";
+import { Button } from "@/components/ui/button.ui";
 import UsageGuides from "@/components/ui/usage-guide.ui";
 import { useTestMonitorCopy } from "@/hooks/useTestMonitorCopy.hook";
 import { useTestMonitorMock } from "@/hooks/useTestMonitorMock.hook";
+import { useTestFixtures } from "@/hooks/useTestFixtures.hook";
 import { useTestMonitorTrace } from "@/hooks/useTestMonitorTrace.hook";
 import { getErrorMessage } from "@/lib/axios";
+import { cn } from "@/lib/utils";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { useLogActions } from "@/lib/services/log.service";
 import { useTestScenarioActions } from "@/lib/services/test-scenario.service";
 import { TestMonitorFilters } from "./test-monitor-filters";
 import { TestMonitorHeader } from "./test-monitor-header";
 import { TestMonitorList } from "./test-monitor-list";
+import { DeleteTestFixtureDialog } from "./delete-test-fixture-dialog";
+import { GenerateTestScenariosDialog } from "./generate-test-scenarios-dialog";
+import { TestCoverageMatrix } from "./test-coverage-matrix";
+import { buildCoverageRows } from "./test-monitor-coverage";
+import { DeleteTestScenarioDialog } from "./delete-test-scenario-dialog";
+import { TestFixtureFormDialog } from "./test-fixture-form-dialog";
+import { TestFixturesDialog } from "./test-fixtures-dialog";
+import { emptyFixtureForm, fixtureToForm, suggestedFixtureForm } from "./test-fixture-form";
+import { TestScenarioFormDialog } from "./test-scenario-form-dialog";
+import { TestScenarioHistoryDialog } from "./test-scenario-history-dialog";
+import { emptyScenarioForm, scenarioToForm } from "./test-scenario-form";
 import {
   MOCK_LOG_STATS,
   MOCK_META,
+  MOCK_ROUTES,
+  MOCK_RUNS,
   MOCK_SCENARIOS,
   MOCK_TRACES,
   buildMockScenarioStats,
   flowFromTrace,
+  mockGenerateScenarios,
   mockRunScenario,
 } from "./test-monitor-mock-data";
 import {
@@ -33,11 +50,21 @@ import {
   servicesOfRow,
 } from "./test-monitor-utils";
 import type {
+  ApiTestFixture,
+  BulkCreateScenariosResult,
+  GenerateDialogState,
+  GenerateScenariosPayload,
+  GenerateScenariosResult,
+  TestMonitorTab,
   ApiTestRun,
   ApiTestScenario,
+  CreateTestScenarioPayload,
+  TestMonitorCaseAction,
   TestMonitorEndpointRow,
   TestMonitorResultFilter,
   TestMonitorRunAllProgress,
+  TestFixtureEditorState,
+  TestScenarioEditorState,
 } from "@/types";
 
 export function TestMonitorPage() {
@@ -56,13 +83,39 @@ export function TestMonitorPage() {
   const [mockScenarios, setMockScenarios] = useState<ApiTestScenario[]>(MOCK_SCENARIOS);
   const [mockRunningId, setMockRunningId] = useState<string | null>(null);
 
-  const { list, stats, meta, run } = useTestScenarioActions({
+  // Case dialogs. `editorKey` remounts the form so each opening starts from its own initial values.
+  const [editor, setEditor] = useState<TestScenarioEditorState | null>(null);
+  const [editorKey, setEditorKey] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<ApiTestScenario | null>(null);
+  const [historyScenario, setHistoryScenario] = useState<ApiTestScenario | null>(null);
+
+  // Fixtures dialog (+ its own form/delete dialogs stacked on top).
+  const [fixturesOpen, setFixturesOpen] = useState(false);
+  const [fixtureEditor, setFixtureEditor] = useState<TestFixtureEditorState | null>(null);
+  const [fixtureEditorKey, setFixtureEditorKey] = useState(0);
+  const [fixtureDeleteTarget, setFixtureDeleteTarget] = useState<ApiTestFixture | null>(null);
+  // Generator dialog; its fixture hints need the fixture list too.
+  const [generator, setGenerator] = useState<GenerateDialogState | null>(null);
+  const [generatorKey, setGeneratorKey] = useState(0);
+  const [tab, setTab] = useState<TestMonitorTab>("endpoints");
+  const fixtureData = useTestFixtures({ mock, fixturesEnabled: fixturesOpen || generator !== null });
+  const openFixtureEditor = (next: TestFixtureEditorState) => {
+    setFixtureEditorKey((k) => k + 1);
+    setFixtureEditor(next);
+  };
+
+  const actions = useTestScenarioActions({
     list: true,
     stats: true,
+    routes: true,
     listOptions: { enabled: !mock },
     statsOptions: { enabled: !mock },
+    routesOptions: { enabled: !mock },
     metaOptions: { enabled: !mock },
+    runsScenarioId: historyScenario?.id,
+    runsOptions: { enabled: !!historyScenario && !mock },
   });
+  const { list, stats, routes, meta, run, runs } = actions;
   const environment = mock ? MOCK_META.environment : (meta.data?.environment ?? null);
   const { stats: logStats } = useLogActions({ stats: true, statsOptions: { enabled: !mock } });
 
@@ -70,13 +123,15 @@ export function TestMonitorPage() {
     () => (mock ? mockScenarios : (list.data ?? [])),
     [mock, mockScenarios, list.data],
   );
+  const routeList = useMemo(() => (mock ? MOCK_ROUTES : (routes.data ?? [])), [mock, routes.data]);
   const allRows = useMemo(
     () =>
       mock
-        ? buildEndpointRows(mockScenarios, buildMockScenarioStats(mockScenarios), MOCK_LOG_STATS)
-        : buildEndpointRows(scenarios, stats.data ?? [], logStats.data ?? []),
-    [mock, mockScenarios, scenarios, stats.data, logStats.data],
+        ? buildEndpointRows(mockScenarios, buildMockScenarioStats(mockScenarios), MOCK_LOG_STATS, routeList)
+        : buildEndpointRows(scenarios, stats.data ?? [], logStats.data ?? [], routeList),
+    [mock, mockScenarios, scenarios, stats.data, logStats.data, routeList],
   );
+  const coverageRows = useMemo(() => buildCoverageRows(routeList, scenarios), [routeList, scenarios]);
 
   const services = useMemo(
     () => [...new Set(allRows.flatMap(servicesOfRow))].sort(),
@@ -108,7 +163,7 @@ export function TestMonitorPage() {
     });
 
   const runMock = useCallback(async (scenario: ApiTestScenario): Promise<ApiTestRun> => {
-    const testRun = await mockRunScenario(scenario.id);
+    const testRun = await mockRunScenario(scenario.id, scenario);
     setMockScenarios((prev) =>
       prev.map((s) =>
         s.id === scenario.id
@@ -181,6 +236,127 @@ export function TestMonitorPage() {
 
   const runEndpoint = (row: TestMonitorEndpointRow) => void runMany(row.cases);
 
+  const openEditor = (next: TestScenarioEditorState) => {
+    setEditorKey((k) => k + 1);
+    setEditor(next);
+  };
+
+  const addCase = (row?: TestMonitorEndpointRow) =>
+    openEditor({
+      mode: "create",
+      initial: emptyScenarioForm(
+        row
+          ? {
+              method: row.method,
+              path: row.path,
+              service: row.service ?? row.flowServices.at(-1),
+            }
+          : {},
+      ),
+    });
+
+  const openGenerator = (
+    routeScope: GenerateDialogState["routes"],
+    categories: GenerateDialogState["categories"] = [],
+  ) => {
+    setGeneratorKey((k) => k + 1);
+    setGenerator({ routes: routeScope, categories });
+  };
+
+  const previewGenerated = async (payload: GenerateScenariosPayload): Promise<GenerateScenariosResult> => {
+    if (mock) return mockGenerateScenarios(payload, mockScenarios);
+    try {
+      return unwrapApiData<GenerateScenariosResult>(await actions.generate.mutateAsync(payload));
+    } catch (err) {
+      toast.error(getErrorMessage(err, copy.generator.previewError));
+      throw err;
+    }
+  };
+
+  const saveGenerated = async (chosen: CreateTestScenarioPayload[]) => {
+    let outcome: BulkCreateScenariosResult;
+    if (mock) {
+      const now = new Date().toISOString();
+      setMockScenarios((prev) => [
+        ...prev,
+        ...chosen.map((payload, i) => ({
+          ...payload,
+          id: `mock-gen-${Date.now()}-${i}`,
+          description: payload.description ?? null,
+          createdAt: now,
+          updatedAt: null,
+          lastRun: null,
+          flow: [],
+        })),
+      ]);
+      outcome = { created: chosen.length, skipped: 0 };
+    } else {
+      try {
+        outcome = unwrapApiData<BulkCreateScenariosResult>(
+          await actions.bulkCreate.mutateAsync({ scenarios: chosen }),
+        );
+      } catch (err) {
+        toast.error(getErrorMessage(err, copy.generator.saveError));
+        throw err;
+      }
+    }
+    toast.success(copy.generator.saved(outcome.created, outcome.skipped));
+  };
+
+  const handleCaseAction = (action: TestMonitorCaseAction, scenario: ApiTestScenario) => {
+    if (action === "edit") openEditor({ mode: "edit", scenarioId: scenario.id, initial: scenarioToForm(scenario) });
+    else if (action === "duplicate") {
+      const initial = scenarioToForm(scenario);
+      openEditor({ mode: "create", initial: { ...initial, name: copy.editor.duplicateName(initial.name) } });
+    } else if (action === "history") setHistoryScenario(scenario);
+    else setDeleteTarget(scenario);
+  };
+
+  // Rejects after toasting so the dialog stays open with the user's input.
+  const saveScenario = async (payload: CreateTestScenarioPayload, scenarioId?: string) => {
+    if (mock) {
+      const now = new Date().toISOString();
+      setMockScenarios((prev) =>
+        scenarioId
+          ? prev.map((s) => (s.id === scenarioId ? { ...s, ...payload, updatedAt: now } : s))
+          : [
+              ...prev,
+              {
+                ...payload,
+                id: `mock-new-${Date.now()}`,
+                description: payload.description ?? null,
+                createdAt: now,
+                updatedAt: null,
+                lastRun: null,
+                flow: [],
+              },
+            ],
+      );
+    } else {
+      try {
+        if (scenarioId) await actions.update.mutateAsync({ id: scenarioId, ...payload });
+        else await actions.create.mutateAsync(payload);
+      } catch (err) {
+        toast.error(getErrorMessage(err, copy.editor.saveError));
+        throw err;
+      }
+    }
+    toast.success(scenarioId ? copy.editor.saved(payload.name) : copy.editor.created(payload.name));
+  };
+
+  const deleteScenario = async (scenario: ApiTestScenario) => {
+    if (mock) setMockScenarios((prev) => prev.filter((s) => s.id !== scenario.id));
+    else {
+      try {
+        await actions.delete.mutateAsync(scenario.id);
+      } catch (err) {
+        toast.error(getErrorMessage(err, copy.deleteDialog.error));
+        throw err;
+      }
+    }
+    toast.success(copy.deleteDialog.deleted(scenario.name));
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <TestMonitorHeader
@@ -190,12 +366,45 @@ export function TestMonitorPage() {
         progress={progress}
         disabled={scenarios.length === 0 || run.isPending || mockRunningId !== null}
         onRunAll={() => void runMany(scenarios)}
+        onCreateCase={() => addCase()}
+        onOpenFixtures={() => setFixturesOpen(true)}
+        onGenerate={() => openGenerator(null)}
         environment={environment}
         demo={mock}
         copy={copy}
       />
 
+      <div className="flex gap-1 self-start rounded-xl bg-[#EEF3F1] p-1" role="tablist">
+        {(["endpoints", "coverage"] as const).map((key) => (
+          <Button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            variant="ghost"
+            size="sm"
+            onClick={() => setTab(key)}
+            className={cn(
+              "h-8! w-auto! rounded-lg! px-4! text-sm font-semibold text-[#5C726D]",
+              tab === key && "bg-white! text-[#16302b]! shadow-sm",
+            )}
+          >
+            {copy.page.tabs[key]}
+          </Button>
+        ))}
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-[#E7EEEC] bg-white shadow-sm">
+        {tab === "coverage" ? (
+          <TestCoverageMatrix
+            rows={coverageRows}
+            isLoading={!mock && (routes.isLoading || list.isLoading)}
+            isError={!mock && routes.isError}
+            onGenerate={openGenerator}
+            copy={copy}
+          />
+        ) : (
+        <>
         <TestMonitorFilters
           endpointCount={inScope.length}
           services={services}
@@ -218,6 +427,9 @@ export function TestMonitorPage() {
           onRun={runScenario}
           onRunEndpoint={runEndpoint}
           onOpenTrace={traceView.open}
+          onCaseAction={handleCaseAction}
+          onAddCase={addCase}
+          onGenerate={(row) => openGenerator([{ method: row.method, path: row.path }])}
           runningScenarioId={
             mock
               ? mockRunningId
@@ -230,6 +442,8 @@ export function TestMonitorPage() {
           isError={!mock && list.isError}
           copy={copy}
         />
+        </>
+        )}
       </div>
 
       <RequestDetailDialog
@@ -244,6 +458,78 @@ export function TestMonitorPage() {
         isTraceLoading={traceView.isTraceLoading}
         realtime={traceView.realtime}
         copy={traceView.loggerCopy}
+      />
+
+      <TestScenarioFormDialog
+        key={editorKey}
+        state={editor}
+        routes={mock ? [] : (routes.data ?? [])}
+        authProfiles={fixtureData.authProfiles}
+        onClose={() => setEditor(null)}
+        onSave={saveScenario}
+        copy={copy}
+      />
+
+      <DeleteTestScenarioDialog
+        scenario={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onDelete={deleteScenario}
+        copy={copy}
+      />
+
+      <TestScenarioHistoryDialog
+        key={historyScenario?.id ?? "none"}
+        scenario={historyScenario}
+        runs={mock ? (MOCK_RUNS[historyScenario?.id ?? ""] ?? []) : (runs.data ?? [])}
+        isLoading={!mock && runs.isLoading}
+        isError={!mock && runs.isError}
+        onClose={() => setHistoryScenario(null)}
+        onOpenTrace={(scenario, correlationId) => {
+          setHistoryScenario(null);
+          traceView.open(scenario, correlationId);
+        }}
+        copy={copy}
+      />
+
+      <GenerateTestScenariosDialog
+        key={`generator-${generatorKey}`}
+        state={generator}
+        existingFixtureKeys={fixtureData.fixtures.map((f) => f.key)}
+        onClose={() => setGenerator(null)}
+        onPreview={previewGenerated}
+        onSave={saveGenerated}
+        onCreateFixture={(key, suggestion) => openFixtureEditor({ initial: suggestedFixtureForm(key, suggestion) })}
+        copy={copy}
+      />
+
+      <TestFixturesDialog
+        open={fixturesOpen}
+        fixtures={fixtureData.fixtures}
+        authProfiles={fixtureData.authProfiles}
+        isLoading={fixtureData.isLoading}
+        isError={fixtureData.isError}
+        resolvingId={fixtureData.resolvingId}
+        onClose={() => setFixturesOpen(false)}
+        onAdd={() => openFixtureEditor({ initial: emptyFixtureForm() })}
+        onEdit={(fixture) => openFixtureEditor({ fixtureId: fixture.id, initial: fixtureToForm(fixture) })}
+        onDelete={setFixtureDeleteTarget}
+        onResolve={fixtureData.resolve}
+        copy={copy}
+      />
+
+      <TestFixtureFormDialog
+        key={`fixture-${fixtureEditorKey}`}
+        state={fixtureEditor}
+        onClose={() => setFixtureEditor(null)}
+        onSave={fixtureData.save}
+        copy={copy}
+      />
+
+      <DeleteTestFixtureDialog
+        fixture={fixtureDeleteTarget}
+        onClose={() => setFixtureDeleteTarget(null)}
+        onDelete={fixtureData.remove}
+        copy={copy}
       />
 
       <UsageGuides steps={copy.usageGuide.steps} warning={copy.usageGuide.warning} />

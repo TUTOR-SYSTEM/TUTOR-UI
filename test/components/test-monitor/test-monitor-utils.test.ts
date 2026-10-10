@@ -27,6 +27,7 @@ const scenario = (over: Partial<ApiTestScenario>): ApiTestScenario => ({
   requestTemplate: {},
   expectedStatus: 200,
   category: "valid",
+  authProfile: "caller",
   createdAt: "2030-01-01T00:00:00Z",
   updatedAt: null,
   lastRun: null,
@@ -37,6 +38,32 @@ const scenario = (over: Partial<ApiTestScenario>): ApiTestScenario => ({
 const passedRun = { correlationId: "c", actualStatus: 200, passed: true, durationMs: 10, runAt: "" };
 
 describe("buildEndpointRows", () => {
+  it("adds every gateway route, even with no scenario or traffic", () => {
+    const rows = buildEndpointRows([], [], [], [
+      { method: "GET", path: "/admin/tutors", summary: "List tutors", tag: "Admin" },
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      method: "GET",
+      path: "/admin/tutors",
+      service: null,
+      cases: [],
+      casesTotal: 0,
+      calls24h: 0,
+    });
+  });
+
+  it("keeps the scenario's service when a route with the same method+path also exists", () => {
+    const rows = buildEndpointRows(
+      [scenario({ lastRun: passedRun })],
+      [],
+      [],
+      [{ method: "POST", path: "/auth/login", summary: null, tag: null }],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ service: "user-service", casesTotal: 1 });
+  });
+
   it("groups scenarios by method+path and takes case counts from scenario stats", () => {
     const rows = buildEndpointRows(
       [scenario({ id: "a", lastRun: passedRun }), scenario({ id: "b" })],

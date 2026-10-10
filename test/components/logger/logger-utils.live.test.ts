@@ -76,6 +76,7 @@ describe("pickScenarioFor", () => {
     requestTemplate: {},
     expectedStatus: 200,
     category: "validation",
+    authProfile: "caller",
     createdAt: "",
     updatedAt: null,
     lastRun: null,

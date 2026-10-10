@@ -57,9 +57,11 @@ export function useTestMonitorTrace(mock = false) {
     void queryClient.invalidateQueries({ queryKey: TEST_SCENARIOS_STATS_QUERY_KEY });
   }, [livePhase, mock, queryClient]);
 
-  const open = useCallback((scenario: ApiTestScenario) => {
-    if (!scenario.lastRun) return;
-    setSelected({ correlationId: scenario.lastRun.correlationId, scenario });
+  /** Mở trace của lần chạy gần nhất, hoặc của 1 lần chạy cụ thể (`correlationId`, từ lịch sử). */
+  const open = useCallback((scenario: ApiTestScenario, correlationId?: string) => {
+    const target = correlationId ?? scenario.lastRun?.correlationId;
+    if (!target) return;
+    setSelected({ correlationId: target, scenario });
     setSpanIdx(0);
   }, []);
 

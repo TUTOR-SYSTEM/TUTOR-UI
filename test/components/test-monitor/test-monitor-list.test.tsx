@@ -18,6 +18,7 @@ const scenario = (over: Partial<ApiTestScenario>): ApiTestScenario => ({
   requestTemplate: {},
   expectedStatus: 200,
   category: "valid",
+  authProfile: "caller",
   createdAt: "",
   updatedAt: null,
   lastRun: null,
@@ -64,6 +65,9 @@ const Harness = (props: Partial<React.ComponentProps<typeof TestMonitorList>>) =
       onRun={vi.fn()}
       onRunEndpoint={vi.fn()}
       onOpenTrace={vi.fn()}
+      onCaseAction={vi.fn()}
+      onAddCase={vi.fn()}
+      onGenerate={vi.fn()}
       runningScenarioId={null}
       isLoading={false}
       isError={false}
@@ -207,5 +211,28 @@ describe("TestMonitorList", () => {
 
     rerender(<Harness rows={[]} />);
     expect(screen.getByText(copy.list.empty)).toBeInTheDocument();
+  });
+
+  it("opens the add-case form for an endpoint, even one without cases", () => {
+    const onAddCase = vi.fn();
+    const onToggle = vi.fn();
+    renderList({ rows: [row({ cases: [], casesTotal: 0, casesPassed: 0 })], onAddCase, onToggle });
+
+    fireEvent.click(screen.getByRole("button", { name: copy.list.addCase("/auth/login") }));
+    expect(onAddCase).toHaveBeenCalledWith(expect.objectContaining({ path: "/auth/login" }));
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it("fires case actions from the ⋮ menu without opening the trace", () => {
+    const onCaseAction = vi.fn();
+    const onOpenTrace = vi.fn();
+    renderList({ onCaseAction, onOpenTrace });
+    fireEvent.click(parentRow());
+
+    fireEvent.click(screen.getByRole("button", { name: copy.list.actions.menu("Request hợp lệ") }));
+    fireEvent.click(screen.getByRole("button", { name: copy.list.actions.history }));
+
+    expect(onCaseAction).toHaveBeenCalledWith("history", expect.objectContaining({ id: "s1" }));
+    expect(onOpenTrace).not.toHaveBeenCalled();
   });
 });

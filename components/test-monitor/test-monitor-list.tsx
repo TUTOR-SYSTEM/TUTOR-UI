@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
-import { ChevronDown, ChevronRight, Play } from "lucide-react";
+import { ChevronDown, ChevronRight, Play, Plus, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button.ui";
 import {
@@ -15,7 +15,7 @@ import {
 import { durationTone, formatDuration } from "@/components/logger/logger-utils";
 import { cn } from "@/lib/utils";
 import type { TestMonitorDictionary } from "@/lib/i18n/test-monitor.dictionary";
-import type { ApiTestScenario, TestMonitorEndpointRow } from "@/types";
+import type { ApiTestScenario, TestMonitorCaseAction, TestMonitorEndpointRow } from "@/types";
 import { MethodTag, ResultPill, ServiceFlow, ServiceTag } from "./test-monitor-badges";
 import { TestMonitorCaseRow } from "./test-monitor-case-row";
 import { formatCompact, resultOf } from "./test-monitor-utils";
@@ -44,6 +44,9 @@ export function TestMonitorList({
   onRun,
   onRunEndpoint,
   onOpenTrace,
+  onCaseAction,
+  onAddCase,
+  onGenerate,
   runningScenarioId,
   busy = false,
   isLoading,
@@ -58,6 +61,12 @@ export function TestMonitorList({
   /** Chạy tuần tự mọi case của 1 endpoint (nút Test ở hàng cha). */
   onRunEndpoint: (row: TestMonitorEndpointRow) => void;
   onOpenTrace: (scenario: ApiTestScenario) => void;
+  /** Sửa / nhân bản / lịch sử / xoá 1 case (menu ⋮). */
+  onCaseAction: (action: TestMonitorCaseAction, scenario: ApiTestScenario) => void;
+  /** Mở form tạo case điền sẵn method/path/service của endpoint. */
+  onAddCase: (row: TestMonitorEndpointRow) => void;
+  /** Mở bộ sinh case tự động cho riêng endpoint này. */
+  onGenerate: (row: TestMonitorEndpointRow) => void;
   /** Kịch bản đang chạy — khoá các nút Test khác để không bắn chồng request. */
   runningScenarioId: string | null;
   /** Đang chạy hàng loạt (Test toàn bộ / Test endpoint) — khoá mọi nút Test. */
@@ -182,6 +191,33 @@ export function TestMonitorList({
                       {row.calls24h > 0 ? formatDuration(row.p95Ms) : "—"}
                     </TableCell>
                     <TableCell className="px-3 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                      <Button
+                        type="button"
+                        size="icon-xs"
+                        variant="ghost"
+                        aria-label={copy.list.generateFor(row.path)}
+                        title={copy.list.generateFor(row.path)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onGenerate(row);
+                        }}
+                      >
+                        <Sparkles className="size-4 text-[#0B7A6D]" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon-xs"
+                        variant="ghost"
+                        aria-label={copy.list.addCase(row.path)}
+                        title={copy.list.addCase(row.path)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddCase(row);
+                        }}
+                      >
+                        <Plus className="size-4 text-[#0B7A6D]" />
+                      </Button>
                       {expandable && (
                         <Button
                           type="button"
@@ -197,6 +233,7 @@ export function TestMonitorList({
                           {copy.list.testButton}
                         </Button>
                       )}
+                      </div>
                     </TableCell>
                   </TableRow>
 
@@ -209,6 +246,7 @@ export function TestMonitorList({
                         disabled={locked}
                         onRun={onRun}
                         onOpenTrace={onOpenTrace}
+                        onAction={onCaseAction}
                         copy={copy}
                       />
                     ))}
