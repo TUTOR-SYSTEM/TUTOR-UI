@@ -91,6 +91,8 @@ export type TestMonitorDictionary = {
       description: string;
       category: string;
       expectedStatus: string;
+      expectedMessage: string;
+      expectedMessageHint: string;
       headers: string;
       headersHint: string;
       body: string;
@@ -329,6 +331,8 @@ const vi: TestMonitorDictionary = {
       description: "Mô tả",
       category: "Loại case",
       expectedStatus: "Status kỳ vọng",
+      expectedMessage: "Message kỳ vọng",
+      expectedMessageHint: "Một đoạn phải có trong message của response (không phân biệt hoa thường). Case chỉ pass khi status và message đều khớp.",
       headers: "Headers (JSON)",
       headersHint:
         "{{accessToken}} = token của auth profile. Bỏ trống thì token vẫn tự gắn (trừ case Xác thực chạy bằng token của bạn).",
@@ -608,6 +612,8 @@ const en: TestMonitorDictionary = {
       description: "Description",
       category: "Case type",
       expectedStatus: "Expected status",
+      expectedMessage: "Expected message",
+      expectedMessageHint: "A substring the response message must contain (case-insensitive). A case passes only when status and message both match.",
       headers: "Headers (JSON)",
       headersHint:
         "{{accessToken}} = the auth profile's token. Left empty, the token is still attached (except Auth cases run with your token).",

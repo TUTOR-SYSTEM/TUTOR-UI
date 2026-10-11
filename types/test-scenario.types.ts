@@ -39,6 +39,8 @@ export type ApiTestScenario = {
   description: string | null;
   requestTemplate: TestScenarioRequestTemplate;
   expectedStatus: number;
+  /** Chuỗi phải có trong `message` của response; thiếu thì case không bao giờ pass. */
+  expectedMessage?: string | null;
   category: TestScenarioCategory;
   authProfile: TestAuthProfile;
   createdAt: string;
@@ -77,6 +79,7 @@ export type CreateTestScenarioPayload = {
   description?: string;
   requestTemplate: TestScenarioRequestTemplate;
   expectedStatus: number;
+  expectedMessage?: string | null;
   category: TestScenarioCategory;
   authProfile: TestAuthProfile;
 };
@@ -94,6 +97,7 @@ export type TestScenarioFormValues = {
   category: TestScenarioCategory;
   authProfile: TestAuthProfile;
   expectedStatus: string;
+  expectedMessage: string;
   headers: string;
   body: string;
 };
@@ -101,7 +105,7 @@ export type TestScenarioFormValues = {
 /** Thao tác trong menu ⋮ của 1 case. */
 export type TestMonitorCaseAction = "edit" | "duplicate" | "history" | "delete";
 
-export type ScenarioFormField = "service" | "path" | "name" | "expectedStatus" | "headers" | "body";
+export type ScenarioFormField = "service" | "path" | "name" | "expectedStatus" | "expectedMessage" | "headers" | "body";
 /** Mã lỗi form → câu báo lỗi trong dictionary (`copy.editor.errors`). */
 export type ScenarioFormError = "required" | "path" | "status" | "json" | "headersObject";
 

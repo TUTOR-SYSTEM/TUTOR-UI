@@ -148,7 +148,7 @@ export function TestMonitorCaseRow({
         {last ? (
           <span
             className="font-mono font-bold"
-            style={{ color: toneText(last.actualStatus === scenario.expectedStatus ? "ok" : "err") }}
+            style={{ color: toneText(last.passed ? "ok" : "err") }}
           >
             {last.actualStatus ?? copy.list.noResponse}
           </span>

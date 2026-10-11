@@ -232,6 +232,16 @@ export function TestScenarioFormDialog({
           </Field>
         </div>
 
+        <Field id="ts-message" label={t.fields.expectedMessage} hint={t.fields.expectedMessageHint} error={errorText("expectedMessage")}>
+          <Input
+            id="ts-message"
+            value={values.expectedMessage}
+            onChange={(e) => set("expectedMessage", e.target.value)}
+            invalid={!!errors.expectedMessage}
+            disabled={saving}
+          />
+        </Field>
+
         <Field id="ts-profile" label={t.fields.authProfile} hint={t.fields.authProfileHint}>
           <Select
             options={profileOptions}
