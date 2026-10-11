@@ -16,6 +16,7 @@ const scenario: ApiTestScenario = {
   description: null,
   requestTemplate: { body: { email: "a@b.c", password: "x" } },
   expectedStatus: 400,
+  expectedMessage: "Sai mật khẩu",
   category: "domain",
   authProfile: "student",
   createdAt: "",
@@ -36,6 +37,7 @@ describe("test-scenario-form", () => {
         name: "Sai mật khẩu",
         requestTemplate: { body: { email: "a@b.c", password: "x" } },
         expectedStatus: 400,
+        expectedMessage: "Sai mật khẩu",
         category: "domain",
         authProfile: "student",
       },
@@ -54,17 +56,18 @@ describe("test-scenario-form", () => {
       path: "//evil.com",
       name: " ",
       expectedStatus: "700",
+      expectedMessage: "",
       headers: '{"x": 1}',
       body: "{oops",
     });
     expect(parsed).toEqual({
       ok: false,
-      errors: { path: "path", name: "required", expectedStatus: "status", headers: "headersObject", body: "json" },
+      errors: { path: "path", name: "required", expectedStatus: "status", expectedMessage: "required", headers: "headersObject", body: "json" },
     });
   });
 
   it("omits empty headers/body/description from the payload", () => {
-    const parsed = parseScenarioForm({ ...emptyScenarioForm(), name: "Không token", headers: "", category: "auth", expectedStatus: "401" });
+    const parsed = parseScenarioForm({ ...emptyScenarioForm(), name: "Không token", headers: "", category: "auth", expectedStatus: "401", expectedMessage: "Unauthorized" });
     expect(parsed.ok && parsed.payload).toEqual({
       service: "gateway",
       method: "GET",
@@ -72,6 +75,7 @@ describe("test-scenario-form", () => {
       name: "Không token",
       requestTemplate: {},
       expectedStatus: 401,
+      expectedMessage: "Unauthorized",
       category: "auth",
       authProfile: "caller",
     });

@@ -53,6 +53,7 @@ export function emptyScenarioForm(
     category: "valid",
     authProfile: "caller",
     expectedStatus: String(DEFAULT_STATUS_BY_CATEGORY.valid),
+    expectedMessage: "",
     headers: prettyJson(DEFAULT_AUTH_HEADERS),
     body: "",
   };
@@ -69,6 +70,7 @@ export function scenarioToForm(scenario: ApiTestScenario): TestScenarioFormValue
     category: scenario.category,
     authProfile: scenario.authProfile ?? "caller",
     expectedStatus: String(scenario.expectedStatus),
+    expectedMessage: scenario.expectedMessage ?? "",
     headers: headers && Object.keys(headers).length > 0 ? prettyJson(headers) : "",
     body: body === undefined ? "" : prettyJson(body),
   };
@@ -92,6 +94,10 @@ export function parseScenarioForm(
 
   const status = Number(values.expectedStatus);
   if (!Number.isInteger(status) || status < 100 || status > 599) errors.expectedStatus = "status";
+
+  // Case pass cần cả status lẫn message, nên không cho lưu case thiếu message.
+  const expectedMessage = values.expectedMessage.trim();
+  if (!expectedMessage) errors.expectedMessage = "required";
 
   let headers: Record<string, string> | undefined;
   if (values.headers.trim()) {
@@ -136,6 +142,7 @@ export function parseScenarioForm(
       ...(description ? { description } : {}),
       requestTemplate: { ...(headers ? { headers } : {}), ...(hasBody ? { body } : {}) },
       expectedStatus: status,
+      expectedMessage,
       category: values.category,
       authProfile: values.authProfile,
     },

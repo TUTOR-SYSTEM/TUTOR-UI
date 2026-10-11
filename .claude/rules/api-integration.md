@@ -99,6 +99,13 @@ const raw = await apiGet<ApiResponse<ApiUser>>("/users/detail-user");
 const user = unwrapApiData<ApiUser>(raw);
 ```
 
+**Cạm bẫy `data: null`**: `unwrapApiData` chỉ bóc khi `data` khác `null`/`undefined`; nếu `data`
+là `null` thì trả nguyên envelope `{ statusCode, data: null }`. Vì vậy fallback kiểu
+`unwrapApiData<T[]>(raw) ?? []` **không** hoạt động — kết quả là object, không phải mảng. Khi cần
+fallback, kiểm tra kiểu trên kết quả bóc (vd `Array.isArray(d) ? d : []`). Đã gặp ở
+`lib/services/class.service.ts` (query `students`), đang được ghi nhận bằng test `it.fails` trong
+`test/lib/services/class.service.test.ts`.
+
 ## Xử lý lỗi
 
 ### `getErrorMessage(error, fallback?)`

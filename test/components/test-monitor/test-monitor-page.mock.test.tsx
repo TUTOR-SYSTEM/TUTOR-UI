@@ -42,6 +42,7 @@ describe("TestMonitorPage (mock mode)", () => {
     fireEvent.click(screen.getByRole("button", { name: copy.page.createCase }));
     fireEvent.change(screen.getByLabelText(copy.editor.fields.path), { target: { value: "/health" } });
     fireEvent.change(screen.getByLabelText(copy.editor.fields.name), { target: { value: "Ping" } });
+    fireEvent.change(screen.getByLabelText(copy.editor.fields.expectedMessage), { target: { value: "pong" } });
     fireEvent.click(screen.getByRole("button", { name: copy.editor.submitCreate }));
 
     await waitFor(() => expect(screen.getByText(new RegExp(`^${copy.page.subtitle(endpoints + 1, 27)}`))).toBeInTheDocument());
@@ -67,7 +68,7 @@ describe("TestMonitorPage (mock mode)", () => {
     fireEvent.change(screen.getByLabelText(copy.editor.fields.body), { target: { value: "{bad" } });
     fireEvent.click(screen.getByRole("button", { name: copy.editor.submitCreate }));
 
-    expect(screen.getByText(copy.editor.errors.required)).toBeInTheDocument();
+    expect(screen.getAllByText(copy.editor.errors.required).length).toBeGreaterThan(0);
     expect(screen.getByText(copy.editor.errors.json)).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: copy.editor.titleCreate })).toBeInTheDocument();
   });
