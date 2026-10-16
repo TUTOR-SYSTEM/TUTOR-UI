@@ -273,13 +273,22 @@ describe("LoginForm", () => {
       expect(saveTokens).toHaveBeenCalledWith("wrapped", null);
     });
 
-    it("redirects home without storing anything when no token is returned", () => {
+    it("shows an error and stays on the login page when no token is returned", () => {
       render(<LoginForm />);
       submit();
       act(() => lastMutateOptions().onSuccess({ data: {} }));
       expect(saveTokens).not.toHaveBeenCalled();
       expect(useAuthStore.getState().accessToken).toBeNull();
-      expect(router.replace).toHaveBeenCalledWith("/");
+      expect(router.replace).not.toHaveBeenCalled();
+    });
+
+    it("clears a stale refresh token when the response carries none", () => {
+      useAuthStore.setState({ refreshToken: "old-account-refresh" }, false);
+      render(<LoginForm />);
+      submit();
+      act(() => lastMutateOptions().onSuccess({ data: { accessToken: "new-access" } }));
+      expect(useAuthStore.getState().refreshToken).toBeNull();
+      expect(saveTokens).toHaveBeenCalledWith("new-access", null);
     });
   });
 

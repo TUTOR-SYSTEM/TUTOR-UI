@@ -21,6 +21,7 @@ import {
   STUDENTS_QUERY_KEY,
 } from "@/lib/services/student.service";
 import { useClassActions } from "@/lib/services/class.service";
+import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import { getErrorMessage } from "@/lib/axios";
 import { Button } from "@/components/ui/button.ui";
 import { Dialog } from "@/components/ui/dialog-form.ui";
@@ -113,6 +114,8 @@ export default function StudentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
+  // PUT/DELETE /students/:id are ADMIN-only on the gateway; TUTOR gets a read-only list.
+  const isAdmin = useCurrentUserRole() === "ADMIN";
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterClassId, setFilterClassId] = useState("");
   const [filterGender, setFilterGender] = useState("");
@@ -365,7 +368,7 @@ export default function StudentsPage() {
                   copy.list.tableHeaders.studentPhone,
                   copy.list.tableHeaders.parentName,
                   copy.list.tableHeaders.parentPhone,
-                  copy.list.tableHeaders.actions,
+                  ...(isAdmin ? [copy.list.tableHeaders.actions] : []),
                 ].map((col, i) => (
                   <TableHead
                     key={col}
@@ -437,29 +440,31 @@ export default function StudentsPage() {
                     {s.parentPhone}
                   </TableCell>
 
-                  {/* Actions */}
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        title={common.actions.edit}
-                        onClick={() => setEditingStudent(s)}
-                      >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon-sm"
-                        title={common.actions.delete}
-                        onClick={() => setDeletingStudent(s)}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {/* Actions (ADMIN only) */}
+                  {isAdmin && (
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          title={common.actions.edit}
+                          onClick={() => setEditingStudent(s)}
+                        >
+                          <Pencil className="size-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon-sm"
+                          title={common.actions.delete}
+                          onClick={() => setDeletingStudent(s)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
 

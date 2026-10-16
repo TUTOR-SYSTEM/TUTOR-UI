@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 
 import type { ApiUser } from "@/types";
+import { clearAuthTokens } from "@/lib/axios/auth-storage";
 import { DEVTOOLS_CONNECTION_NAME } from "./devtools";
 import { safeStorage } from "./storage";
 
@@ -56,12 +57,16 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         setSessionChecked: (sessionChecked) =>
           set({ sessionChecked }, false, "auth/setSessionChecked"),
 
-        clearAuth: () =>
+        clearAuth: () => {
+          // Drop the legacy `accessToken`/`refreshToken` localStorage keys too, so a
+          // cleared session can't fall back to a stale token (see client.ts).
+          clearAuthTokens();
           set(
             { ...initialState, sessionChecked: true },
             false,
             "auth/clearAuth",
-          ),
+          );
+        },
       }),
       {
         name: "auth-store",

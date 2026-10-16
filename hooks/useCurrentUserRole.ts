@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 
+import { decodeJwtPayload } from "@/lib/auth/jwt-payload";
 import { useAuthStore } from "@/zustand/auth.store";
 
 export type UserRole = "ADMIN" | "TUTOR" | "STUDENT" | "PARENT";
@@ -17,17 +18,8 @@ const normalize = (value?: string | null): UserRole | null => {
 };
 
 /** Reads `role` from the JWT `role` claim (always present on access tokens). */
-const roleFromToken = (accessToken: string | null): UserRole | null => {
-  if (!accessToken) return null;
-  try {
-    const payload = accessToken.split(".")[1];
-    if (!payload) return null;
-    const decoded = JSON.parse(atob(payload)) as { role?: string };
-    return normalize(decoded.role);
-  } catch {
-    return null;
-  }
-};
+const roleFromToken = (accessToken: string | null): UserRole | null =>
+  normalize(decodeJwtPayload<{ role?: string }>(accessToken)?.role);
 
 /**
  * Current user's role. Prefers the profile loaded into the zustand auth store

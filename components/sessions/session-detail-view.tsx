@@ -75,17 +75,9 @@ const STATUS_OPTIONS = (
 /** Attendance is only meaningful once the session is running or finished. */
 const ATTENDANCE_STATUSES: SessionStatus[] = ["ONGOING", "COMPLETED"];
 
-/**
- * Illustrative content for sections that have no backend endpoint yet
- * (attendance, assignment schedule, tutor's private note & feedback).
- * Swap these for real data once the corresponding APIs exist.
- */
-const SAMPLE = {
-  tutorName: "Thầy Minh",
-  studentName: "Nguyễn An",
-  privateNote:
-    "Trọng tâm: kỹ thuật đổi biến trong tích phân từng phần. An còn nhầm dấu khi lấy nguyên hàm hàm lượng giác — cần làm thêm 3-4 ví dụ minh họa trước khi chuyển bài tập.",
-};
+/** Fallbacks when real data is unavailable (no sample content in production screens). */
+const NO_DATA_TUTOR_NAME = "—";
+const NO_PRIVATE_NOTE = "Chưa có ghi chú riêng.";
 
 /* ─── Building blocks ─────────────────────────────────────────────── */
 
@@ -278,7 +270,7 @@ const CurriculumImportInput = ({
     setImportingKey(m.file.key);
     try {
       const field = kind === "theory" ? "theoryUrls" : "exerciseUrls";
-      await axiosInstance.patch(`/sessions/${sessionId}`, {
+      await axiosInstance.put(`/sessions/${sessionId}`, {
         [field]: [...existing, m.file],
       });
       toast.success(kind === "theory" ? "Đã thêm tài liệu" : "Đã giao bài tập");
@@ -390,7 +382,7 @@ export const SessionDetailView = ({ sessionId }: { sessionId: string }) => {
     if (!session || !statusDraft) return;
     setSavingStatus(true);
     try {
-      await axiosInstance.patch(`/sessions/${sessionId}`, {
+      await axiosInstance.put(`/sessions/${sessionId}`, {
         status: statusDraft,
       });
       toast.success("Đã cập nhật buổi học");
@@ -418,8 +410,8 @@ export const SessionDetailView = ({ sessionId }: { sessionId: string }) => {
     userGradesOptions: { enabled: false },
   }).byField;
   const tutorName = useMemo(() => {
-    if (!tutorRaw) return SAMPLE.tutorName;
-    return fullName(tutorRaw[0]) || SAMPLE.tutorName;
+    if (!tutorRaw) return NO_DATA_TUTOR_NAME;
+    return fullName(tutorRaw[0]) || NO_DATA_TUTOR_NAME;
   }, [tutorRaw]);
 
   /* ── Class roster for attendance (GET /students?classId=) ── */
@@ -665,7 +657,7 @@ export const SessionDetailView = ({ sessionId }: { sessionId: string }) => {
                 Ghi chú riêng về buổi học
               </h2>
               <p className="mt-3 text-sm text-muted-foreground">
-                {SAMPLE.privateNote}
+                {NO_PRIVATE_NOTE}
               </p>
               <p className="mt-4 text-sm font-semibold text-emerald-600">
                 Chỉ gia sư nhìn thấy mục này

@@ -409,14 +409,7 @@ export default function SchedulePage() {
     list: { limit: 100 },
   }).list;
 
-  const allSessions = useMemo(() => {
-    const sessions = sessionsData?.sessions ?? [];
-    if (sessions.length > 0 || (sessionsData && !isLoading)) {
-      console.log("[Schedule] sessionsData:", sessionsData);
-      console.log("[Schedule] allSessions:", sessions);
-    }
-    return sessions;
-  }, [sessionsData, isLoading]);
+  const allSessions = useMemo(() => sessionsData?.sessions ?? [], [sessionsData]);
 
   /* ── Month data ── */
   const sessionsByDate = useMemo(

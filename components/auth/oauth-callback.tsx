@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import { useAuth } from "@/components/providers/auth.provider";
@@ -10,7 +10,6 @@ import { AuthCardShell } from "./auth-ui";
 
 export function OAuthCallback() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { setAuthTokens } = useAuth();
   const { oauthCallback: t } = useAuthCopy();
   const handled = useRef(false);
@@ -21,8 +20,16 @@ export function OAuthCallback() {
     }
     handled.current = true;
 
-    const accessToken = searchParams.get("accessToken");
-    const refreshToken = searchParams.get("refreshToken");
+    // Gateway returns tokens in the URL fragment (#accessToken=...&refreshToken=...),
+    // which is never sent to the server, so read it here and clear it right away.
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = params.get("accessToken");
+    const refreshToken = params.get("refreshToken");
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname + window.location.search,
+    );
 
     if (!accessToken) {
       router.replace("/login?error=oauth_failed");
@@ -31,7 +38,7 @@ export function OAuthCallback() {
 
     setAuthTokens({ accessToken, refreshToken });
     router.replace("/");
-  }, [searchParams, setAuthTokens, router]);
+  }, [setAuthTokens, router]);
 
   return (
     <AuthCardShell

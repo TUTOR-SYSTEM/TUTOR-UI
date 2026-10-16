@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { Info } from "lucide-react";
 
 import { useTuitionActions } from "@/lib/services/tuition.service";
-import { useStudentActions } from "@/lib/services/student.service";
 import { useCurrentUserId } from "@/hooks/useCurrentUserId";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import type { TuitionRecord } from "@/types";
@@ -61,18 +60,14 @@ export function FamilyFeesPage() {
   const isParent = role === "PARENT";
   const viewerId = useCurrentUserId();
 
-  const { data: studentsPayload, isLoading: studentsLoading } =
-    useStudentActions({
-      list: { page: 1, limit: 100 },
-      listOptions: { enabled: isParent && !!viewerId },
-    }).list;
+  // Gateway `GET /students` is ADMIN-only and PARENT has no "my children"
+  // endpoint, so PARENT cannot resolve child ids yet: no list request is made.
+  const studentsLoading = false;
 
   const childIds = useMemo(() => {
     if (!isParent) return viewerId ? [viewerId] : [];
-    return (studentsPayload?.students ?? [])
-      .filter((s) => s.parentId === viewerId)
-      .map((s) => s.id);
-  }, [isParent, studentsPayload, viewerId]);
+    return [];
+  }, [isParent, viewerId]);
 
   const {
     data: tuitionsPayload,
@@ -96,7 +91,7 @@ export function FamilyFeesPage() {
       <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-[#E7EEEC] bg-white py-16 text-center">
         <Info className="size-8 text-[#C5D5D1]" />
         <p className="text-sm text-[#9AAEA9]">
-          Chưa có học sinh nào được liên kết với tài khoản phụ huynh này.
+          Chức năng xem học phí của học sinh liên kết hiện chưa khả dụng.
         </p>
       </div>
     );

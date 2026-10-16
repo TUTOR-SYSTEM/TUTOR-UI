@@ -20,7 +20,7 @@ describe("getRouteAccess", () => {
       "STUDENT",
       "PARENT",
     ]);
-    expect(getRouteAccess("/students/abc")).toEqual(["ADMIN", "TUTOR"]);
+    expect(getRouteAccess("/students/abc")).toEqual(["ADMIN"]);
   });
 
   it("matches on segment boundaries, not raw string prefixes", () => {
@@ -33,5 +33,13 @@ describe("getRouteAccess", () => {
     for (const rule of ROUTE_ACCESS) {
       expect(rule.allow.length, rule.prefix).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("getRouteAccess internal pages", () => {
+  it("restricts internal/dev pages to ADMIN", () => {
+    expect(getRouteAccess("/flow-request")).toEqual(["ADMIN"]);
+    expect(getRouteAccess("/api-gaps")).toEqual(["ADMIN"]);
+    expect(getRouteAccess("/reports")).toEqual(["ADMIN"]);
   });
 });

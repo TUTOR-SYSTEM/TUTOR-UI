@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Loader2, Plus } from "lucide-react";
 
 import { toast } from "sonner";
@@ -24,60 +23,56 @@ import { CreateClassChapterDialog } from "../dialog/create-class-chapter-dialog"
 
 /* ─── Types ─────────────────────────────────────────────── */
 
-type Grade = { id: string; name: string; level: number };
-
 /* ─── Main page ──────────────────────────────────────────── */
 
 type CurriculumPageProps = { classId: string };
 
 export const CurriculumPage = ({ classId }: CurriculumPageProps) => {
-  const qc = useQueryClient();
   const [showCreateChapter, setShowCreateChapter] = useState(false);
 
-  const chapterKey = useMemo(() => ["curriculum-chapters", classId], [classId]);
+  // Chapters belong to the class's curriculum, so read it from the class first.
+  const { data: classRaw, isLoading: classLoading } = useGet<unknown>(
+    ["class-detail", classId],
+    `/classes/${classId}`,
+    { enabled: !!classId },
+  );
+  const curriculumId = useMemo(() => {
+    if (!classRaw) return "";
+    return unwrapApiData<{ curriculumId?: string | null }>(classRaw)?.curriculumId ?? "";
+  }, [classRaw]);
 
-  const { data: gradesRaw } = useGet<unknown>(["grades"], "/curriculum");
-  const grades = useMemo<Grade[]>(() => {
-    if (!gradesRaw) return [];
-    return unwrapApiData<Grade[]>(gradesRaw) ?? [];
-  }, [gradesRaw]);
+  const chapterKey = useMemo(
+    () => ["curriculum-chapters", curriculumId],
+    [curriculumId],
+  );
 
   const {
     data: chaptersRaw,
-    isLoading,
+    isLoading: chaptersLoading,
     error,
     refetch: refetchChapters,
-  } = useGet<unknown>(chapterKey, `/curriculum/${classId}`, {
-    enabled: !!classId,
+  } = useGet<unknown>(chapterKey, "/chapter", {
+    params: { curriculumId, limit: 100 },
+    enabled: !!curriculumId,
   });
+  const isLoading = classLoading || chaptersLoading;
 
   const chapters = useMemo<Chapter[]>(() => {
     if (!chaptersRaw) return [];
-    const d = unwrapApiData<{ curriculums: Chapter[] }>(chaptersRaw);
-    return d?.curriculums ?? [];
+    return unwrapApiData<{ chapters: Chapter[] }>(chaptersRaw)?.chapters ?? [];
   }, [chaptersRaw]);
 
   const handleDeleteChapter = useCallback(
     async (chapterId: string) => {
       try {
-        await axiosInstance.delete(`/curriculum/${chapterId}`);
-        qc.setQueryData(chapterKey, (old: unknown) => {
-          if (!old) return old;
-          const d = unwrapApiData<{ curriculums: Chapter[] }>(old);
-          if (!d) return old;
-          return {
-            data: {
-              ...d,
-              curriculums: d.curriculums.filter((c) => c.id !== chapterId),
-            },
-          };
-        });
+        await axiosInstance.delete(`/chapter/${chapterId}`);
+        await refetchChapters();
         toast.success("Đã xóa chương");
       } catch (err) {
         toast.error(getErrorMessage(err, "Xóa chương thất bại"));
       }
     },
-    [qc, chapterKey],
+    [refetchChapters],
   );
 
   return (
@@ -205,18 +200,10 @@ export const CurriculumPage = ({ classId }: CurriculumPageProps) => {
         )}
       </div>
 
-      {/* Grade badge legend */}
-      {grades.length > 0 && (
-        <p className="text-center text-xs text-muted-foreground">
-          Chương trình được phân theo khối lớp. Bấm vào chương để mở rộng và
-          quản lý bài học.
-        </p>
-      )}
-
       {/* Create chapter dialog */}
       {showCreateChapter && (
         <CreateClassChapterDialog
-          grades={grades}
+          curriculumId={curriculumId}
           onClose={() => setShowCreateChapter(false)}
           onCreated={() => refetchChapters()}
         />

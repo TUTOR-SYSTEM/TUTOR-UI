@@ -33,8 +33,6 @@ import { toast } from "sonner";
 import { useUserActions } from "@/lib/services/user.service";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
-import { useCurrentUserId } from "@/hooks/useCurrentUserId";
-import { useStudentActions } from "@/lib/services/student.service";
 import type { UserRole } from "@/lib/rbac/roles";
 import { useTheme } from "@/components/providers/theme.provider";
 import { useColorTheme } from "@/components/providers/color-theme.provider";
@@ -686,23 +684,10 @@ function ProfilePanel() {
   // UI and stripped from the payload, not just disabled.
   const isNameLocked = role === "STUDENT";
 
-  // PARENT profile shows which students are linked to this account. There is
-  // no direct "my children" API — same workaround as `FamilyFeesPage`: read
-  // `/students` (every row carries `parentId`, see `users.parent_id` on the
-  // backend) and keep the ones pointing back at this parent's user id.
+  // PARENT profile would list linked students, but gateway `GET /students` is
+  // ADMIN-only and there is no PARENT "my children" endpoint yet, so the list
+  // is not fetched for PARENT (see the empty-state message below).
   const isParent = role === "PARENT";
-  const viewerId = useCurrentUserId();
-  const { data: linkedStudentsPayload, isLoading: linkedStudentsLoading } =
-    useStudentActions({
-      list: { page: 1, limit: 100 },
-      listOptions: { enabled: isParent && !!viewerId },
-    }).list;
-  const linkedStudents = useMemo(() => {
-    if (!isParent) return [];
-    return (linkedStudentsPayload?.students ?? []).filter(
-      (s) => s.parentId === viewerId,
-    );
-  }, [isParent, linkedStudentsPayload, viewerId]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -777,6 +762,7 @@ function ProfilePanel() {
       setAvatarPreview(null);
     } finally {
       setAvatarUploading(false);
+      URL.revokeObjectURL(previewUrl);
     }
 
     if (fileInputRef.current) {
@@ -967,53 +953,9 @@ function ProfilePanel() {
           <Divider />
           <SectionTitle>Học sinh liên kết</SectionTitle>
 
-          {linkedStudentsLoading ? (
-            <div className="flex items-center justify-center py-6">
-              <Loader2 className="size-5 animate-spin text-[#9AAEA9]" />
-            </div>
-          ) : linkedStudents.length === 0 ? (
-            <p className="text-sm text-[#9AAEA9]">
-              Chưa có học sinh nào được liên kết với tài khoản phụ huynh này.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {linkedStudents.map((s) => {
-                const studentClasses = (s.classes ?? [])
-                  .map((c) => c.name)
-                  .join(", ");
-                return (
-                  <div
-                    key={s.id}
-                    className="flex items-center gap-3 rounded-lg border border-[#EEF3F1] px-4 py-3"
-                  >
-                    {s.avatar ? (
-                      <Image
-                        width={40}
-                        height={40}
-                        src={s.avatar}
-                        alt=""
-                        className="size-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex size-10 items-center justify-center rounded-full bg-[#0E9F8E] text-sm font-bold text-white">
-                        {getInitials(s.firstName, s.lastName)}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-[#16302b]">
-                        {[s.firstName, s.lastName].filter(Boolean).join(" ")}
-                      </p>
-                      <p className="truncate text-xs text-[#9AAEA9]">
-                        {[s.school, studentClasses]
-                          .filter(Boolean)
-                          .join(" · ") || "Chưa có lớp"}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <p className="text-sm text-[#9AAEA9]">
+            Chức năng xem học sinh liên kết hiện chưa khả dụng.
+          </p>
         </>
       )}
 
@@ -1067,28 +1009,20 @@ function ProfilePanel() {
 }
 
 /* ─── Change-password schema ─── */
+// Mirrors gateway `changePasswordSchema`: the current password only needs to be non-empty
+// (old passwords may predate the rules); the new one must match the full policy.
 const changePasswordSchema = z
   .object({
-    currentPassword: z
-      .string()
-      .min(1, "Vui lòng nhập mật khẩu hiện tại")
-      .min(8, "Tối thiểu 8 ký tự")
-      .regex(/[A-Z]/, "Phải có ít nhất 1 chữ hoa")
-      .regex(/[a-z]/, "Phải có ít nhất 1 chữ thường")
-      .regex(/[0-9]/, "Phải có ít nhất 1 chữ số"),
+    currentPassword: z.string().min(1, "Vui lòng nhập mật khẩu hiện tại"),
     newPassword: z
       .string()
       .min(8, "Tối thiểu 8 ký tự")
+      .max(20, "Tối đa 20 ký tự")
       .regex(/[A-Z]/, "Phải có ít nhất 1 chữ hoa")
       .regex(/[a-z]/, "Phải có ít nhất 1 chữ thường")
-      .regex(/[0-9]/, "Phải có ít nhất 1 chữ số"),
-    confirmPassword: z
-      .string()
-      .min(1, "Vui lòng xác nhận mật khẩu")
-      .min(8, "Tối thiểu 8 ký tự")
-      .regex(/[A-Z]/, "Phải có ít nhất 1 chữ hoa")
-      .regex(/[a-z]/, "Phải có ít nhất 1 chữ thường")
-      .regex(/[0-9]/, "Phải có ít nhất 1 chữ số"),
+      .regex(/[0-9]/, "Phải có ít nhất 1 chữ số")
+      .regex(/[^A-Za-z0-9]/, "Phải có ít nhất 1 ký tự đặc biệt"),
+    confirmPassword: z.string().min(1, "Vui lòng xác nhận mật khẩu"),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
     message: "Mật khẩu xác nhận không khớp",

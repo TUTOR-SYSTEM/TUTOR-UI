@@ -1,7 +1,6 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,14 +13,13 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
 import { TableRow, TableCell } from "@/components/ui/table.ui";
 import { LessonRow, type Lesson } from "./curriculum-lesson-row";
 
+/** Row of `GET /chapter?curriculumId=` (gateway `chapter.getAll` → `{ chapters, pagination }`). */
 export type Chapter = {
   id: string;
-  userId: string;
-  gradeId: string | null;
+  curriculumId: string;
   title: string;
   description: string | null;
-  createdAt: string;
-  updatedAt: string;
+  order?: number;
 };
 
 /** One chapter row (expands to its lessons) on the class curriculum page. */
@@ -34,7 +32,6 @@ export const ChapterRow = ({
   index: number;
   onDeleteChapter: () => void;
 }) => {
-  const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [addingLesson, setAddingLesson] = useState(false);
   const [newLessonTitle, setNewLessonTitle] = useState("");
@@ -47,31 +44,29 @@ export const ChapterRow = ({
     string | null
   >(null);
 
-  const lessonKey = ["lessons", chapter.id];
+  // Lessons are scoped by both curriculum and chapter (gateway `GET /curriculum/lessons`).
+  const curriculumId = chapter.curriculumId;
+  const lessonKey = ["lessons", curriculumId, chapter.id];
   const {
     data: lessonsRaw,
     isLoading: lessonsLoading,
     refetch: refetchLessons,
-  } = useGet<unknown>(
-    lessonKey,
-    `/curriculum/lessons/by-curriculum/${chapter.id}`,
-    {
-      enabled: open,
-    },
-  );
+  } = useGet<unknown>(lessonKey, "/curriculum/lessons", {
+    params: { curriculumId, chapterId: chapter.id, limit: 100 },
+    enabled: open && !!curriculumId,
+  });
 
   const lessons = useMemo<Lesson[]>(() => {
     if (!lessonsRaw) return [];
-    return unwrapApiData<Lesson[]>(lessonsRaw) ?? [];
+    return unwrapApiData<{ lessons: Lesson[] }>(lessonsRaw)?.lessons ?? [];
   }, [lessonsRaw]);
 
   const handleCreateLesson = async () => {
     if (!newLessonTitle.trim()) return;
     setSubmittingLesson(true);
     try {
-      // This page's Chapter model has no distinct curriculumId, so both query params reuse chapter.id until the model is reconciled with the chapter-within-curriculum structure.
       await axiosInstance.post(
-        `/lesson?curriculumId=${chapter.id}&chapterId=${chapter.id}`,
+        "/curriculum/lessons",
         {
           title: newLessonTitle.trim(),
           description: newLessonDesc.trim() || undefined,
@@ -79,6 +74,7 @@ export const ChapterRow = ({
           theoryUrls: [],
           exerciseUrls: [],
         },
+        { params: { curriculumId, chapterId: chapter.id } },
       );
       setNewLessonTitle("");
       setNewLessonDesc("");
@@ -96,12 +92,7 @@ export const ChapterRow = ({
     setDeletingLesson(lessonId);
     try {
       await axiosInstance.delete(`/curriculum/lessons/${lessonId}`);
-      qc.setQueryData(lessonKey, (old: unknown) => {
-        if (!old) return old;
-        const unwrapped = unwrapApiData<Lesson[]>(old);
-        if (!unwrapped) return old;
-        return { data: unwrapped.filter((l) => l.id !== lessonId) };
-      });
+      await refetchLessons();
       toast.success("Đã xóa bài học");
     } catch (err) {
       toast.error(getErrorMessage(err, "Xóa bài thất bại"));

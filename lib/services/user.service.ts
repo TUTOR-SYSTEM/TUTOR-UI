@@ -105,21 +105,29 @@ export function useUserActions(args?: {
     },
   );
 
-  /** Fetch all available grades. */
+  /**
+   * Fetch all available grades. Disabled by default: gateway has no `GET /curriculum/grades`
+   * (404 on every mount). Enable explicitly via `allGradesOptions` once the route exists.
+   */
   const allGrades = useGet<ApiResponse<UserGrade[]>, UserGrade[]>(
     ["all-grades"],
     "/curriculum/grades",
     {
+      enabled: false,
       select: (raw) => unwrapApiData<UserGrade[]>(raw) ?? [],
       ...args?.allGradesOptions,
     },
   );
 
-  /** Fetch grades assigned to current user. */
+  /**
+   * Fetch grades assigned to current user. Disabled by default: gateway has no
+   * `GET /users/grades` (404 on every mount). Enable via `userGradesOptions` once it exists.
+   */
   const userGrades = useGet<ApiResponse<UserGrade[]>, UserGrade[]>(
     ["user-grades"],
     "/users/grades",
     {
+      enabled: false,
       select: (raw) => unwrapApiData<UserGrade[]>(raw) ?? [],
       ...args?.userGradesOptions,
     },

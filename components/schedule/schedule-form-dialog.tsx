@@ -10,12 +10,16 @@ import { Input } from "@/components/ui/input.ui";
 import { Select, type SelectOption } from "@/components/ui/select.ui";
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/axios";
-import { useSessionActions, SESSIONS_QUERY_KEY } from "@/lib/services/session.service";
+import {
+  useSessionActions,
+  apiGetNextSessionNumber,
+  SESSIONS_QUERY_KEY,
+} from "@/lib/services/session.service";
 import { useClassActions } from "@/lib/services/class.service";
 import { useScheduleCopy } from "@/hooks/useScheduleCopy.hook";
 import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
 import { useQueryClient } from "@tanstack/react-query";
-import type { StudentSessionListItem, SessionPayload } from "@/types";
+import type { StudentSessionListItem, CreateSessionPayload } from "@/types";
 
 /* ─── Form values ─── */
 type SessionFormValues = {
@@ -95,7 +99,8 @@ export function ScheduleFormDialog({ open, onClose, session }: ScheduleFormDialo
     if (session) {
       const startDate = new Date(session.startAt);
       const endDate = new Date(session.endAt);
-      const dateStr = startDate.toISOString().split("T")[0];
+      // Local calendar date, matching the local hh:mm below (toISOString would be UTC).
+      const dateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
       const startTime = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
       const endTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
       reset({
@@ -129,23 +134,22 @@ export function ScheduleFormDialog({ open, onClose, session }: ScheduleFormDialo
   /* mutations */
   const { create, update } = useSessionActions();
 
-  const onSubmit = (values: SessionFormValues) => {
+  const onSubmit = async (values: SessionFormValues) => {
+    // Local date + time → ISO instants, as the gateway expects `startAt` / `endAt`.
     const startAt = new Date(`${values.date}T${values.startTime}:00`).toISOString();
     const endAt = new Date(`${values.date}T${values.endTime}:00`).toISOString();
 
-    const payload: SessionPayload = {
-      classId: values.classId,
+    const fields = {
       title: values.title.trim() || undefined,
-      date: values.date,
-      startTime: values.startTime,
-      endTime: values.endTime,
-      location: values.location.trim() || undefined,
       description: values.description.trim() || undefined,
+      location: values.location.trim() || undefined,
+      startAt,
+      endAt,
     };
 
     if (isEditing && session) {
       update.mutate(
-        { id: session.id, ...payload },
+        { id: session.id, ...fields },
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: SESSIONS_QUERY_KEY });
@@ -158,6 +162,18 @@ export function ScheduleFormDialog({ open, onClose, session }: ScheduleFormDialo
         },
       );
     } else {
+      let sessionNumber: number;
+      try {
+        sessionNumber = await apiGetNextSessionNumber(values.classId);
+      } catch (err) {
+        toast.error(getErrorMessage(err, copy.form.toastCreateError));
+        return;
+      }
+      const payload: CreateSessionPayload = {
+        classId: values.classId,
+        sessionNumber,
+        ...fields,
+      };
       create.mutate(payload, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: SESSIONS_QUERY_KEY });

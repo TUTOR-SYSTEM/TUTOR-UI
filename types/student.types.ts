@@ -18,10 +18,11 @@ export type StudentProps = {
 };
 
 /* ─── UI constants ─── */
+/** Values must match gateway `createStudentSchema` / `updateStudentSchema` (`parentRelationship`). */
 export const RELATIONSHIP_OPTIONS = [
-  { label: "Bố", value: "FATHER", enum: "MALE" },
-  { label: "Mẹ", value: "MOTHER", enum: "FEMALE" },
-  { label: "Người giám hộ", value: "OTHER" },
+  { label: "Bố", value: "FATHER" },
+  { label: "Mẹ", value: "MOTHER" },
+  { label: "Người giám hộ", value: "GUARDIAN" },
 ];
 
 export enum GENDER_ENUM {
