@@ -1,5 +1,5 @@
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
-import { useGet, usePost, usePut, useDelete } from "@/lib/axios/query";
+import { apiGet, useGet, usePost, usePut, useDelete } from "@/lib/axios/query";
 import type { UseQueryOptions } from "@tanstack/react-query";
 import type {
   ApiResponse,
@@ -8,13 +8,29 @@ import type {
   StudentSessionDetail,
   StudentSessionsResponse,
   SessionStatus,
-  SessionPayload,
+  CreateSessionPayload,
+  UpdateSessionPayload,
   BulkSessionPayload,
 } from "@/types";
 
 // ─── Query keys ──────────────────────────────────────────────────────────────
 
 export const SESSIONS_QUERY_KEY = ["sessions"] as const;
+
+// ─── Plain functions ─────────────────────────────────────────────────────────
+
+/**
+ * Next free `sessionNumber` for a class (max existing + 1). The gateway requires
+ * `sessionNumber` on create and the form has no field for it.
+ */
+export async function apiGetNextSessionNumber(classId: string): Promise<number> {
+  const raw = await apiGet<ApiResponse<StudentSessionListItem[]>>(
+    `/sessions/class/${classId}`,
+  );
+  const body = unwrapApiData<StudentSessionListItem[]>(raw);
+  const list = Array.isArray(body) ? body : [];
+  return list.reduce((max, s) => Math.max(max, s.sessionNumber ?? 0), 0) + 1;
+}
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
@@ -73,7 +89,7 @@ export function useSessionActions(args?: {
     },
   );
 
-  const create = usePost<ApiResponse<StudentSessionDetail>, SessionPayload>(
+  const create = usePost<ApiResponse<StudentSessionDetail>, CreateSessionPayload>(
     "/sessions",
   );
   const createBulk = usePost<
@@ -82,7 +98,7 @@ export function useSessionActions(args?: {
   >("/sessions/bulk");
   const update = usePut<
     ApiResponse<StudentSessionDetail>,
-    { id: string } & Partial<SessionPayload>
+    { id: string } & UpdateSessionPayload
   >((payload) => `/sessions/${payload.id}`);
   const del = useDelete<ApiResponse<DeleteResult>, string>(
     (id) => `/sessions/${id}`,

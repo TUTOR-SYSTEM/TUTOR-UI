@@ -80,7 +80,7 @@ describe("AppSidebar", () => {
   });
 
   describe("navigation by role", () => {
-    it("shows the full tutor menu including students and fees", () => {
+    it("shows the full tutor menu including fees, but not students (ADMIN-only list endpoint)", () => {
       signIn("TUTOR");
       render(<AppSidebar />);
       const labels = navLabels();
@@ -92,12 +92,12 @@ describe("AppSidebar", () => {
           copy.nav.classes,
           copy.nav.curriculum,
           copy.nav.grades,
-          copy.nav.students,
           copy.nav.fees,
           copy.nav.discussions,
           copy.nav.aiChat,
         ]),
       );
+      expect(labels).not.toContain(copy.nav.students);
       expect(labels).not.toContain(copy.nav.tutors);
       expect(labels).not.toContain(copy.nav.logger);
     });
@@ -158,7 +158,8 @@ describe("AppSidebar", () => {
     it("defaults to the tutor menu when no role is available", () => {
       useAuthStore.setState({ accessToken: null, user: null }, false);
       render(<AppSidebar />);
-      expect(navLabels()).toContain(copy.nav.students);
+      expect(navLabels()).toContain(copy.nav.fees);
+      expect(navLabels()).not.toContain(copy.nav.students);
     });
   });
 

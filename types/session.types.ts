@@ -81,14 +81,22 @@ export type StudentSessionsResponse = {
   pagination: Pagination;
 };
 
-export type SessionPayload = {
+/** `POST /sessions` body — gateway `createSessionSchema` (`startAt`, `endAt`, `sessionNumber` required). */
+export type CreateSessionPayload = {
   classId: string;
+  sessionNumber: number;
+  startAt: string;
+  endAt: string;
   title?: string;
-  date: string;
-  startTime: string;
-  endTime: string;
   description?: string;
   location?: string;
+};
+
+/** `PUT /sessions/:id` body — gateway `updateSessionSchema` (all optional). */
+export type UpdateSessionPayload = Partial<
+  Omit<CreateSessionPayload, "classId" | "sessionNumber">
+> & {
+  sessionNumber?: number;
   status?: SessionStatus;
   lessonId?: string | null;
   note?: string;

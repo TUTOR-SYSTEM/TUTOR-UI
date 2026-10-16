@@ -81,12 +81,14 @@ export type ManagedUsersApiPayload = {
   };
 };
 
+/** `POST /users` body — gateway `createUserSchema` (password 8–20 chars required). */
 export type CreateManagedUserPayload = {
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
   role: ManagedUserRole;
+  password: string;
 };
 
 export type UpdateManagedUserPayload = {

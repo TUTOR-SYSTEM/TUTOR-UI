@@ -5,6 +5,7 @@ import type { ComponentProps } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import {
   Eye,
   EyeOff,
@@ -74,14 +75,16 @@ export const LoginForm = ({ className, ...props }: ComponentProps<"div">) => {
   const handleLoginSuccess = (raw: unknown) => {
     const payload = unwrapApiData<LoginResponse>(raw);
     const token = pickAccessToken(payload);
-    if (token) {
-      const rt = pickRefreshToken(payload);
-      setAuthTokens({
-        accessToken: token,
-        refreshToken: rt === undefined ? undefined : rt,
-      });
-      saveAuthTokens(token, rt === undefined ? null : rt);
+    if (!token) {
+      // Without an access token the session can't be established; don't pretend it worked.
+      toast.error(t.errorFallback);
+      return;
     }
+    // A new login replaces the whole session: a refresh token missing from the response
+    // must clear the previous account's one, not keep it.
+    const rt = pickRefreshToken(payload) ?? null;
+    setAuthTokens({ accessToken: token, refreshToken: rt });
+    saveAuthTokens(token, rt);
     router.replace("/");
   };
 

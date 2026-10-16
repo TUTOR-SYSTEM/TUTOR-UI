@@ -91,10 +91,13 @@ export function EditUserDialog({ user, onClose, onSaved }: Props) {
     setValues(getDefaultValues(user));
   }
 
-  const updateUser = usePut<
-    ApiManagedUser,
-    UpdateManagedUserPayload & { id: string }
-  >((payload) => `/users/${payload.id}`);
+  // The id goes in the URL only: gateway `PUT /users/:id` (`updateUserSchema`, strict) rejects
+  // unknown keys, so the body is exactly the editable fields. The URL is re-resolved from the
+  // current `user` on each render, and the dialog only submits while a user is open.
+  const userId = user?.id ?? "";
+  const updateUser = usePut<ApiManagedUser, UpdateManagedUserPayload>(
+    () => `/users/${userId}`,
+  );
 
   const handleClose = () => {
     if (updateUser.isPending) return;
@@ -104,7 +107,11 @@ export function EditUserDialog({ user, onClose, onSaved }: Props) {
   const validate = (): boolean => {
     const next: Partial<Record<keyof FormValues, string>> = {};
     if (!values.firstName.trim()) next.firstName = "Vui lòng nhập họ";
+    else if (values.firstName.trim().length < 2)
+      next.firstName = "Họ phải có ít nhất 2 ký tự";
     if (!values.lastName.trim()) next.lastName = "Vui lòng nhập tên";
+    else if (values.lastName.trim().length < 2)
+      next.lastName = "Tên phải có ít nhất 2 ký tự";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -114,7 +121,6 @@ export function EditUserDialog({ user, onClose, onSaved }: Props) {
 
     updateUser.mutate(
       {
-        id: user.id,
         firstName: values.firstName.trim(),
         lastName: values.lastName.trim(),
         phone: values.phone.trim() || undefined,

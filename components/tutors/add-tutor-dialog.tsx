@@ -148,7 +148,7 @@ export function AddTutorDialog({ open, onClose, onCreated }: Props) {
         <Field
           label="Mật khẩu"
           required
-          hint="8–14 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
+          hint="8–20 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
         >
           <Input
             {...register("password")}

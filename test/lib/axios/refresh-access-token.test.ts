@@ -74,3 +74,38 @@ describe("refreshAccessTokenViaStore", () => {
     expect(postAuthRefresh).toHaveBeenLastCalledWith("r2");
   });
 });
+
+describe("performRefresh failure modes", () => {
+  beforeEach(() => {
+    postAuthRefresh.mockReset();
+    localStorage.clear();
+    useAuthStore.setState({ ...initial, accessToken: "old-a", refreshToken: "old-r", user: null }, false);
+  });
+
+  it("keeps the session on a network error (refresh token may still be valid)", async () => {
+    const networkError = Object.assign(new Error("Network Error"), {
+      isAxiosError: true,
+      response: undefined,
+    });
+    postAuthRefresh.mockRejectedValue(networkError);
+
+    await expect(performRefresh()).resolves.toBe(false);
+
+    expect(useAuthStore.getState().accessToken).toBe("old-a");
+    expect(useAuthStore.getState().refreshToken).toBe("old-r");
+  });
+
+  it("ends the session when the refresh token is rejected with 401", async () => {
+    const rejected = Object.assign(new Error("Unauthorized"), {
+      isAxiosError: true,
+      response: { status: 401 },
+    });
+    postAuthRefresh.mockRejectedValue(rejected);
+
+    await expect(performRefresh()).resolves.toBe(false);
+
+    expect(useAuthStore.getState().accessToken).toBeNull();
+    expect(getAccessToken()).toBeNull();
+    expect(getRefreshToken()).toBeNull();
+  });
+});

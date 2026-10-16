@@ -33,7 +33,7 @@ const DEFAULT_VALUES: FormValuesStudent = {
   studentPhone: "",
   school: "",
   parentName: "",
-  parentRelationship: GENDER_ENUM.MALE,
+  parentRelationship: "",
   parentPhone: "",
   parentEmail: "",
 };

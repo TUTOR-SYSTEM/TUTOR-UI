@@ -77,7 +77,6 @@ const roleNav: Record<UserRole, NavItem[]> = {
     NAV.classes,
     NAV.curriculum,
     NAV.grades,
-    NAV.students, // Tutor/Admin only
     NAV.fees, // 👀 view-only for Tutor
     NAV.discussions,
     NAV.aiChat,

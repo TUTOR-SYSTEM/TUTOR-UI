@@ -18,6 +18,7 @@ import {
 
 import { EditStudentDialog } from "@/components/students/edit-student-dialog";
 import { useStudentActions } from "@/lib/services/student.service";
+import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import { useExerciseActions } from "@/lib/services/exercise.service";
 import { getErrorMessage } from "@/lib/axios";
 import { useStudentsCopy } from "@/hooks/useStudentsCopy.hook";
@@ -107,6 +108,8 @@ export default function StudentDetailPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState(false);
+  // PUT /students/:id is ADMIN-only on the gateway; TUTOR can view but not edit.
+  const isAdmin = useCurrentUserRole() === "ADMIN";
 
   const tabs = useMemo<{ id: Tab; label: string }[]>(
     () => [
@@ -215,14 +218,16 @@ export default function StudentDetailPage() {
           <span className="font-semibold text-[#16302b]">{student.name}</span>
         </nav>
         <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="flex items-center gap-2 rounded-lg border border-[#E7EEEC] bg-white px-4 py-2 text-sm font-medium text-[#16302b] hover:bg-[#F3F7F5] transition-colors shadow-sm"
-          >
-            <Pencil className="size-3.5" />
-            {copy.detail.editProfile}
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-2 rounded-lg border border-[#E7EEEC] bg-white px-4 py-2 text-sm font-medium text-[#16302b] hover:bg-[#F3F7F5] transition-colors shadow-sm"
+            >
+              <Pencil className="size-3.5" />
+              {copy.detail.editProfile}
+            </button>
+          )}
           <button
             type="button"
             className="flex items-center gap-2 rounded-lg bg-[#0E9F8E] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0b7a6d] transition-colors shadow-sm"

@@ -24,7 +24,12 @@ export const ROUTE_ACCESS: readonly RouteAccessRule[] = [
   { prefix: "/users", allow: ["ADMIN"] },
   { prefix: "/logger", allow: ["ADMIN"] },
   { prefix: "/test-monitor", allow: ["ADMIN"] },
-  { prefix: "/students", allow: ["ADMIN", "TUTOR"] },
+  // Internal/dev pages (API map, API gap report, admin reports) — ADMIN only.
+  { prefix: "/flow-request", allow: ["ADMIN"] },
+  { prefix: "/api-gaps", allow: ["ADMIN"] },
+  { prefix: "/reports", allow: ["ADMIN"] },
+  // Gateway `GET /students` is ADMIN-only; TUTOR has no list endpoint here.
+  { prefix: "/students", allow: ["ADMIN"] },
   { prefix: "/sessions", allow: ["TUTOR", "STUDENT"] },
   { prefix: "/curriculum", allow: ["TUTOR", "PARENT"] },
   { prefix: "/schedule", allow: ["TUTOR", "STUDENT", "PARENT"] },

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import type { ApiUser } from "@/types";
 import { ApiError } from "@/types";
-import { postAuthRefresh } from "@/lib/axios/auth-refresh";
+import { refreshAccessTokenViaStore } from "@/lib/axios/refresh-access-token";
 import {
   clearAuthTokens,
   setAuthTokens as saveAuthTokens,
@@ -83,7 +83,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const refreshToken = useAuthStore((s) => s.refreshToken);
   const setUser = useAuthStore((s) => s.setUser);
   const setSessionChecked = useAuthStore((s) => s.setSessionChecked);
-  const setCredentials = useAuthStore((s) => s.setCredentials);
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
   useEffect(() => {
@@ -127,15 +126,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
+      // Shared single-flight refresh (also used by the axios 401 interceptor): the store's
+      // current refresh token is used, so a token already rotated by the interceptor isn't
+      // replayed, and the new tokens are persisted to localStorage.
+      const refreshed = await refreshAccessTokenViaStore();
+      if (cancelled) {
+        return;
+      }
+      if (!refreshed) {
+        failUnauthorized();
+        return;
+      }
       try {
-        const tokens = await postAuthRefresh(refreshToken);
-        if (cancelled) {
-          return;
-        }
-        setCredentials({
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-        });
         const refreshRaw = await apiGet<unknown>("/users/detail-user");
         const refreshUser = unwrapApiData<ApiUser>(refreshRaw);
         if (!cancelled) {
@@ -158,7 +160,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     refreshToken,
     setUser,
     setSessionChecked,
-    setCredentials,
     clearAuth,
   ]);
 

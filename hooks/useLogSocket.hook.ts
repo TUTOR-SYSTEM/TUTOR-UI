@@ -28,13 +28,15 @@ export function useLogSocket({ enabled = true, onNewLog }: UseLogSocketOptions) 
     onNewLogRef.current = onNewLog;
   }, [onNewLog]);
 
+  // Reactive token: the socket is rebuilt after a refresh/login, so a reconnect never reuses
+  // an expired access token captured at mount.
+  const accessToken = useAuthStore((s) => s.accessToken);
+
   useEffect(() => {
-    if (!enabled) return;
-    const token = useAuthStore.getState().accessToken;
-    if (!token) return;
+    if (!enabled || !accessToken) return;
 
     const socket: Socket = io(`${LOG_SOCKET_URL}/logs`, {
-      auth: { token },
+      auth: { token: accessToken },
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: 10,
@@ -50,8 +52,9 @@ export function useLogSocket({ enabled = true, onNewLog }: UseLogSocketOptions) 
 
     return () => {
       socket.disconnect();
+      setIsConnected(false);
     };
-  }, [enabled]);
+  }, [enabled, accessToken]);
 
   return { isConnected };
 }

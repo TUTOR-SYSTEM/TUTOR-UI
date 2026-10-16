@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import UsageGuides, {
   type UsageGuideStep,
 } from "@/components/ui/usage-guide.ui";
+import { CHAT_AVAILABLE } from "@/lib/chat/availability";
 import { useChatSocket } from "@/hooks/useChatSocket.hook";
 import { useUserStatus } from "@/hooks/useUserStatus.hook";
 import { useSocket } from "@/components/providers/socket.provider";
@@ -204,7 +205,8 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
 
 /* ─── Main component ─── */
 
-export const DiscussionsPage = () => {
+/** Chat UI; only mounted when `CHAT_AVAILABLE` (its hooks fire `/chat/*` requests). */
+const ChatDiscussionsPage = () => {
   const [search, setSearch] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -723,6 +725,17 @@ export const DiscussionsPage = () => {
       </div>
 
       <UsageGuides steps={USAGE_GUIDE_STEPS} />
+    </div>
+  );
+};
+
+export const DiscussionsPage = () => {
+  if (CHAT_AVAILABLE) return <ChatDiscussionsPage />;
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border bg-card py-16 text-center">
+      <MessageSquareDot className="size-8 text-muted-foreground/50" />
+      <p className="text-sm font-medium">Tính năng thảo luận tạm thời chưa khả dụng.</p>
+      <p className="text-xs text-muted-foreground">Vui lòng quay lại sau.</p>
     </div>
   );
 };

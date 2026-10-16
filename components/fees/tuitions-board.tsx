@@ -82,7 +82,9 @@ const AVATAR_COLORS = [
 ];
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
-const YEARS = [2024, 2025, 2026, 2027];
+/** Current year and the 3 years before it (was a hard-coded 2024–2027 range). */
+const CURRENT_YEAR = new Date().getFullYear();
+const YEARS = [CURRENT_YEAR - 3, CURRENT_YEAR - 2, CURRENT_YEAR - 1, CURRENT_YEAR];
 const PAGE_SIZE = 5;
 
 const moneyFmt = (v: number) => v.toLocaleString("vi-VN") + " đ";

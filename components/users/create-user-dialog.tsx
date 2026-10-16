@@ -28,6 +28,7 @@ type FormValues = {
   lastName: string;
   email: string;
   phone: string;
+  password: string;
   role: ManagedUserRole;
 };
 
@@ -36,8 +37,14 @@ const EMPTY_FORM: FormValues = {
   lastName: "",
   email: "",
   phone: "",
+  password: "",
   role: "TUTOR",
 };
+
+/* Gateway `createUserSchema`: names min 2, password 8–20 characters. */
+const NAME_MIN_LENGTH = 2;
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MAX_LENGTH = 20;
 
 function Field({
   label,
@@ -82,10 +89,19 @@ export function CreateUserDialog({ open, onClose, onCreated }: Props) {
   const validate = (): boolean => {
     const next: Partial<Record<keyof FormValues, string>> = {};
     if (!values.firstName.trim()) next.firstName = "Vui lòng nhập họ";
+    else if (values.firstName.trim().length < NAME_MIN_LENGTH)
+      next.firstName = `Họ phải có ít nhất ${NAME_MIN_LENGTH} ký tự`;
     if (!values.lastName.trim()) next.lastName = "Vui lòng nhập tên";
+    else if (values.lastName.trim().length < NAME_MIN_LENGTH)
+      next.lastName = `Tên phải có ít nhất ${NAME_MIN_LENGTH} ký tự`;
     if (!values.email.trim()) next.email = "Vui lòng nhập email";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim()))
       next.email = "Email không hợp lệ";
+    if (!values.password) next.password = "Vui lòng nhập mật khẩu";
+    else if (values.password.length < PASSWORD_MIN_LENGTH)
+      next.password = `Mật khẩu phải có ít nhất ${PASSWORD_MIN_LENGTH} ký tự`;
+    else if (values.password.length > PASSWORD_MAX_LENGTH)
+      next.password = `Mật khẩu tối đa ${PASSWORD_MAX_LENGTH} ký tự`;
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -99,6 +115,7 @@ export function CreateUserDialog({ open, onClose, onCreated }: Props) {
       email: values.email.trim(),
       phone: values.phone.trim() || undefined,
       role: values.role,
+      password: values.password,
     };
 
     createUser.mutate(payload, {
@@ -165,6 +182,20 @@ export function CreateUserDialog({ open, onClose, onCreated }: Props) {
             />
           </Field>
         </div>
+
+        <Field label="Mật khẩu" required error={errors.password}>
+          <Input
+            value={values.password}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, password: e.target.value }))
+            }
+            type="password"
+            autoComplete="new-password"
+            placeholder={`${PASSWORD_MIN_LENGTH}–${PASSWORD_MAX_LENGTH} ký tự`}
+            invalid={!!errors.password}
+            disabled={isPending}
+          />
+        </Field>
 
         <Field label="Email" required error={errors.email}>
           <Input

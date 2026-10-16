@@ -26,6 +26,7 @@ import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { getErrorMessage } from "@/lib/axios";
 import { useClassFormCopy } from "@/hooks/useClassFormCopy.hook";
 import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
+import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import { FieldError } from "../components/field-error";
 import type {
   ApiStudent,
@@ -81,6 +82,7 @@ function getInitialState(item: ClassesProps["classItem"]): FormState {
 export function EditClassDialog({ classItem, onClose }: ClassesProps) {
   const copy = useClassFormCopy();
   const commonCopy = useCommonCopy();
+  const role = useCurrentUserRole();
   const open = classItem !== null;
   const queryClient = useQueryClient();
   const prevClassItemRef = useRef(classItem);
@@ -179,8 +181,11 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
     },
   );
 
-  /* students fetch — all available students (for picker) */
-  const { data: studentsPayload, isLoading: studentsLoading } = useGet<
+  /* students fetch — all available students (for picker).
+   * Gateway `GET /students` is ADMIN-only; other roles can only pick from the
+   * current class members (no new students can be added). */
+  const canListAllStudents = role === "ADMIN";
+  const { data: studentsPayload, isLoading: studentsLoadingAll } = useGet<
     unknown,
     StudentsApiPayload
   >(["edit-class-students", studentSearch], "/students", {
@@ -188,13 +193,19 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
       limit: 100,
       ...(studentSearch.trim() ? { search: studentSearch.trim() } : {}),
     },
-    enabled: open,
+    enabled: open && canListAllStudents,
     select: (raw) => unwrapApiData<StudentsApiPayload>(raw),
   });
+  const studentsLoading = canListAllStudents
+    ? studentsLoadingAll
+    : !currentStudentsData;
 
   const allStudents = useMemo(
-    () => studentsPayload?.students ?? [],
-    [studentsPayload],
+    () =>
+      canListAllStudents
+        ? (studentsPayload?.students ?? [])
+        : (currentStudentsData ?? []),
+    [canListAllStudents, studentsPayload, currentStudentsData],
   );
 
   /* derive selected IDs — use override when user has made changes, else fall back to fetched */

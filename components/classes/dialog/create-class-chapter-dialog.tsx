@@ -1,35 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { BookOpen, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { axiosInstance, getErrorMessage } from "@/lib/axios";
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
-import { Select } from "@/components/ui/select.ui";
 
-type Grade = { id: string; name: string; level: number };
-
-/** Create-chapter dialog on the per-class curriculum page. */
+/** Create-chapter dialog on the per-class curriculum page (`POST /chapter/:curriculumId`). */
 export const CreateClassChapterDialog = ({
-  grades,
+  curriculumId,
   onClose,
   onCreated,
 }: {
-  grades: Grade[];
+  curriculumId: string;
   onClose: () => void;
   onCreated: () => void;
 }) => {
   const [title, setTitle] = useState("");
-  const [gradeId, setGradeId] = useState(grades[0]?.id ?? "");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!title.trim() || !gradeId) return;
+    if (!title.trim() || !curriculumId) return;
     setSubmitting(true);
     try {
-      await axiosInstance.post("/curriculum", { title: title.trim(), gradeId });
+      await axiosInstance.post(`/chapter/${curriculumId}`, {
+        title: title.trim(),
+      });
       toast.success("Đã tạo chương mới");
       onCreated();
       onClose();
@@ -39,11 +37,6 @@ export const CreateClassChapterDialog = ({
       setSubmitting(false);
     }
   };
-
-  const sortedGrades = useMemo(
-    () => [...grades].sort((a, b) => a.level - b.level),
-    [grades],
-  );
 
   return (
     <Dialog
@@ -67,17 +60,6 @@ export const CreateClassChapterDialog = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            disabled={submitting}
-          />
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium">Khối lớp</label>
-          <Select
-            value={gradeId}
-            onValueChange={setGradeId}
-            options={sortedGrades.map((g) => ({ label: g.name, value: g.id }))}
-            placeholder="Chọn khối lớp"
             disabled={submitting}
           />
         </div>
