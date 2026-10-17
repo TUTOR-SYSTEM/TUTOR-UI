@@ -3,11 +3,6 @@ import axios from "axios";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:8888";
 
-export type RefreshedTokens = {
-  accessToken: string;
-  refreshToken: string;
-};
-
 export const unwrapNestPayload = <T extends Record<string, unknown>>(
   body: unknown,
 ): T | undefined => {
@@ -21,26 +16,25 @@ export const unwrapNestPayload = <T extends Record<string, unknown>>(
   return body as T;
 };
 
-/** Không dùng `axiosInstance` để tránh gắn Bearer access (có thể đã hết hạn). */
-export async function postAuthRefresh(
-  refreshToken: string,
-): Promise<RefreshedTokens> {
+/**
+ * `POST /auth/refresh` — refresh token nằm trong cookie httpOnly `refresh_token` (gateway set,
+ * `path=/auth`), nên không gửi body và phải bật `withCredentials`. Trả access token mới; cookie
+ * được xoay vòng phía server. Không dùng `axiosInstance` để tránh gắn Bearer access đã hết hạn.
+ */
+export async function postAuthRefresh(): Promise<{ accessToken: string }> {
   const res = await axios.post<unknown>(
     `${API_BASE_URL}/auth/refresh`,
-    { refreshToken },
+    undefined,
     {
       headers: { "Content-Type": "application/json" },
       timeout: 10_000,
+      withCredentials: true,
     },
   );
-  const inner = unwrapNestPayload<{
-    accessToken?: string;
-    refreshToken?: string;
-  }>(res.data);
+  const inner = unwrapNestPayload<{ accessToken?: unknown }>(res.data);
   const accessToken = inner?.accessToken;
-  const nextRefresh = inner?.refreshToken;
-  if (typeof accessToken !== "string" || typeof nextRefresh !== "string") {
+  if (typeof accessToken !== "string" || accessToken.length === 0) {
     throw new Error("Invalid refresh response");
   }
-  return { accessToken, refreshToken: nextRefresh };
+  return { accessToken };
 }

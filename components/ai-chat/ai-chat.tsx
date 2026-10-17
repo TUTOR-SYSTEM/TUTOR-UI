@@ -15,10 +15,8 @@ export const AiChatPage = () => {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const chatMutation = usePost<
-    unknown,
-    { message: string; history: { role: string; content: string }[] }
-  >("/ai-chat/chat");
+  // Lịch sử hội thoại được server giữ theo userId; FE chỉ gửi tin nhắn mới.
+  const chatMutation = usePost<unknown, { message: string }>("/ai-chat/chat");
 
   const isLoading = chatMutation.isPending;
 
@@ -30,9 +28,8 @@ export const AiChatPage = () => {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
-    const history = messages.map((m) => ({ role: m.role, content: m.content }));
     chatMutation.mutate(
-      { message: text, history },
+      { message: text },
       {
         onSuccess: (res) => {
           const data = unwrapApiData<{ reply: string }>(res);
@@ -52,7 +49,7 @@ export const AiChatPage = () => {
         },
       },
     );
-  }, [input, isLoading, messages, chatMutation]);
+  }, [input, isLoading, chatMutation]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({

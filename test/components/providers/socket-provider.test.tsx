@@ -15,7 +15,7 @@ import { SocketProvider, useSocket } from "@/components/providers/socket.provide
 import { useAuthStore } from "@/zustand/auth.store";
 
 type FakeSocket = {
-  auth: { token: string };
+  auth: (cb: (data: { token: string | null }) => void) => void;
   on: ReturnType<typeof vi.fn>;
   off: ReturnType<typeof vi.fn>;
   connect: ReturnType<typeof vi.fn>;
@@ -24,7 +24,16 @@ type FakeSocket = {
 
 const createdSockets: FakeSocket[] = [];
 
-function fakeSocket(options: { auth: { token: string } }): FakeSocket {
+/** Đọc token mà socket sẽ gửi ở lần kết nối kế tiếp. */
+function tokenSentBy(socket: FakeSocket): string | null | undefined {
+  let sent: string | null | undefined;
+  socket.auth((data) => {
+    sent = data.token;
+  });
+  return sent;
+}
+
+function fakeSocket(options: { auth: FakeSocket["auth"] }): FakeSocket {
   const socket: FakeSocket = {
     auth: options.auth,
     on: vi.fn(),
@@ -56,10 +65,10 @@ describe("SocketProvider", () => {
     chat.available = true;
     createdSockets.length = 0;
     ioMock.mockReset();
-    ioMock.mockImplementation((_url: string, options: { auth: { token: string } }) =>
+    ioMock.mockImplementation((_url: string, options: { auth: FakeSocket["auth"] }) =>
       fakeSocket(options),
     );
-    useAuthStore.setState({ accessToken: null, refreshToken: null, user: null }, false);
+    useAuthStore.setState({ accessToken: null, user: null }, false);
   });
 
   it("does not connect while there is no access token", () => {
@@ -68,21 +77,22 @@ describe("SocketProvider", () => {
     expect(seen.current?.socket).toBeNull();
   });
 
-  it("connects with the token present at mount and reconnects with the new token after a token change", () => {
+  it("connects once at mount and keeps the same socket across a token refresh (only auth is updated)", () => {
     useAuthStore.setState({ accessToken: "token-1" }, false);
     const seen = renderProvider();
     expect(ioMock).toHaveBeenCalledTimes(1);
-    expect(createdSockets[0].auth.token).toBe("token-1");
+    expect(tokenSentBy(createdSockets[0])).toBe("token-1");
     expect(createdSockets[0].connect).toHaveBeenCalledTimes(1);
 
     act(() => {
       useAuthStore.setState({ accessToken: "token-2" }, false);
     });
 
-    expect(createdSockets[0].disconnect).toHaveBeenCalled();
-    expect(ioMock).toHaveBeenCalledTimes(2);
-    expect(createdSockets[1].auth.token).toBe("token-2");
-    expect(seen.current?.socket).toBe(createdSockets[1]);
+    // Refresh không ngắt kết nối; lần reconnect sau sẽ dùng token mới.
+    expect(createdSockets[0].disconnect).not.toHaveBeenCalled();
+    expect(ioMock).toHaveBeenCalledTimes(1);
+    expect(tokenSentBy(createdSockets[0])).toBe("token-2");
+    expect(seen.current?.socket).toBe(createdSockets[0]);
   });
 
   it("disconnects and drops the socket on logout", () => {

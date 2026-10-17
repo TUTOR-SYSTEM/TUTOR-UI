@@ -51,6 +51,7 @@ import {
   fmtDateTime,
   fmtTime,
 } from "@/components/sessions/session-shared";
+import { canUploadFiles, pickUploadFiles } from "@/lib/upload-policy";
 
 /* ─── Upload form helpers ─────────────────────────────────────────────────── */
 
@@ -203,12 +204,13 @@ export const ExerciseSubmitPage = ({
 
   /* ── Upload picked files to /upload, then stage locally ── */
   const onPickFiles = useCallback(async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+    const picked = pickUploadFiles(files);
+    if (picked.length === 0) return;
     setUploading(true);
     try {
       const uploaded: SessionFile[] = [];
       const sizes: Record<string, number> = {};
-      for (const file of Array.from(files)) {
+      for (const file of picked) {
         const fd = new FormData();
         fd.append("file", file);
         const res = await axiosInstance.post("/upload", fd, {
@@ -619,7 +621,7 @@ export const ExerciseSubmitPage = ({
                             multiple
                             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar"
                             className="hidden"
-                            disabled={uploading}
+                            disabled={uploading || !canUploadFiles(role)}
                             onChange={(e) => onPickFiles(e.target.files)}
                           />
                           {uploading ? (

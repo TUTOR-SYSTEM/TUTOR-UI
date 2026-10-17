@@ -31,6 +31,7 @@ import type {
   DashboardScheduleItem,
   DashboardStats,
 } from "@/types";
+import { safeRedirectHref } from "@/lib/notification-redirect";
 
 /* ─── helpers ─── */
 function getGreeting(labels: DashboardDictionary["greeting"]) {
@@ -394,7 +395,7 @@ export default function HomePage() {
                       {n.title}
                       {" · "}
                       <Link
-                        href={n.redirectUrl || "/notifications"}
+                        href={safeRedirectHref(n.redirectUrl) ?? "/notifications"}
                         className="font-medium text-[#0E9F8E] hover:underline"
                       >
                         {n.actionLabel || copy.notifications.detail}

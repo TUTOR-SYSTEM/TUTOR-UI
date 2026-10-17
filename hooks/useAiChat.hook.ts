@@ -13,9 +13,9 @@ export interface ChatMessage {
   content: string;
 }
 
+/** Chỉ gửi tin nhắn mới: gateway bỏ `history` và server giữ lịch sử theo userId. */
 interface ChatRequest {
   message: string;
-  history: ChatMessage[];
 }
 
 /** Shape returned by `POST /ai-chat/chat` after the Nest response envelope is unwrapped. */
@@ -30,8 +30,8 @@ const WELCOME_MESSAGE: ChatMessage = {
 };
 
 /**
- * Conversation state + send logic for the AI chat widget.
- * Sends the running history so the assistant keeps context across turns.
+ * Conversation state + send logic for the AI chat widget. Hiển thị lịch sử ở FE; ngữ cảnh
+ * hội thoại do server giữ theo userId.
  */
 export function useAiChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
@@ -42,11 +42,10 @@ export function useAiChat() {
       const content = raw.trim();
       if (!content || mutation.isPending) return;
 
-      const history = messages;
       setMessages((prev) => [...prev, { role: "user", content }]);
 
       try {
-        const body = await mutation.mutateAsync({ message: content, history });
+        const body = await mutation.mutateAsync({ message: content });
         const { reply } = unwrapApiData<ChatReply>(body);
         setMessages((prev) => [
           ...prev,
@@ -68,7 +67,7 @@ export function useAiChat() {
         ]);
       }
     },
-    [messages, mutation],
+    [mutation],
   );
 
   const reset = useCallback(() => setMessages([WELCOME_MESSAGE]), []);

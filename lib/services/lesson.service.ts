@@ -15,23 +15,6 @@ import type {
 
 export const LESSONS_QUERY_KEY = ["lessons"] as const;
 
-// ─── Plain functions ─────────────────────────────────────────────────────────
-
-export async function apiUploadLessonFile(
-  lessonId: string,
-  type: "theory" | "exercises",
-  file: File,
-): Promise<LessonItem> {
-  const formData = new FormData();
-  formData.append("file", file);
-  const url =
-    type === "theory"
-      ? `/curriculum/lessons/${lessonId}/add-theory`
-      : `/curriculum/lessons/${lessonId}/exercises`;
-  const raw = await axiosInstance.put<ApiResponse<LessonItem>>(url, formData);
-  return unwrapApiData<LessonItem>(raw.data);
-}
-
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 /** All lesson queries + mutations behind one hook: `useLessonActions({...}).create.mutate(...)`. */

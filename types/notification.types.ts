@@ -26,12 +26,13 @@ export type NotificationsApiPayload = {
   };
 };
 
+/** `content` bắt buộc: cột DB `notifications.content` là NOT NULL. */
 export type CreateNotificationPayload = {
   type: NotificationType;
   title: string;
-  content?: string;
+  content: string;
   subContent?: string;
 };
 
 /** `PATCH /notifications/read-all` response. */
-export type MarkAllReadResult = { markedAll: true };
+export type MarkAllReadResult = { markedAll: true; count: number };

@@ -23,6 +23,17 @@ vi.mock("next/image", () => ({
 
 import AppSidebar from "@/components/layout/app-sidebar";
 
+// Sign-out goes through a TanStack mutation; stub it so the sidebar renders without a QueryClient.
+const logoutMock = vi.hoisted(() => ({ mutate: vi.fn() }));
+vi.mock("@/lib/services/auth.service", () => ({
+  useAuthActions: () => ({ logout: {
+    mutate: (_payload: unknown, opts?: { onSettled?: () => void }) => {
+      logoutMock.mutate();
+      opts?.onSettled?.();
+    },
+  } }),
+}));
+
 const initialAuth = useAuthStore.getState();
 
 const jwt = (payload: Record<string, unknown>) =>
@@ -264,10 +275,11 @@ describe("AppSidebar", () => {
       expect(screen.getByRole("button", { name: copy.userMenu.signOut })).toBeInTheDocument();
     });
 
-    it("signs out: clears the access token and routes to /login", () => {
+    it("signs out: calls the server logout, clears the access token and routes to /login", () => {
       render(<AppSidebar />);
       openMenu();
       fireEvent.click(screen.getByRole("button", { name: copy.userMenu.signOut }));
+      expect(logoutMock.mutate).toHaveBeenCalledTimes(1);
       expect(useAuthStore.getState().accessToken).toBeNull();
       expect(router.push).toHaveBeenCalledWith("/login");
     });

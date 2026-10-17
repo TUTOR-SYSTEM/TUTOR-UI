@@ -28,22 +28,24 @@ const SOCKET_URL =
   process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:8888";
 
 export function SocketProvider({ children }: { children: ReactNode }) {
-  // The token is a reactive dependency: a new socket is built when the access token changes
-  // (login, refresh, logout) instead of reading the token once at mount. The socket is created
-  // with autoConnect off and only connected inside the effect below.
+  // Socket được tạo lại khi phiên bắt đầu/kết thúc (có/không có token), KHÔNG khi access token
+  // đổi do refresh — refresh chỉ cập nhật `socket.auth` cho lần kết nối sau. Tránh disconnect/
+  // connect mỗi lần làm mới token.
   const accessToken = useAuthStore((s) => s.accessToken);
+  const hasSession = Boolean(accessToken);
   const socket = useMemo<Socket | null>(() => {
     // Gateway does not proxy the `/chat` namespace yet (see lib/chat/availability.ts).
-    if (!CHAT_AVAILABLE || !accessToken) return null;
+    if (!CHAT_AVAILABLE || !hasSession) return null;
     return io(`${SOCKET_URL}/chat`, {
-      auth: { token: accessToken },
+      // Hàm auth được gọi mỗi lần kết nối/reconnect, nên luôn lấy token hiện tại (sau refresh).
+      auth: (cb) => cb({ token: useAuthStore.getState().accessToken }),
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
       autoConnect: false,
     });
-  }, [accessToken]);
+  }, [hasSession]);
 
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
@@ -87,6 +89,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       socket.off("connect_error", handleConnectError);
       socket.disconnect();
       setIsConnected(false);
+      setOnlineUsers(new Set());
     };
   }, [socket]);
 

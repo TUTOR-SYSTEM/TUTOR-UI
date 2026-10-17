@@ -9,6 +9,9 @@ export type AuthDictionary = {
     hidePassword: string;
     processing: string;
     encryptedNote: string;
+    requiredField: string;
+    passwordTooShort: string;
+    passwordTooLong: string;
     backToLogin: string;
     back: string;
     footer: string;
@@ -38,7 +41,6 @@ export type AuthDictionary = {
     passwordLabel: string;
     passwordPlaceholder: string;
     forgotPassword: string;
-    rememberMe: string;
     submit: string;
     errorFallback: string;
     noAccount: string;
@@ -94,6 +96,18 @@ export type AuthDictionary = {
     successSubtitle: string;
     loginNow: string;
   };
+  verifyEmail: {
+    heading: string;
+    verifyingTitle: string;
+    verifyingSubtitle: string;
+    missingToken: string;
+    successTitle: string;
+    successSubtitle: string;
+    loginNow: string;
+    errorTitle: string;
+    errorSubtitle: string;
+    errorFallback: string;
+  };
   oauthCallback: {
     title: string;
     subtitle: string;
@@ -110,6 +124,10 @@ const vi: AuthDictionary = {
     hidePassword: "Ẩn mật khẩu",
     processing: "Đang xử lý…",
     encryptedNote: "Thông tin của bạn được bảo vệ & mã hóa",
+
+    requiredField: "Vui lòng nhập thông tin này",
+    passwordTooShort: "Mật khẩu phải có ít nhất 8 ký tự",
+    passwordTooLong: "Mật khẩu tối đa 100 ký tự",
     backToLogin: "Quay lại đăng nhập",
     back: "Quay lại",
     footer: "© 2026 Gia Sư Pro · Hỗ trợ · Điều khoản",
@@ -141,7 +159,6 @@ const vi: AuthDictionary = {
     passwordLabel: "Mật khẩu",
     passwordPlaceholder: "Nhập mật khẩu",
     forgotPassword: "Quên mật khẩu?",
-    rememberMe: "Ghi nhớ đăng nhập trên thiết bị này",
     submit: "Đăng nhập",
     errorFallback: "Đăng nhập thất bại",
     noAccount: "Chưa có tài khoản gia sư?",
@@ -197,6 +214,18 @@ const vi: AuthDictionary = {
     successSubtitle: "Mật khẩu của bạn đã được cập nhật. Hãy đăng nhập lại.",
     loginNow: "Đăng nhập ngay",
   },
+  verifyEmail: {
+    heading: "Xác minh email",
+    verifyingTitle: "Đang xác minh email…",
+    verifyingSubtitle: "Vui lòng đợi trong giây lát.",
+    missingToken: "Liên kết thiếu mã xác minh. Hãy mở lại liên kết trong email.",
+    successTitle: "Xác minh email thành công",
+    successSubtitle: "Tài khoản của bạn đã được xác minh. Hãy đăng nhập để tiếp tục.",
+    loginNow: "Đăng nhập ngay",
+    errorTitle: "Không thể xác minh email",
+    errorSubtitle: "Liên kết không hợp lệ hoặc đã hết hạn. Hãy đăng ký lại hoặc yêu cầu gửi lại email xác minh.",
+    errorFallback: "Xác minh email thất bại",
+  },
   oauthCallback: {
     title: "Đang đăng nhập…",
     subtitle: "Đang hoàn tất kết nối tài khoản",
@@ -213,6 +242,10 @@ const en: AuthDictionary = {
     hidePassword: "Hide password",
     processing: "Processing…",
     encryptedNote: "Your information is protected & encrypted",
+
+    requiredField: "This field is required",
+    passwordTooShort: "Password must be at least 8 characters",
+    passwordTooLong: "Password must be at most 100 characters",
     backToLogin: "Back to sign in",
     back: "Back",
     footer: "© 2026 Gia Sư Pro · Support · Terms",
@@ -244,7 +277,6 @@ const en: AuthDictionary = {
     passwordLabel: "Password",
     passwordPlaceholder: "Enter your password",
     forgotPassword: "Forgot password?",
-    rememberMe: "Remember me on this device",
     submit: "Sign in",
     errorFallback: "Sign in failed",
     noAccount: "Don't have a tutor account?",
@@ -299,6 +331,18 @@ const en: AuthDictionary = {
     successTitle: "Password changed successfully",
     successSubtitle: "Your password has been updated. Please sign in again.",
     loginNow: "Sign in now",
+  },
+  verifyEmail: {
+    heading: "Verify email",
+    verifyingTitle: "Verifying your email…",
+    verifyingSubtitle: "Please wait a moment.",
+    missingToken: "The link is missing a verification token. Please open the link from your email again.",
+    successTitle: "Email verified successfully",
+    successSubtitle: "Your account has been verified. Sign in to continue.",
+    loginNow: "Sign in now",
+    errorTitle: "Could not verify your email",
+    errorSubtitle: "The link is invalid or has expired. Please register again or request a new verification email.",
+    errorFallback: "Email verification failed",
   },
   oauthCallback: {
     title: "Signing you in…",

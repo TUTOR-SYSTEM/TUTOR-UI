@@ -22,28 +22,25 @@ describe("postAuthRefresh", () => {
     post.mockReset();
   });
 
-  it("posts the refresh token without the Bearer header and returns both tokens", async () => {
-    post.mockResolvedValue({ data: { data: { accessToken: "new-a", refreshToken: "new-r" } } });
+  it("posts without a body, sends the httpOnly cookie, and returns only the access token", async () => {
+    post.mockResolvedValue({ data: { data: { accessToken: "new-a" } } });
 
-    await expect(postAuthRefresh("old-r")).resolves.toEqual({
-      accessToken: "new-a",
-      refreshToken: "new-r",
-    });
+    await expect(postAuthRefresh()).resolves.toEqual({ accessToken: "new-a" });
 
     const [url, body, options] = post.mock.calls[0];
     expect(url).toMatch(/\/auth\/refresh$/);
-    expect(body).toEqual({ refreshToken: "old-r" });
-    expect(options.headers).toEqual({ "Content-Type": "application/json" });
+    expect(body).toBeUndefined();
+    expect(options.withCredentials).toBe(true);
     expect(options.headers.Authorization).toBeUndefined();
   });
 
-  it("throws when the response is missing either token", async () => {
-    post.mockResolvedValue({ data: { data: { accessToken: "only-a" } } });
-    await expect(postAuthRefresh("r")).rejects.toThrow("Invalid refresh response");
+  it("throws when the response has no access token", async () => {
+    post.mockResolvedValue({ data: { data: {} } });
+    await expect(postAuthRefresh()).rejects.toThrow("Invalid refresh response");
   });
 
   it("propagates transport errors", async () => {
     post.mockRejectedValue(new Error("ECONNREFUSED"));
-    await expect(postAuthRefresh("r")).rejects.toThrow("ECONNREFUSED");
+    await expect(postAuthRefresh()).rejects.toThrow("ECONNREFUSED");
   });
 });

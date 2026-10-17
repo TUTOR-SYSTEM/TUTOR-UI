@@ -5,6 +5,7 @@ import type {
   ApiResponse,
   DeleteResult,
   ChapterItem,
+  ChaptersApiPayload,
   CreateChapterPayload,
   UpdateChapterPayload,
 } from "@/types";
@@ -19,7 +20,7 @@ export const CHAPTERS_QUERY_KEY = ["chapters"] as const;
 export function useChapterActions(args?: {
   list?: { curriculumId: string; page?: number; limit?: number };
   listOptions?: Omit<
-    UseQueryOptions<ApiResponse<ChapterItem[]>, Error, ChapterItem[]>,
+    UseQueryOptions<ApiResponse<ChaptersApiPayload>, Error, ChapterItem[]>,
     "queryKey" | "queryFn"
   >;
   detailId?: string;
@@ -28,13 +29,14 @@ export function useChapterActions(args?: {
     "queryKey" | "queryFn"
   >;
 }) {
-  const list = useGet<ApiResponse<ChapterItem[]>, ChapterItem[]>(
+  // BE trả `{ chapters, pagination }` (không phải mảng trần).
+  const list = useGet<ApiResponse<ChaptersApiPayload>, ChapterItem[]>(
     [...CHAPTERS_QUERY_KEY, args?.list],
     "/chapter",
     {
       params: args?.list,
       enabled: !!args?.list,
-      select: (raw) => unwrapApiData<ChapterItem[]>(raw) ?? [],
+      select: (raw) => unwrapApiData<ChaptersApiPayload>(raw)?.chapters ?? [],
       ...args?.listOptions,
     },
   );

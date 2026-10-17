@@ -1,7 +1,10 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 import { ApiError, ApiErrorResponse } from "@/types";
-import { refreshAccessTokenViaStore } from "@/lib/axios/refresh-access-token";
+import {
+  refreshAccessTokenViaStore,
+  type RefreshOutcome,
+} from "@/lib/axios/refresh-access-token";
 import { getAccessToken } from "@/lib/axios/auth-storage";
 import { useAuthStore } from "@/zustand/auth.store";
 import { useLocaleStore } from "@/zustand/locale.store";
@@ -84,7 +87,8 @@ export const shouldSkip401Refresh = (
     key.includes("/auth/login") ||
     key.includes("/auth/register") ||
     key.includes("/auth/forgot-password") ||
-    key.includes("/auth/reset-password")
+    key.includes("/auth/reset-password") ||
+    key.includes("/auth/verify-email")
   );
 };
 
@@ -101,13 +105,20 @@ export const redirectToLogin = (): void => {
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:8888";
 
+/** `withCredentials`: refresh token là cookie httpOnly của gateway (`/auth/refresh`, `/auth/logout`). */
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30_000,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+const bearerOf = (header: unknown): string => {
+  const value = typeof header === "string" ? header : "";
+  return value.startsWith("Bearer ") ? value.slice("Bearer ".length) : "";
+};
 
 axiosInstance.interceptors.request.use((config) => {
   if (typeof window === "undefined") {
@@ -157,8 +168,17 @@ axiosInstance.interceptors.response.use(
         return Promise.reject(toApiError(error));
       }
 
-      const ok = await refreshAccessTokenViaStore();
-      if (!ok) {
+      // Request này gửi bằng access token cũ mà store đã có token mới (một 401 khác vừa refresh
+      // xong): retry ngay với token hiện tại, không gọi refresh lần nữa.
+      const current = useAuthStore.getState().accessToken;
+      const alreadyRotated =
+        Boolean(current) && bearerOf(config.headers?.Authorization) !== current;
+
+      let outcome: RefreshOutcome = "refreshed";
+      if (!alreadyRotated) {
+        outcome = await refreshAccessTokenViaStore();
+      }
+      if (outcome === "rejected") {
         redirectToLogin();
         return Promise.reject(
           new ApiError(
@@ -168,6 +188,18 @@ axiosInstance.interceptors.response.use(
           ),
         );
       }
+      if (outcome === "failed") {
+        // Lỗi tạm thời khi refresh: giữ phiên. Không trả 401 để caller (vd AuthProvider) không
+        // hiểu nhầm là phiên hết hạn và xóa token.
+        return Promise.reject(
+          new ApiError(
+            "Could not refresh your session. Please try again.",
+            undefined,
+            normalizeResponseData(error.response?.data),
+          ),
+        );
+      }
+
       const token = useAuthStore.getState().accessToken;
       config._retry401 = true;
       config.headers = config.headers ?? {};

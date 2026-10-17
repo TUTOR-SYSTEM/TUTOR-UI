@@ -45,6 +45,7 @@ import type {
   SessionFile,
   UploadResult,
 } from "@/types";
+import { canUploadFiles, pickUploadFiles } from "@/lib/upload-policy";
 
 type SessionDetailWatchPageProps = { classId: string; sessionId: string };
 
@@ -142,11 +143,12 @@ export const SessionDetailWatchPage = ({
 
   /* ── Upload picked files to storage (staged, not yet submitted) ── */
   const onPickFiles = useCallback(async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+    const picked = pickUploadFiles(files);
+    if (picked.length === 0) return;
     setUploading(true);
     try {
       const uploaded: SessionFile[] = [];
-      for (const file of Array.from(files)) {
+      for (const file of picked) {
         const fd = new FormData();
         fd.append("file", file);
         const res = await axiosInstance.post("/upload", fd, {
@@ -484,7 +486,7 @@ export const SessionDetailWatchPage = ({
                       type="file"
                       multiple
                       className="hidden"
-                      disabled={uploading}
+                      disabled={uploading || !canUploadFiles(role)}
                       onChange={(e) => onPickFiles(e.target.files)}
                     />
                     {uploading ? (

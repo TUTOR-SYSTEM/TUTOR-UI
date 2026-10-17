@@ -28,6 +28,9 @@ export type DashboardMonthly = {
   month: number; // 1..12
   revenue: number;
   sessions: number;
+  newStudents: number;
+  newClasses: number;
+  cumulativeRevenue: number;
 };
 
 export type DashboardStats = {
@@ -35,6 +38,8 @@ export type DashboardStats = {
   studentsCount: number;
   sessionsThisWeek: number;
   sessionsCompletedThisWeek: number;
+  sessionsTodayCompleted: number;
+  sessionsTodayPending: number;
   revenueThisMonth: number;
   overdueTuitionCount: number;
   unpaidTuitionAmount: number;
@@ -44,6 +49,8 @@ export type DashboardOverview = {
   role: "ADMIN" | "TUTOR" | "STUDENT" | "PARENT" | string;
   stats: DashboardStats;
   todaySchedule: DashboardScheduleItem[];
+  upcomingSchedule: DashboardScheduleItem[];
   monthly: DashboardMonthly[];
+  /** Best-effort từ tutor-service: lỗi phía notification trả `[]`. */
   recentNotifications: DashboardNotification[];
 };

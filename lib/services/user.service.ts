@@ -1,5 +1,6 @@
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
-import { apiGet, useGet, usePost, usePut, useDelete } from "@/lib/axios/query";
+import { apiGet, apiPut, useGet, usePost, usePut, useDelete } from "@/lib/axios/query";
+import { useMutation } from "@tanstack/react-query";
 import { axiosInstance } from "@/lib/axios";
 import type { UseQueryOptions } from "@tanstack/react-query";
 import type {
@@ -28,17 +29,6 @@ export async function apiGetCurrentUser(): Promise<ApiUser> {
   return unwrapApiData<ApiUser>(raw);
 }
 
-export async function apiUploadAvatar(file: File): Promise<{ avatar: string }> {
-  const formData = new FormData();
-  formData.append("avatar", file);
-  const raw = await axiosInstance.post<ApiResponse<{ avatar: string }>>(
-    "/users/avatar",
-    formData,
-    { headers: { "Content-Type": "multipart/form-data" } },
-  );
-  return unwrapApiData<{ avatar: string }>(raw.data);
-}
-
 export async function apiUpdateProfile(
   payload: UpdateUserProfilePayload,
 ): Promise<Partial<ApiUser>> {
@@ -47,10 +37,6 @@ export async function apiUpdateProfile(
     payload,
   );
   return unwrapApiData<Partial<ApiUser>>(raw.data);
-}
-
-export async function apiUpdateUserGrades(gradesId: string[]): Promise<void> {
-  await axiosInstance.put("/users/grade", { gradesId });
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -144,10 +130,18 @@ export function useUserActions(args?: {
   const deleteManaged = useDelete<ApiResponse<DeleteResult>, string>(
     (id) => `/users/${id}`,
   );
-  const toggleStatus = usePut<
+  /** `PUT /users/:id/status` nhận `{ isActive }` tường minh (idempotent); `id` đi vào URL. */
+  const toggleStatus = useMutation<
     ApiResponse<ApiManagedUser>,
+    Error,
     { id: string; isActive: boolean }
-  >((payload) => `/users/${payload.id}/status`);
+  >({
+    mutationFn: ({ id, isActive }) =>
+      apiPut<ApiResponse<ApiManagedUser>, { isActive: boolean }>(
+        `/users/${id}/status`,
+        { isActive },
+      ),
+  });
   const changePassword = usePost<
     ApiResponse<ChangePasswordResult>,
     ChangePasswordPayload

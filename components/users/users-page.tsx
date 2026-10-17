@@ -9,7 +9,8 @@ import { CreateUserDialog } from "./create-user-dialog";
 import { EditUserDialog, type ManagedUser } from "./edit-user-dialog";
 import { DeleteUserDialog } from "./delete-user-dialog";
 import { ROLE_COLOR, ROLE_LABEL } from "./role-options";
-import { useGet, useDelete, usePut } from "@/lib/axios/query";
+import { useGet, useDelete } from "@/lib/axios/query";
+import { useUserActions } from "@/lib/services/user.service";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { getErrorMessage } from "@/lib/axios";
 import { cn } from "@/lib/utils";
@@ -146,17 +147,7 @@ export function UsersPage() {
     onError: (err) => toast.error(getErrorMessage(err, "Xóa thất bại")),
   });
 
-  const toggleStatus = usePut<
-    ApiManagedUser,
-    { id: string; isActive: boolean }
-  >((payload) => `/users/${payload.id}/status`, {
-    onSuccess: () => {
-      invalidate();
-      toast.success("Cập nhật trạng thái thành công!");
-    },
-    onError: (err) =>
-      toast.error(getErrorMessage(err, "Cập nhật trạng thái thất bại")),
-  });
+  const { toggleStatus } = useUserActions();
 
   const handleDelete = (id: string) => {
     deleteUser.mutate(id, { onSuccess: () => setDeletingUser(null) });
@@ -172,7 +163,17 @@ export function UsersPage() {
     ) {
       return;
     }
-    toggleStatus.mutate({ id: user.id, isActive: !user.isActive });
+    toggleStatus.mutate(
+      { id: user.id, isActive: !user.isActive },
+      {
+        onSuccess: () => {
+          invalidate();
+          toast.success("Cập nhật trạng thái thành công!");
+        },
+        onError: (err) =>
+          toast.error(getErrorMessage(err, "Cập nhật trạng thái thất bại")),
+      },
+    );
   };
 
   const columns: DataTableColumn<ManagedUser>[] = [

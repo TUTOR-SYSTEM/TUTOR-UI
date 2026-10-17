@@ -39,6 +39,15 @@ export const ROUTE_ACCESS: readonly RouteAccessRule[] = [
   { prefix: "/discussions", allow: ["TUTOR", "STUDENT", "PARENT"] },
   { prefix: "/notifications", allow: ["TUTOR", "STUDENT", "PARENT"] },
   { prefix: "/ai-chat", allow: ["TUTOR", "STUDENT", "PARENT"] },
+  // Trang legacy (quản lý tài chính cá nhân từ bản mẫu cũ): không có menu và không có API tương
+  // ứng ở gateway. Khóa cho mọi role thay vì để mặc định "mọi role đã đăng nhập".
+  { prefix: "/accounts", allow: [] },
+  { prefix: "/transactions", allow: [] },
+  { prefix: "/budgets", allow: [] },
+  { prefix: "/categories", allow: [] },
+  { prefix: "/analytics", allow: [] },
+  { prefix: "/investments", allow: [] },
+  { prefix: "/practice-exams", allow: [] },
 ] as const;
 
 const matchesPrefix = (pathname: string, prefix: string): boolean =>

@@ -2,16 +2,13 @@ import { Suspense } from "react";
 
 import ResetPass from "@/components/auth/reset-pass";
 import { AuthScreen } from "@/components/auth/auth-ui";
-import { redirectIfAuthenticated } from "@/lib/axios/auth-redirect";
 
 export const metadata = {
   title: "Đặt lại mật khẩu | Tutor Pro",
   description: "Tạo mật khẩu mới cho tài khoản của bạn",
 };
 
-export default async function ResetPasswordPage() {
-  await redirectIfAuthenticated();
-
+export default function ResetPasswordPage() {
   return (
     <AuthScreen>
       <Suspense

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button.ui";
 import { FileRow } from "./file-row";
 import { useCurriculumCopy } from "@/hooks/useCurriculumCopy.hook";
 import type { CurriculumLessonFile } from "@/types";
+import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
+import { canUploadFiles } from "@/lib/upload-policy";
 
 type MaterialGroupProps = {
   badgeLabel: string;
@@ -30,6 +32,7 @@ export function MaterialGroup({
   onRemove,
 }: MaterialGroupProps) {
   const { detail: t } = useCurriculumCopy();
+  const role = useCurrentUserRole();
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -39,6 +42,7 @@ export function MaterialGroup({
           ref={inputRef}
           type="file"
           className="hidden"
+          disabled={!canUploadFiles(role)}
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) onUpload(file);

@@ -23,6 +23,7 @@ import UsageGuides, {
 import { useCurriculumCopy } from "@/hooks/useCurriculumCopy.hook";
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/axios";
+import { CURRICULUM_QUERY_KEY } from "@/lib/services/curriculum.service";
 
 /* ─── Icon color presets ─────────────────────────────────── */
 
@@ -36,7 +37,6 @@ const ICON_COLORS = [
 ];
 
 const DEFAULT_PAGE_SIZE = 10;
-const CURRICULUM_QUERY_KEY = ["curriculum-frameworks"] as const;
 
 function formatDate(iso: string): string {
   if (!iso) return "—";

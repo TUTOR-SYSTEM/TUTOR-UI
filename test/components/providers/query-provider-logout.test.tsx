@@ -23,7 +23,7 @@ function renderProvider() {
 
 describe("QueryProvider sign-out", () => {
   beforeEach(() => {
-    useAuthStore.setState({ accessToken: "token-a", refreshToken: null, user: null }, false);
+    useAuthStore.setState({ accessToken: "token-a", user: null }, false);
   });
 
   it("clears the cached queries of the previous user when the session is cleared", () => {

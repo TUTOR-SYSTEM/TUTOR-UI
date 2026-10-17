@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button.ui";
 import { Input } from "@/components/ui/input.ui";
 import { TableRow, TableCell } from "@/components/ui/table.ui";
 import { FileChip, type LessonFile } from "./curriculum-file-chip";
+import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
+import { canUploadFiles } from "@/lib/upload-policy";
 
 export type Lesson = {
   id: string;
@@ -40,6 +42,7 @@ export const LessonRow = ({
     null,
   );
   const [removing, setRemoving] = useState<string | null>(null);
+  const role = useCurrentUserRole();
 
   const uploadFile = useCallback(
     async (type: "theory" | "exercise", file: File) => {
@@ -130,6 +133,7 @@ export const LessonRow = ({
               ref={theoryRef}
               type="file"
               className="hidden"
+              disabled={!canUploadFiles(role)}
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) uploadFile("theory", f);
@@ -174,6 +178,7 @@ export const LessonRow = ({
               ref={exerciseRef}
               type="file"
               className="hidden"
+              disabled={!canUploadFiles(role)}
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) uploadFile("exercise", f);

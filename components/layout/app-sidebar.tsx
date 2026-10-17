@@ -27,6 +27,7 @@ import { SidebarProvider } from "@/components/ui/sidebar.ui";
 import { useAuthStore } from "@/zustand/auth.store";
 import { useCurrentUserRole, type UserRole } from "@/hooks/useCurrentUserRole";
 import { useAuth } from "@/components/providers/auth.provider";
+import { useAuthActions } from "@/lib/services/auth.service";
 import { useAppShellCopy } from "@/hooks/useAppShellCopy.hook";
 import type { AppShellDictionary } from "@/lib/i18n/app-shell.dictionary";
 import MenuPopover from "@/components/ui/menu-popover.ui";
@@ -190,11 +191,17 @@ const AppSidebar = () => {
   const gradientIndex = stringToHash(displayName) % AVATAR_GRADIENTS.length;
   const gradientClass = AVATAR_GRADIENTS[gradientIndex];
   const router = useRouter();
-  const { setAccessToken } = useAuth();
+  const { clearSession } = useAuth();
+  const { logout } = useAuthActions();
 
+  /** Thu hồi session phía server trước; dù lỗi mạng vẫn xóa state local và về trang đăng nhập. */
   const signOut = () => {
-    setAccessToken(null);
-    router.push("/login");
+    logout.mutate(undefined, {
+      onSettled: () => {
+        clearSession();
+        router.push("/login");
+      },
+    });
   };
 
   return (
