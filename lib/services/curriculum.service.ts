@@ -3,7 +3,6 @@ import { useGet, usePost, usePut, useDelete } from "@/lib/axios/query";
 import type { UseQueryOptions } from "@tanstack/react-query";
 import type {
   ApiResponse,
-  DeleteResult,
   CurriculumFramework,
   CurriculumFrameworksApiPayload,
   CurriculumDetail,
@@ -73,7 +72,8 @@ export function useCurriculumActions(args?: {
     ApiResponse<CurriculumFramework>,
     { id: string } & UpdateCurriculumPayload
   >((payload) => `/curriculum/${payload.id}`);
-  const del = useDelete<ApiResponse<DeleteResult>, string>(
+  /** Backend replies `data: true` when a row was deleted, `false` when nothing matched. */
+  const del = useDelete<ApiResponse<boolean>, string>(
     (id) => `/curriculum/${id}`,
   );
 

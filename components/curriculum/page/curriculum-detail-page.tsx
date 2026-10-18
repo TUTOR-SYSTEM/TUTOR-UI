@@ -57,7 +57,7 @@ export const CurriculumDetailPage = ({ frameworkId }: Props) => {
   const handleDeleteChapter = useCallback(
     async (chapterId: string) => {
       try {
-        await axiosInstance.delete(`/chapter/${chapterId}`);
+        await axiosInstance.delete(`/chapters/${chapterId}`);
         refetch();
         toast.success(t.deleteChapterToastSuccess);
       } catch (err) {

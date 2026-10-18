@@ -129,6 +129,7 @@ export type StudentsDictionary = {
     genderLabel: string;
     genderMale: string;
     genderFemale: string;
+    genderOther: string;
     classLabel: string;
     classPlaceholder: string;
     studentPhoneLabel: string;
@@ -161,6 +162,7 @@ export type StudentsDictionary = {
     genderLabel: string;
     genderMale: string;
     genderFemale: string;
+    genderOther: string;
     birthdayLabel: string;
     studentPhoneLabel: string;
     studentPhonePlaceholder: string;
@@ -337,6 +339,7 @@ const vi: StudentsDictionary = {
     genderLabel: "Giới tính",
     genderMale: "Nam",
     genderFemale: "Nữ",
+    genderOther: "Khác",
     classLabel: "Lớp học",
     classPlaceholder: "Chọn lớp học...",
     studentPhoneLabel: "SĐT học sinh",
@@ -370,6 +373,7 @@ const vi: StudentsDictionary = {
     genderLabel: "Giới tính",
     genderMale: "Nam",
     genderFemale: "Nữ",
+    genderOther: "Khác",
     birthdayLabel: "Ngày sinh",
     studentPhoneLabel: "SĐT học sinh",
     studentPhonePlaceholder: "VD: 0901 234 567",
@@ -548,6 +552,7 @@ const en: StudentsDictionary = {
     genderLabel: "Gender",
     genderMale: "Male",
     genderFemale: "Female",
+    genderOther: "Other",
     classLabel: "Class",
     classPlaceholder: "Select a class...",
     studentPhoneLabel: "Student phone",
@@ -581,6 +586,7 @@ const en: StudentsDictionary = {
     genderLabel: "Gender",
     genderMale: "Male",
     genderFemale: "Female",
+    genderOther: "Other",
     birthdayLabel: "Date of birth",
     studentPhoneLabel: "Student phone",
     studentPhonePlaceholder: "e.g. 0901 234 567",

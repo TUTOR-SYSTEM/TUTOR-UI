@@ -1,4 +1,4 @@
-/** Chương (chapter) trong khung chương trình — backed by `/chapter` on the API. */
+/** Chương (chapter) trong khung chương trình — backed by `/chapters` on the API. */
 
 /** Row chương BE trả về (bảng `chapters`). */
 export type ChapterItem = {
@@ -11,7 +11,7 @@ export type ChapterItem = {
   updatedAt: string;
 };
 
-/** `GET /chapter` — danh sách có phân trang. */
+/** `GET /chapters` — danh sách có phân trang. */
 export type ChaptersApiPayload = {
   chapters: ChapterItem[];
   pagination: {
@@ -22,12 +22,12 @@ export type ChaptersApiPayload = {
   };
 };
 
-/** Body `POST /chapter/:curriculumId`. */
+/** Body `POST /chapters/:curriculumId`. */
 export type CreateChapterPayload = {
   title: string;
   description?: string;
   order?: number;
 };
 
-/** Body `PUT /chapter/:id`. */
+/** Body `PUT /chapters/:id`. */
 export type UpdateChapterPayload = Partial<CreateChapterPayload>;

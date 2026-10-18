@@ -42,7 +42,7 @@ function buildSchema(t: StudentsDictionary["editDialog"]) {
       .min(1, t.errStudentNameRequired)
       .max(255, t.errNameMax255),
     classId: z.string().optional(),
-    gender: z.enum(["MALE", "FEMALE"]),
+    gender: z.enum(["MALE", "FEMALE", "OTHER"]),
     birthday: z.string().optional(),
     studentPhone: z
       .union([
@@ -70,7 +70,10 @@ function getDefaultValues(student: Student): FormValues {
   return {
     studentName: student.name,
     classId: student.classId ?? "",
-    gender: student.gender === "FEMALE" ? "FEMALE" : "MALE",
+    gender:
+      student.gender === "FEMALE" || student.gender === "OTHER"
+        ? student.gender
+        : "MALE",
     birthday: student.dateOfBirth ? student.dateOfBirth.slice(0, 10) : "",
     studentPhone: student.phone ?? "",
     school: student.school ?? "",
@@ -291,7 +294,7 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
                 name="gender"
                 control={control}
                 render={({ field }) => (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {(
                       [
                         { value: "MALE", label: copy.editDialog.genderMale },
@@ -299,6 +302,7 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
                           value: "FEMALE",
                           label: copy.editDialog.genderFemale,
                         },
+                        { value: "OTHER", label: copy.editDialog.genderOther },
                       ] as const
                     ).map((opt) => {
                       const selected = field.value === opt.value;

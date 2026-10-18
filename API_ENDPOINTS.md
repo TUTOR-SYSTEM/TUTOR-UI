@@ -123,13 +123,9 @@
 | PUT    | `/users/:id/status`      | JWT  | 400                  | —                                                 | `"User Id must be uuid"` • `"User not found"`                                                                                                                                                                                | All          |          |
 | DELETE | `/users/:id`             | JWT  | success              | —                                                 | `{ id: string }`                                                                                                                                                                                                             | All          |          |
 | DELETE | `/users/:id`             | JWT  | 400                  | —                                                 | `"User Id must be uuid"` • `"User not found"`                                                                                                                                                                                | All          |          |
-| POST   | `/users/avatar`          | JWT  | success              | Multipart: `avatar`                               | `{ url, key, size, mimetype }`                                                                                                                                                                                               | All          |          |
-| POST   | `/users/avatar`          | JWT  | 400                  | Multipart                                         | `"User Id must be uuid"` • `"User not found"`                                                                                                                                                                                | All          |          |
 | GET    | `/users/grades`          | JWT  | success              | —                                                 | Grades list                                                                                                                                                                                                                  | ADMIN, TUTOR |          |
 | PUT    | `/users/grades/:id`      | JWT  | success              | `{ name?, level? }`                               | Updated grade                                                                                                                                                                                                                | ADMIN, TUTOR |          |
 | PUT    | `/users/grades/:id`      | JWT  | 400                  | Body                                              | `"Grade not found"`                                                                                                                                                                                                          | ADMIN, TUTOR |          |
-| PUT    | `/users/grade`           | JWT  | success              | `{ gradeIds: string[] }`                          | Updated user grades                                                                                                                                                                                                          | ADMIN, TUTOR |          |
-| PUT    | `/users/grade`           | JWT  | 400                  | Body                                              | `"One or more grade IDs are invalid"`                                                                                                                                                                                        | ADMIN, TUTOR |          |
 | POST   | `/users/change-password` | JWT  | success              | `{ oldPassword, newPassword }`                    | `{ message }`                                                                                                                                                                                                                | All          |          |
 | POST   | `/users/change-password` | JWT  | 400                  | Body                                              | `"User not found"`                                                                                                                                                                                                           | All          |          |
 | POST   | `/users/change-password` | JWT  | 401                  | Body                                              | `"Current password is incorrect"`                                                                                                                                                                                            | All          |          |
@@ -361,26 +357,26 @@ nhà") — all optional, default `[]`/`null`, not yet rendered by any FE page as
 
 ---
 
-## 10. Chapter — `/chapter`
+## 10. Chapter — `/chapters`
 
 
 | M      | Path                     | Auth | Scenario          | Payload                                       | Response                                                         | Roles | Status |
 | ------ | ------------------------ | ---- | ----------------- | --------------------------------------------- | ---------------------------------------------------------------- | ----- | ------ |
-| POST   | `/chapter/:curriculumId` | JWT  | success           | `{ name, description?, order? }`              | Created chapter                                                  | All   |        |
-| POST   | `/chapter/:curriculumId` | JWT  | 400/404           | Body                                          | `"curriculumId must be a valid UUID"` • `"Curriculum not found"` | All   |        |
-| POST   | `/chapter/:curriculumId` | JWT  | 422: title        | missing • &gt; 255                            | `"Title is required"` • `"Title too long"`                       | All   |        |
-| POST   | `/chapter/:curriculumId` | JWT  | 422: order        | invalid int                                   | Zod default                                                      | All   |        |
-| GET    | `/chapter`               | JWT  | success           | Query: `curriculumId (required), page, limit` | Paginated chapters                                               | All   |        |
-| GET    | `/chapter`               | JWT  | 400               | Query                                         | `"curriculumId must be a valid UUID"`                            | All   |        |
-| GET    | `/chapter`               | JWT  | 422: curriculumId | missing                                       | `"Invalid curriculum ID"`                                        | All   |        |
-| GET    | `/chapter`               | JWT  | 422: page/limit   | out of range                                  | Same as users                                                    | All   |        |
-| GET    | `/chapter/:id`           | JWT  | success           | —                                             | Chapter detail                                                   | All   |        |
-| GET    | `/chapter/:id`           | JWT  | 400/404           | —                                             | `"Invalid chapter id"` • `"Chapter not found"`                   | All   |        |
-| PUT    | `/chapter/:id`           | JWT  | success           | `{ name?, description?, order? }`             | Updated chapter                                                  | All   |        |
-| PUT    | `/chapter/:id`           | JWT  | 400/404           | Body                                          | `"Invalid chapter id"` • `"Chapter not found"`                   | All   |        |
-| PUT    | `/chapter/:id`           | JWT  | 422               | Body invalid                                  | Same field rules as `POST /chapter` (all optional)               | All   |        |
-| DELETE | `/chapter/:id`           | JWT  | success           | —                                             | Deletion result                                                  | All   |        |
-| DELETE | `/chapter/:id`           | JWT  | 400/404           | —                                             | `"Invalid chapter id"` • `"Chapter not found"`                   | All   |        |
+| POST   | `/chapters/:curriculumId` | JWT  | success           | `{ name, description?, order? }`              | Created chapter                                                  | All   |        |
+| POST   | `/chapters/:curriculumId` | JWT  | 400/404           | Body                                          | `"curriculumId must be a valid UUID"` • `"Curriculum not found"` | All   |        |
+| POST   | `/chapters/:curriculumId` | JWT  | 422: title        | missing • &gt; 255                            | `"Title is required"` • `"Title too long"`                       | All   |        |
+| POST   | `/chapters/:curriculumId` | JWT  | 422: order        | invalid int                                   | Zod default                                                      | All   |        |
+| GET    | `/chapters`               | JWT  | success           | Query: `curriculumId (required), page, limit` | Paginated chapters                                               | All   |        |
+| GET    | `/chapters`               | JWT  | 400               | Query                                         | `"curriculumId must be a valid UUID"`                            | All   |        |
+| GET    | `/chapters`               | JWT  | 422: curriculumId | missing                                       | `"Invalid curriculum ID"`                                        | All   |        |
+| GET    | `/chapters`               | JWT  | 422: page/limit   | out of range                                  | Same as users                                                    | All   |        |
+| GET    | `/chapters/:id`           | JWT  | success           | —                                             | Chapter detail                                                   | All   |        |
+| GET    | `/chapters/:id`           | JWT  | 400/404           | —                                             | `"Invalid chapter id"` • `"Chapter not found"`                   | All   |        |
+| PUT    | `/chapters/:id`           | JWT  | success           | `{ name?, description?, order? }`             | Updated chapter                                                  | All   |        |
+| PUT    | `/chapters/:id`           | JWT  | 400/404           | Body                                          | `"Invalid chapter id"` • `"Chapter not found"`                   | All   |        |
+| PUT    | `/chapters/:id`           | JWT  | 422               | Body invalid                                  | Same field rules as `POST /chapters` (all optional)               | All   |        |
+| DELETE | `/chapters/:id`           | JWT  | success           | —                                             | Deletion result                                                  | All   |        |
+| DELETE | `/chapters/:id`           | JWT  | 400/404           | —                                             | `"Invalid chapter id"` • `"Chapter not found"`                   | All   |        |
 
 
 ---
@@ -569,7 +565,7 @@ nhà") — all optional, default `[]`/`null`, not yet rendered by any FE page as
 
 | M   | Path     | Auth   | Scenario | Payload | Response                  | Roles | Status |
 | --- | -------- | ------ | -------- | ------- | ------------------------- | ----- | ------ |
-| GET | `/emails`| Public | success  | —       | Test email sent response  | —     |        |
+| POST | `/emails/test`| ADMIN | success  | —       | Test email sent response  | ADMIN |        |
 
 
 ---
@@ -679,7 +675,7 @@ bước vào/ra service ở nhịp chậm (`hooks/useTracePlayback.hook.ts`, `bu
 | 7         | SessionController      | `/sessions`        | 7       | 0      | 0               |
 | 8         | ScheduleController     | `/schedules`       | 7       | 0      | 0               |
 | 9         | CurriculumController   | `/curriculum`      | 6       | 0      | 0               |
-| 10        | ChapterController      | `/chapter`         | 5       | 0      | 0               |
+| 10        | ChapterController      | `/chapters`         | 5       | 0      | 0               |
 | 11        | LessonController       | `/curriculum/lessons` | 9    | 0      | 0               |
 | 12        | ExerciseController     | `/exercises`       | 5       | 0      | 0               |
 | 13        | TuitionController      | `/tuitions`        | 6       | 0      | 0               |

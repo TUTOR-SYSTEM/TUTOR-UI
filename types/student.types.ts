@@ -28,11 +28,13 @@ export const RELATIONSHIP_OPTIONS = [
 export enum GENDER_ENUM {
   MALE = "MALE",
   FEMALE = "FEMALE",
+  OTHER = "OTHER",
 }
 
 export const GENDER = [
   { value: "MALE", field: "MALE" },
   { value: "FEMALE", field: "FEMALE" },
+  { value: "OTHER", field: "OTHER" },
 ] as const;
 
 export type FormValuesStudent = {
@@ -152,7 +154,7 @@ export type UpdateStudentPayload = {
   id: string;
   studentName?: string;
   studentPhone?: string;
-  gender?: "MALE" | "FEMALE";
+  gender?: "MALE" | "FEMALE" | "OTHER";
   birthday?: string;
   school?: string;
   address?: string;

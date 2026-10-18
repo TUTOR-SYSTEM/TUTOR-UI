@@ -203,7 +203,7 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
                 name="gender"
                 control={control}
                 render={({ field }) => (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {(
                       [
                         { value: "MALE", label: copy.addDialog.genderMale },
@@ -211,6 +211,7 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
                           value: "FEMALE",
                           label: copy.addDialog.genderFemale,
                         },
+                        { value: "OTHER", label: copy.addDialog.genderOther },
                       ] as const
                     ).map((opt) => {
                       const selected = field.value === opt.value;

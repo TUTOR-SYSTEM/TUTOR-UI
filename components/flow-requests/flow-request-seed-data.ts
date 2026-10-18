@@ -44,12 +44,12 @@ export const SEED_FLOW_REQUESTS: FlowRequest[] = [
 
   { id: "adm-tutor-cre", method: "POST", fePath: "/admin/tutors", gwPath: "/admin/tutors", topic: "user.createUser", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
   { id: "adm-tutor-list", method: "GET", fePath: "/admin/tutors", gwPath: "/admin/tutors", topic: "user.getUsers", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
-  { id: "adm-tutor-det", method: "GET", fePath: "/admin/tutors/:id", gwPath: "/admin/tutors/:id", topic: "user.getUserByField", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
+  { id: "adm-tutor-det", method: "GET", fePath: "/admin/tutors/:id", gwPath: "/admin/tutors/:id", topic: "admin.getTutor", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
   { id: "adm-tutor-upd", method: "PUT", fePath: "/admin/tutors/:id", gwPath: "/admin/tutors/:id", topic: "user.updateUserByAdmin", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
   { id: "adm-tutor-del", method: "DELETE", fePath: "/admin/tutors/:id", gwPath: "/admin/tutors/:id", topic: "user.deleteUserByAdmin", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
   { id: "adm-stu-cre", method: "POST", fePath: "/admin/students", gwPath: "/admin/students", topic: "user.createUser", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
   { id: "adm-stu-list", method: "GET", fePath: "/admin/students", gwPath: "/admin/students", topic: "user.getUsers", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
-  { id: "adm-stu-det", method: "GET", fePath: "/admin/students/:id", gwPath: "/admin/students/:id", topic: "user.getUserByField", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
+  { id: "adm-stu-det", method: "GET", fePath: "/admin/students/:id", gwPath: "/admin/students/:id", topic: "admin.getStudent", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
   { id: "adm-stu-upd", method: "PUT", fePath: "/admin/students/:id", gwPath: "/admin/students/:id", topic: "user.updateUserByAdmin", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
   { id: "adm-stu-del", method: "DELETE", fePath: "/admin/students/:id", gwPath: "/admin/students/:id", topic: "user.deleteUserByAdmin", service: "user-service", domain: "Admin", gwController: "Admin", chained: [] },
 
@@ -71,11 +71,11 @@ export const SEED_FLOW_REQUESTS: FlowRequest[] = [
   { id: "cur-delete", method: "DELETE", fePath: "/curriculum/:id", gwPath: "/curriculum/:id", topic: "curriculum.delete", service: "tutor-service", domain: "Curriculum", gwController: "Curriculum", chained: [] },
   { id: "cur-gencode", method: "GET", fePath: "/curriculum/generate-code", gwPath: "/curriculum/generate-code", topic: "curriculum.generateCode", service: "tutor-service", domain: "Curriculum", gwController: "Curriculum", chained: [] },
 
-  { id: "chap-create", method: "POST", fePath: "/chapter/:curriculumId", gwPath: "/chapter/:curriculumId", topic: "chapter.create", service: "tutor-service", domain: "Chapter", gwController: "Chapter", chained: [] },
-  { id: "chap-list", method: "GET", fePath: "/chapter", gwPath: "/chapter", topic: "chapter.getAll", service: "tutor-service", domain: "Chapter", gwController: "Chapter", chained: [] },
-  { id: "chap-detail", method: "GET", fePath: "/chapter/:id", gwPath: "/chapter/:id", topic: "chapter.getById", service: "tutor-service", domain: "Chapter", gwController: "Chapter", chained: [] },
-  { id: "chap-update", method: "PUT", fePath: "/chapter/:id", gwPath: "/chapter/:id", topic: "chapter.update", service: "tutor-service", domain: "Chapter", gwController: "Chapter", chained: [] },
-  { id: "chap-delete", method: "DELETE", fePath: "/chapter/:id", gwPath: "/chapter/:id", topic: "chapter.delete", service: "tutor-service", domain: "Chapter", gwController: "Chapter", chained: [] },
+  { id: "chap-create", method: "POST", fePath: "/chapters/:curriculumId", gwPath: "/chapters/:curriculumId", topic: "chapter.create", service: "tutor-service", domain: "Chapter", gwController: "Chapter", chained: [] },
+  { id: "chap-list", method: "GET", fePath: "/chapters", gwPath: "/chapters", topic: "chapter.getAll", service: "tutor-service", domain: "Chapter", gwController: "Chapter", chained: [] },
+  { id: "chap-detail", method: "GET", fePath: "/chapters/:id", gwPath: "/chapters/:id", topic: "chapter.getById", service: "tutor-service", domain: "Chapter", gwController: "Chapter", chained: [] },
+  { id: "chap-update", method: "PUT", fePath: "/chapters/:id", gwPath: "/chapters/:id", topic: "chapter.update", service: "tutor-service", domain: "Chapter", gwController: "Chapter", chained: [] },
+  { id: "chap-delete", method: "DELETE", fePath: "/chapters/:id", gwPath: "/chapters/:id", topic: "chapter.delete", service: "tutor-service", domain: "Chapter", gwController: "Chapter", chained: [] },
 
   { id: "les-create", method: "POST", fePath: "/curriculum/lessons", gwPath: "/curriculum/lessons", topic: "lesson.create", service: "tutor-service", domain: "Lesson", gwController: "Lesson", chained: [] },
   { id: "les-list", method: "GET", fePath: "/curriculum/lessons", gwPath: "/curriculum/lessons", topic: "lesson.getAll", service: "tutor-service", domain: "Lesson", gwController: "Lesson", chained: [] },
@@ -133,7 +133,7 @@ export const SEED_FLOW_REQUESTS: FlowRequest[] = [
   { id: "upl-download", method: "GET", fePath: "/upload/download", gwPath: "/upload/download", topic: "upload.download", service: "third-service", domain: "Upload", gwController: "Upload", chained: [] },
   { id: "upl-delete", method: "DELETE", fePath: "/upload/:key", gwPath: "/upload/:key", topic: "upload.delete", service: "third-service", domain: "Upload", gwController: "Upload", chained: [] },
 
-  { id: "email-test", method: "GET", fePath: "/emails", gwPath: "/emails", topic: "email.test", service: "third-service", domain: "Email", gwController: "Email", chained: [] },
+  { id: "email-test", method: "POST", fePath: "/emails/test", gwPath: "/emails/test", topic: "email.test", service: "third-service", domain: "Email", gwController: "Email", chained: [] },
 
   { id: "ai-chat", method: "POST", fePath: "/ai-chat/chat", gwPath: "/ai-chat/chat", topic: "ai.chat", service: "tutor-service", domain: "AI Chat", gwController: "AI Chat", chained: [] },
   { id: "ai-history", method: "GET", fePath: "/ai-chat/history", gwPath: "/ai-chat/history", topic: "ai.history", service: "tutor-service", domain: "AI Chat", gwController: "AI Chat", chained: [] },
