@@ -59,7 +59,11 @@ export function useNotificationActions(args?: {
     [...NOTIFICATIONS_QUERY_KEY, args?.list],
     "/notifications",
     {
-      params: args?.list,
+      // `search` rỗng/khoảng trắng: bỏ param (BE từ chối `search=""` với 400).
+      params: args?.list && {
+        ...args.list,
+        search: args.list.search?.trim() || undefined,
+      },
       enabled: !!args?.list,
       select: (raw) => normalizeNotificationsList(unwrapApiData(raw)),
       ...args?.listOptions,

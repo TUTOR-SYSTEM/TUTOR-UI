@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// PreToolUse hook (Write|Edit): chặn sửa file secret .env* (kể cả .env.local, .env.production).
+// PreToolUse hook (Write|Edit): hỏi xác nhận trước khi sửa file secret .env* (kể cả .env.local, .env.production).
 // FE tham chiếu cấu hình qua biến NEXT_PUBLIC_* / process.env, không sửa .env qua Claude.
 let input = '';
 process.stdin.on('data', (c) => (input += c));
@@ -18,7 +18,7 @@ process.stdin.on('end', () => {
       JSON.stringify({
         hookSpecificOutput: {
           hookEventName: 'PreToolUse',
-          permissionDecision: 'deny',
+          permissionDecision: 'ask',
           permissionDecisionReason:
             'File .env giữ secret — sửa tay, không qua Claude. FE đọc config qua NEXT_PUBLIC_* / process.env.',
         },

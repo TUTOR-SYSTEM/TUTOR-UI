@@ -5,6 +5,7 @@ import type {
   ApiResponse,
   DeleteResult,
   ChapterItem,
+  ChaptersApiPayload,
   CreateChapterPayload,
   UpdateChapterPayload,
 } from "@/types";
@@ -19,7 +20,7 @@ export const CHAPTERS_QUERY_KEY = ["chapters"] as const;
 export function useChapterActions(args?: {
   list?: { curriculumId: string; page?: number; limit?: number };
   listOptions?: Omit<
-    UseQueryOptions<ApiResponse<ChapterItem[]>, Error, ChapterItem[]>,
+    UseQueryOptions<ApiResponse<ChaptersApiPayload>, Error, ChapterItem[]>,
     "queryKey" | "queryFn"
   >;
   detailId?: string;
@@ -28,20 +29,21 @@ export function useChapterActions(args?: {
     "queryKey" | "queryFn"
   >;
 }) {
-  const list = useGet<ApiResponse<ChapterItem[]>, ChapterItem[]>(
+  // BE trả `{ chapters, pagination }` (không phải mảng trần).
+  const list = useGet<ApiResponse<ChaptersApiPayload>, ChapterItem[]>(
     [...CHAPTERS_QUERY_KEY, args?.list],
-    "/chapter",
+    "/chapters",
     {
       params: args?.list,
       enabled: !!args?.list,
-      select: (raw) => unwrapApiData<ChapterItem[]>(raw) ?? [],
+      select: (raw) => unwrapApiData<ChaptersApiPayload>(raw)?.chapters ?? [],
       ...args?.listOptions,
     },
   );
 
   const detail = useGet<ApiResponse<ChapterItem>, ChapterItem>(
     [...CHAPTERS_QUERY_KEY, "detail", args?.detailId],
-    `/chapter/${args?.detailId ?? ""}`,
+    `/chapters/${args?.detailId ?? ""}`,
     {
       enabled: !!args?.detailId,
       select: (raw) => unwrapApiData<ChapterItem>(raw),
@@ -52,13 +54,13 @@ export function useChapterActions(args?: {
   const create = usePost<
     ApiResponse<ChapterItem>,
     { curriculumId: string } & CreateChapterPayload
-  >((payload) => `/chapter/${payload.curriculumId}`);
+  >((payload) => `/chapters/${payload.curriculumId}`);
   const update = usePut<
     ApiResponse<ChapterItem>,
     { id: string } & UpdateChapterPayload
-  >((payload) => `/chapter/${payload.id}`);
+  >((payload) => `/chapters/${payload.id}`);
   const del = useDelete<ApiResponse<DeleteResult>, string>(
-    (id) => `/chapter/${id}`,
+    (id) => `/chapters/${id}`,
   );
 
   return { list, detail, create, update, delete: del };

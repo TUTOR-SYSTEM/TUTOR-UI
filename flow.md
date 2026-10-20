@@ -389,7 +389,7 @@ Kèm specific error cases cho từng bước.
 | Create Session              | `POST /sessions`                                                                                 |
 | Bulk Create Sessions        | `POST /sessions/bulk`                                                                            |
 | Create Curriculum           | `POST /curriculum`                                                                               |
-| Create Chapter              | `POST /chapter/{curriculumId}`                                                                   |
+| Create Chapter              | `POST /chapters/{curriculumId}`                                                                   |
 | Create Lesson               | `POST /lesson?curriculumId=&chapterId=`                                                          |
 | Upload Lesson Material      | `PUT /lesson/{id}/add-theory` hoặc `PUT /lesson/{id}/exercises`                                  |
 | Create Tuition              | `POST /tuitions`                                                                                 |

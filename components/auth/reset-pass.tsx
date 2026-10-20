@@ -10,6 +10,7 @@ import { ArrowLeft, CheckCircle2, Eye, EyeOff, Lock } from "lucide-react";
 import { handleFormApiError } from "@/lib/axios/form-error";
 import { useAuthCopy } from "@/hooks/useAuthCopy.hook";
 import { useAuthActions } from "@/lib/services/auth.service";
+import { newPasswordError } from "@/lib/auth/password-policy";
 import { AuthSubmitButton, AuthTextField } from "./auth-ui";
 
 type ResetPasswordFormValues = {
@@ -38,6 +39,14 @@ export const ResetPass = () => {
     form.clearErrors();
 
     const values = form.getValues();
+    const passwordError = newPasswordError(values.password, {
+      tooShort: shared.passwordTooShort,
+      tooLong: shared.passwordTooLong,
+    });
+    if (passwordError) {
+      form.setError("password", { message: passwordError });
+      return;
+    }
     if (values.password !== values.confirmPassword) {
       form.setError("confirmPassword", {
         message: t.passwordMismatch,

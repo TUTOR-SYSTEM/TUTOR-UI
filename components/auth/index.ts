@@ -17,3 +17,4 @@ export {
   AuthPageShell,
   AuthWaveBackground,
 } from "./auth-shell";
+export { VerifyEmail } from "./verify-email";

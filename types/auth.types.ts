@@ -11,15 +11,14 @@ export type LoginFormValues = {
   email: string;
   identifier: string;
   password: string;
-  rememberMe: boolean;
 };
 
+/** Body `POST /auth/login*`. Refresh token không nằm trong body — gateway set cookie httpOnly. */
 export type LoginResponse = {
   accessToken?: string;
   access_token?: string;
   token?: string;
-  refreshToken?: string;
-  refresh_token?: string | null;
+  user?: unknown;
 };
 
 export type RegisterPayload = {
@@ -27,7 +26,6 @@ export type RegisterPayload = {
   lastName: string;
   email: string;
   password: string;
-  confirmPassword: string;
 };
 
 export type RegisterResponse = {
@@ -40,6 +38,9 @@ export type RegisterResponse = {
   };
 };
 
+/** `POST /auth/logout` (cần access token). Gateway xóa cookie refresh và session phía server. */
+export type LogoutResponse = { message: string };
+
 export type ForgotPasswordPayload = { email: string };
 export type ForgotPasswordResponse = { ok: boolean };
 
@@ -49,3 +50,6 @@ export type ResetPasswordPayload = {
   confirmPassword: string;
 };
 export type ResetPasswordResponse = { ok: boolean };
+
+export type VerifyEmailPayload = { jti: string };
+export type VerifyEmailResponse = { ok: boolean };

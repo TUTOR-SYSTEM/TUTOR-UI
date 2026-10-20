@@ -1,16 +1,33 @@
-/** Chương (chapter) trong khung chương trình — backed by `/chapter` on the API. */
+/** Chương (chapter) trong khung chương trình — backed by `/chapters` on the API. */
 
-/** BE row shape isn't fully documented yet — kept as an open record, not `unknown`. */
-export type ChapterItem = Record<string, unknown>;
+/** Row chương BE trả về (bảng `chapters`). */
+export type ChapterItem = {
+  id: string;
+  curriculumId: string;
+  title: string;
+  description: string | null;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+};
 
+/** `GET /chapters` — danh sách có phân trang. */
+export type ChaptersApiPayload = {
+  chapters: ChapterItem[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+};
+
+/** Body `POST /chapters/:curriculumId`. */
 export type CreateChapterPayload = {
-  name: string;
+  title: string;
   description?: string;
   order?: number;
 };
 
-export type UpdateChapterPayload = {
-  name?: string;
-  description?: string;
-  order?: number;
-};
+/** Body `PUT /chapters/:id`. */
+export type UpdateChapterPayload = Partial<CreateChapterPayload>;

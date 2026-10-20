@@ -76,7 +76,7 @@ describe("requestUrlKey", () => {
 
 describe("shouldSkip401Refresh", () => {
   it("skips refresh for auth endpoints", () => {
-    for (const url of ["/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password"]) {
+    for (const url of ["/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password", "/auth/verify-email"]) {
       expect(shouldSkip401Refresh(cfg({ baseURL: "http://api", url }))).toBe(true);
     }
   });

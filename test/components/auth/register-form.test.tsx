@@ -168,7 +168,6 @@ describe("RegisterForm", () => {
         lastName: "Nguyen",
         email: "an@example.com",
         password: "Passw0rd!",
-        confirmPassword: "Passw0rd!",
       });
     });
 

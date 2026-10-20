@@ -66,13 +66,14 @@ export type ApiManagedUser = {
   role: ManagedUserRole;
   isActive: boolean;
   subjects?: string[] | null;
+  school?: string | null;
   classCount?: number;
   studentCount?: number;
   createdAt?: string;
 };
 
 export type ManagedUsersApiPayload = {
-  data: ApiManagedUser[];
+  users: ApiManagedUser[];
   pagination: {
     total: number;
     page: number;

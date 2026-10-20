@@ -21,9 +21,6 @@ export type BulkSchedulePayload = {
   }>;
 };
 
-/** BE row shape isn't fully documented yet — kept as an open record, not `unknown`. */
-export type ScheduleItem = Record<string, unknown>;
-
 /* ─── Calendar-specific API types ─── */
 
 export type ScheduleDayOfWeek =
@@ -63,3 +60,6 @@ export interface CalendarSession {
 }
 
 export type ViewMode = "month" | "week" | "day";
+
+/** Row lịch học trả về từ `GET /schedules*` (gồm thông tin lớp). */
+export type ScheduleItem = ApiSchedule;

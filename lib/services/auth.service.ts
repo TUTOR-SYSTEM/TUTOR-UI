@@ -9,13 +9,17 @@ import type {
   ForgotPasswordResponse,
   ResetPasswordPayload,
   ResetPasswordResponse,
+  VerifyEmailPayload,
+  VerifyEmailResponse,
+  LogoutResponse,
 } from "@/types/auth.types";
 
 /**
  * BE (`AuthController`) only exposes register / login / login-user-code /
  * refresh / forgot-password / reset-password / OAuth — there is no OTP step.
  * `forgot-password` emails a reset link carrying the token directly consumed
- * by `reset-password` as `jti`.
+ * by `reset-password` as `jti`. `register` also emails a verification link whose
+ * token is consumed by `verify-email` as `jti`; login is not blocked by it.
  */
 export function useAuthActions() {
   const login = usePost<LoginResponse, LoginPayload>(resolveLoginUrl);
@@ -28,6 +32,19 @@ export function useAuthActions() {
   const resetPassword = usePost<ResetPasswordResponse, ResetPasswordPayload>(
     "/auth/reset-password",
   );
+  const verifyEmail = usePost<VerifyEmailResponse, VerifyEmailPayload>(
+    "/auth/verify-email",
+  );
 
-  return { login, register, forgotPassword, resetPassword };
+  /** Thu hồi session phía server (gateway xóa refresh cookie). Gọi trước khi xóa state local. */
+  const logout = usePost<LogoutResponse, void>("/auth/logout");
+
+  return {
+    login,
+    register,
+    forgotPassword,
+    resetPassword,
+    verifyEmail,
+    logout,
+  };
 }

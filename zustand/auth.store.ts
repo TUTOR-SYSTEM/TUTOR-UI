@@ -2,23 +2,29 @@ import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 
 import type { ApiUser } from "@/types";
-import { clearAuthTokens } from "@/lib/axios/auth-storage";
+import {
+  AUTH_STORE_KEY,
+  clearLegacyAuthTokens,
+} from "@/lib/axios/auth-storage";
 import { DEVTOOLS_CONNECTION_NAME } from "./devtools";
 import { safeStorage } from "./storage";
 
+/**
+ * Chỉ access token nằm phía client. Refresh token là cookie httpOnly do gateway set
+ * (`path=/auth`), JS không đọc được — xem `lib/axios/auth-refresh.ts`.
+ */
 export type AuthState = {
   accessToken: string | null;
-  refreshToken: string | null;
   user: ApiUser | null;
-  /** Đã xử lý xong bước kiểm tra token (hoặc không có token để kiểm tra). Không persist. */
+  /** Đã xử lý xong bước kiểm tra session (sau khi tải profile). Không persist. */
   sessionChecked: boolean;
 };
 
 export type AuthActions = {
-  setCredentials: (payload: {
-    accessToken: string;
-    refreshToken?: string | null;
-  }) => void;
+  /** Phiên mới (login / OAuth): reset profile, buộc kiểm tra lại session. */
+  startSession: (accessToken: string) => void;
+  /** Làm mới access token (refresh): giữ nguyên profile đang có. */
+  setCredentials: (payload: { accessToken: string }) => void;
   patchAccessToken: (accessToken: string) => void;
   setUser: (user: ApiUser) => void;
   setSessionChecked: (checked: boolean) => void;
@@ -27,7 +33,6 @@ export type AuthActions = {
 
 const initialState: AuthState = {
   accessToken: null,
-  refreshToken: null,
   user: null,
   sessionChecked: false,
 };
@@ -38,16 +43,15 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       (set) => ({
         ...initialState,
 
-        setCredentials: ({ accessToken, refreshToken }) =>
+        startSession: (accessToken) =>
           set(
-            (state) => ({
-              accessToken,
-              refreshToken:
-                refreshToken !== undefined ? refreshToken : state.refreshToken,
-            }),
+            { accessToken, user: null, sessionChecked: false },
             false,
-            "auth/setCredentials",
+            "auth/startSession",
           ),
+
+        setCredentials: ({ accessToken }) =>
+          set({ accessToken }, false, "auth/setCredentials"),
 
         patchAccessToken: (accessToken) =>
           set({ accessToken }, false, "auth/patchAccessToken"),
@@ -58,25 +62,16 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           set({ sessionChecked }, false, "auth/setSessionChecked"),
 
         clearAuth: () => {
-          // Drop the legacy `accessToken`/`refreshToken` localStorage keys too, so a
-          // cleared session can't fall back to a stale token (see client.ts).
-          clearAuthTokens();
-          set(
-            { ...initialState, sessionChecked: true },
-            false,
-            "auth/clearAuth",
-          );
+          // Xóa key localStorage của thiết kế cũ (refresh token / bản sao access token).
+          clearLegacyAuthTokens();
+          set({ ...initialState, sessionChecked: true }, false, "auth/clearAuth");
         },
       }),
       {
-        name: "auth-store",
+        name: AUTH_STORE_KEY,
         storage: createJSONStorage(() => safeStorage),
-        // Chỉ persist token — user/sessionChecked luôn tính lại lúc runtime,
-        // giống whitelist ["accessToken", "refreshToken"] của redux-persist cũ.
-        partialize: (state) => ({
-          accessToken: state.accessToken,
-          refreshToken: state.refreshToken,
-        }),
+        // Một nơi duy nhất cho access token. User/sessionChecked tính lại lúc runtime.
+        partialize: (state) => ({ accessToken: state.accessToken }),
         // Tự rehydrate trong effect (xem `zustand/hydrate.ts`) để tránh
         // SSR/CSR mismatch — server không có `localStorage`.
         skipHydration: true,

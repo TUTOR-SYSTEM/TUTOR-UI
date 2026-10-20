@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useCurriculumCopy } from "@/hooks/useCurriculumCopy.hook";
 import type { CurriculumDictionary } from "@/lib/i18n/curriculum.dictionary";
 import type { CurriculumFramework } from "@/types";
+import { CURRICULUM_QUERY_KEY } from "@/lib/services/curriculum.service";
 
 /* ─── props ─── */
 type Props = {
@@ -119,7 +120,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 /**
  * Create/edit dialog for curriculum frameworks. Pass `initial` to edit an
  * existing framework, or omit it to create a new one. Invalidates the
- * "curriculum-frameworks" query on success, so callers don't need to refetch
+ * curriculum query on success, so callers don't need to refetch
  * manually.
  */
 export function CurriculumFormDialog({ open, initial, onClose }: Props) {
@@ -167,7 +168,7 @@ export function CurriculumFormDialog({ open, initial, onClose }: Props) {
   }, [open, isEdit, generatedCode, setValue]);
 
   const invalidateList = () =>
-    queryClient.invalidateQueries({ queryKey: ["curriculum-frameworks"] });
+    queryClient.invalidateQueries({ queryKey: CURRICULUM_QUERY_KEY });
 
   const createMutation = usePost<CurriculumFramework, CurriculumPayload>(
     "/curriculum",

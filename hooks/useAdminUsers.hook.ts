@@ -1,8 +1,14 @@
 "use client";
 
-import type { UseMutationOptions } from "@tanstack/react-query";
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 
-import { useGet, usePost, usePut, useDelete } from "@/lib/axios/query";
+import {
+  apiPut,
+  useGet,
+  usePost,
+  usePut,
+  useDelete,
+} from "@/lib/axios/query";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import type {
   AdminStudentsApiPayload,
@@ -53,6 +59,21 @@ export function useUpdateTutor(
     `/admin/tutors/${id}`,
     options,
   );
+}
+
+/**
+ * Id travels with the payload so one hook can serve every row of the tutor list.
+ * The id goes in the URL only: gateway `PUT /admin/tutors/:id` is `.strict()` and
+ * rejects an `id` key in the body.
+ */
+export function useUpdateTutorById(
+  options?: MutationOptions<unknown, { id: string } & UpdateAdminUserPayload>,
+) {
+  return useMutation<unknown, Error, { id: string } & UpdateAdminUserPayload>({
+    mutationFn: ({ id, ...body }) =>
+      apiPut<unknown, UpdateAdminUserPayload>(`/admin/tutors/${id}`, body),
+    ...options,
+  });
 }
 
 export function useDeleteTutor(options?: MutationOptions<unknown, string>) {

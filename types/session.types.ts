@@ -105,15 +105,19 @@ export type UpdateSessionPayload = Partial<
   exerciseDueAt?: string | null;
 };
 
+/** Một buổi trong `POST /sessions/bulk` — khớp `createSessionSchema` ở BE (`startAt`/`endAt` là ISO). */
+export type BulkSessionItemPayload = {
+  sessionNumber: number;
+  startAt: string;
+  endAt: string;
+  title?: string;
+  description?: string;
+  location?: string;
+};
+
 export type BulkSessionPayload = {
   classId: string;
-  sessions: Array<{
-    date: string;
-    startTime: string;
-    endTime: string;
-    title?: string;
-    description?: string;
-  }>;
+  sessions: BulkSessionItemPayload[];
 };
 
 /* ─── Bài tập / bài làm (exercise) ─── */
@@ -141,16 +145,20 @@ export type ExercisesResponse = {
   pagination: Pagination;
 };
 
+/** Khớp `createExerciseSchema` ở BE. `tutorId`/`studentId` bắt buộc (UUID). */
 export type CreateExercisePayload = {
-  sessionId: string;
-  studentId?: string;
-  content?: string;
-  attachments?: string[];
+  tutorId: string;
+  studentId: string;
+  sessionId?: string | null;
+  lessonId?: string | null;
+  issueUrls?: SessionFile[] | null;
+  exerciseUrls?: SessionFile[] | null;
+  status?: ExerciseStatus;
 };
 
+/** Khớp `submitExerciseSchema` ở BE: nộp lại cần ít nhất một file bài làm. */
 export type ResubmitExercisePayload = {
-  content?: string;
-  attachments?: string[];
+  exerciseUrls: SessionFile[];
 };
 
 export type GradeExercisePayload = {

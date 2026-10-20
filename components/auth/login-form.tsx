@@ -22,7 +22,7 @@ import { useAuthCopy } from "@/hooks/useAuthCopy.hook";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { handleFormApiError } from "@/lib/axios/form-error";
 import { useAuthActions } from "@/lib/services/auth.service";
-import { setAuthTokens as saveAuthTokens } from "@/lib/axios";
+import { loginPasswordError } from "@/lib/auth/password-policy";
 import { startFacebookOAuth, startGoogleOAuth } from "@/lib/oauth";
 import {
   AuthTextField,
@@ -36,13 +36,9 @@ function pickAccessToken(data: LoginResponse): string | undefined {
   return data.accessToken ?? data.access_token ?? data.token;
 }
 
-function pickRefreshToken(data: LoginResponse): string | null | undefined {
-  return data.refreshToken ?? data.refresh_token;
-}
-
 export const LoginForm = ({ className, ...props }: ComponentProps<"div">) => {
   const router = useRouter();
-  const { isAuthenticated, setAuthTokens } = useAuth();
+  const { isAuthenticated, startSession } = useAuth();
   const { login: t, shared } = useAuthCopy();
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<Role>("admin");
@@ -62,7 +58,6 @@ export const LoginForm = ({ className, ...props }: ComponentProps<"div">) => {
       email: "",
       identifier: "",
       password: "",
-      rememberMe: false,
     },
   });
 
@@ -80,11 +75,8 @@ export const LoginForm = ({ className, ...props }: ComponentProps<"div">) => {
       toast.error(t.errorFallback);
       return;
     }
-    // A new login replaces the whole session: a refresh token missing from the response
-    // must clear the previous account's one, not keep it.
-    const rt = pickRefreshToken(payload) ?? null;
-    setAuthTokens({ accessToken: token, refreshToken: rt });
-    saveAuthTokens(token, rt);
+    // Refresh token nằm trong cookie httpOnly do gateway set; FE chỉ giữ access token.
+    startSession(token);
     router.replace("/");
   };
 
@@ -97,21 +89,37 @@ export const LoginForm = ({ className, ...props }: ComponentProps<"div">) => {
     form.clearErrors();
     const values = form.getValues();
     const password = values.password;
+
+    const passwordError = loginPasswordError(password, {
+      required: shared.requiredField,
+      tooLong: shared.passwordTooLong,
+    });
+    if (passwordError) {
+      form.setError("password", { message: passwordError });
+      return;
+    }
+
     const mutateOptions = {
       onSuccess: handleLoginSuccess,
       onError: handleLoginError,
     };
 
     if (role === "admin") {
-      loginMutation.mutate(
-        { email: values.email?.trim() ?? "", password },
-        mutateOptions,
-      );
+      const email = values.email?.trim() ?? "";
+      if (!email) {
+        form.setError("email", { message: shared.requiredField });
+        return;
+      }
+      loginMutation.mutate({ email, password }, mutateOptions);
       return;
     }
 
     // Học sinh / Phụ huynh: chấp nhận cả mã người dùng lẫn email (nếu có).
     const identifier = values.identifier?.trim() ?? "";
+    if (!identifier) {
+      form.setError("identifier", { message: shared.requiredField });
+      return;
+    }
     if (identifier.includes("@")) {
       loginMutation.mutate({ email: identifier, password }, mutateOptions);
     } else {
@@ -224,16 +232,6 @@ export const LoginForm = ({ className, ...props }: ComponentProps<"div">) => {
           data-testid="login-password-input"
           {...form.register("password")}
         />
-
-        {/* Remember me */}
-        <label className="flex cursor-pointer items-center gap-2.5">
-          <input
-            type="checkbox"
-            {...form.register("rememberMe")}
-            className="size-4 rounded border-input accent-primary"
-          />
-          <span className="text-sm text-muted-foreground">{t.rememberMe}</span>
-        </label>
 
         <AuthSubmitButton pending={loginMutation.isPending}>
           {t.submit}

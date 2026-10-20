@@ -1,48 +1,32 @@
-const ACCESS_KEY = "accessToken";
-const REFRESH_KEY = "refreshToken";
+/** Tên key persist của `useAuthStore` (zustand). */
+export const AUTH_STORE_KEY = "auth-store";
 
+const LEGACY_ACCESS_KEY = "accessToken";
+const LEGACY_REFRESH_KEY = "refreshToken";
+
+/**
+ * Access token đọc thẳng từ bản persist của `useAuthStore` (cùng một key). Dùng khi store chưa
+ * rehydrate (request đầu tiên trước `AuthProvider`). Không có bản sao thứ hai.
+ */
 export function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return localStorage.getItem(ACCESS_KEY);
+    const raw = window.localStorage.getItem(AUTH_STORE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { state?: { accessToken?: unknown } };
+    const token = parsed?.state?.accessToken;
+    return typeof token === "string" && token.length > 0 ? token : null;
   } catch {
     return null;
   }
 }
 
-export function getRefreshToken(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return localStorage.getItem(REFRESH_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export function setAuthTokens(
-  accessToken: string,
-  refreshToken?: string | null,
-): void {
+/** Xóa key localStorage của thiết kế cũ (access/refresh token rời). */
+export function clearLegacyAuthTokens(): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(ACCESS_KEY, accessToken);
-    if (refreshToken !== undefined) {
-      if (refreshToken) {
-        localStorage.setItem(REFRESH_KEY, refreshToken);
-      } else {
-        localStorage.removeItem(REFRESH_KEY);
-      }
-    }
-  } catch {
-    // localStorage not available
-  }
-}
-
-export function clearAuthTokens(): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.removeItem(ACCESS_KEY);
-    localStorage.removeItem(REFRESH_KEY);
+    window.localStorage.removeItem(LEGACY_ACCESS_KEY);
+    window.localStorage.removeItem(LEGACY_REFRESH_KEY);
   } catch {
     // localStorage not available
   }

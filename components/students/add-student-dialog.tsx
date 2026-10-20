@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Check, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -14,11 +14,13 @@ import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { getErrorMessage } from "@/lib/axios";
 import { useClassActions } from "@/lib/services/class.service";
 import { useStudentsCopy } from "@/hooks/useStudentsCopy.hook";
+import { ParentPicker } from "@/components/students/parent-picker";
 import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
 import {
   CreateStudentPayload,
   FormValuesStudent,
   GENDER_ENUM,
+  ParentOption,
   StudentProps,
   RELATIONSHIP_OPTIONS,
 } from "@/types";
@@ -75,11 +77,34 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
     useForm<FormValuesStudent>({
       defaultValues: DEFAULT_VALUES,
     });
+  /* existing parent picked from search; null = create a new parent from the fields below */
+  const [linkedParent, setLinkedParent] = useState<ParentOption | null>(null);
+
+  /* picked an existing parent: show their data in the parent fields, locked (sent as parentId only) */
+  const linkParent = (parent: ParentOption) => {
+    setLinkedParent(parent);
+    setValue("parentRelationship", "");
+    setValue("parentPhone", parent.phone ?? "");
+    setValue("parentEmail", parent.email ?? "");
+  };
+
+  /* name typed away from the picked parent: unlock the fields for a new parent */
+  const unlinkParent = () => {
+    setLinkedParent(null);
+    setValue("parentRelationship", "");
+    setValue("parentPhone", "");
+    setValue("parentEmail", "");
+  };
 
   /* reset form on close */
   useEffect(() => {
     if (!open) reset(DEFAULT_VALUES);
   }, [open, reset]);
+
+  const handleClose = () => {
+    setLinkedParent(null);
+    onClose();
+  };
 
   /* generate a fresh student code every time the dialog opens */
   const { data: studentCodeRaw, isFetching: isGeneratingCode } = useGet(
@@ -114,6 +139,14 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
   const createStudent = usePost<unknown, CreateStudentPayload>("/students");
 
   const onSubmit = (values: FormValuesStudent) => {
+    const parentPayload: Partial<CreateStudentPayload> = linkedParent
+      ? { parentId: linkedParent.id }
+      : {
+          parentName: values.parentName?.trim() || undefined,
+          parentRelationship: values.parentRelationship || undefined,
+          parentPhone: values.parentPhone?.trim() || undefined,
+          parentEmail: values.parentEmail?.trim() || undefined,
+        };
     const payload: CreateStudentPayload = {
       studentName: values.studentName.trim(),
       userCode: values.userCode?.trim() || undefined,
@@ -121,10 +154,7 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
       gender: values.gender,
       studentPhone: values.studentPhone?.trim() || undefined,
       school: values.school?.trim() || undefined,
-      parentName: values.parentName?.trim() || undefined,
-      parentRelationship: values.parentRelationship || undefined,
-      parentPhone: values.parentPhone?.trim() || undefined,
-      parentEmail: values.parentEmail?.trim() || undefined,
+      ...parentPayload,
     };
 
     createStudent.mutate(payload, {
@@ -137,12 +167,14 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
           classCode: values.classCode?.trim() ?? "",
           studentPhone: values.studentPhone?.trim() ?? "",
           school: values.school?.trim() ?? "",
-          parentName: values.parentName.trim(),
-          parentEmail: values.parentEmail.trim(),
-          parentRelationship: values.parentRelationship.trim(),
-          parentPhone: values.parentPhone?.trim() ?? "",
+          parentName: linkedParent ? linkedParent.name : values.parentName.trim(),
+          parentEmail: linkedParent ? (linkedParent.email ?? "") : values.parentEmail.trim(),
+          parentRelationship: linkedParent ? "" : values.parentRelationship.trim(),
+          parentPhone: linkedParent
+            ? (linkedParent.phone ?? "")
+            : (values.parentPhone?.trim() ?? ""),
         });
-        onClose();
+        handleClose();
       },
       onError: (error) => {
         toast.error(getErrorMessage(error, copy.addDialog.toastError));
@@ -158,7 +190,7 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
       subtitle={copy.addDialog.subtitle}
       className="max-w-2xl"
       cancelText={common.actions.cancel}
-      onCancel={onClose}
+      onCancel={handleClose}
       submitText={copy.addDialog.submitText}
       submitIcon={Check}
       onSubmit={handleSubmit(onSubmit)}
@@ -203,7 +235,7 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
                 name="gender"
                 control={control}
                 render={({ field }) => (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {(
                       [
                         { value: "MALE", label: copy.addDialog.genderMale },
@@ -211,6 +243,7 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
                           value: "FEMALE",
                           label: copy.addDialog.genderFemale,
                         },
+                        { value: "OTHER", label: copy.addDialog.genderOther },
                       ] as const
                     ).map((opt) => {
                       const selected = field.value === opt.value;
@@ -274,15 +307,25 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
         <div className="flex flex-col gap-4">
           <SectionTitle>{copy.addDialog.sectionParentInfo}</SectionTitle>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Họ và tên phụ huynh */}
-            <Field label={copy.addDialog.parentNameLabel} required>
-              <Input
-                {...register("parentName")}
+          {/* Họ và tên phụ huynh — gõ để tìm phụ huynh có sẵn */}
+          <Controller
+            name="parentName"
+            control={control}
+            render={({ field }) => (
+              <ParentPicker
+                label={copy.addDialog.parentNameLabel}
                 placeholder={copy.addDialog.parentNamePlaceholder}
+                required
+                value={field.value ?? ""}
+                onValueChange={field.onChange}
+                linked={linkedParent}
+                onLink={linkParent}
+                onUnlink={unlinkParent}
               />
-            </Field>
+            )}
+          />
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {/* Quan hệ */}
             <Field label={copy.addDialog.relationshipLabel}>
               <Controller
@@ -294,6 +337,7 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
                     value={field.value ?? ""}
                     onValueChange={field.onChange}
                     placeholder={copy.addDialog.relationshipPlaceholder}
+                    disabled={!!linkedParent}
                   />
                 )}
               />
@@ -305,6 +349,7 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
                 {...register("parentPhone")}
                 type="tel"
                 placeholder={copy.addDialog.parentPhonePlaceholder}
+                disabled={!!linkedParent}
               />
             </Field>
 
@@ -314,6 +359,7 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
                 {...register("parentEmail")}
                 type="email"
                 placeholder={copy.addDialog.parentEmailPlaceholder}
+                disabled={!!linkedParent}
               />
             </Field>
           </div>

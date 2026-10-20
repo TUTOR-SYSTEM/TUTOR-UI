@@ -37,6 +37,7 @@ import {
   type Annotation,
   type MarkerType,
 } from "./exercise-annotation-marker";
+import { pickUploadFiles } from "@/lib/upload-policy";
 
 /* ─── Types ─── */
 
@@ -204,12 +205,13 @@ export const GradeWorkspace = ({
   };
 
   const onPickAnswerKey = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+    const picked = pickUploadFiles(files);
+    if (picked.length === 0 || !isTutor) return;
     setUploadingAnswerKey(true);
     try {
       const uploaded: SessionFile[] = [];
       const sizes: Record<string, number> = {};
-      for (const file of Array.from(files)) {
+      for (const file of picked) {
         const fd = new FormData();
         fd.append("file", file);
         const res = await axiosInstance.post("/upload", fd, {
@@ -539,7 +541,7 @@ export const GradeWorkspace = ({
                 multiple
                 accept="image/*,.pdf"
                 className="hidden"
-                disabled={uploadingAnswerKey}
+                disabled={uploadingAnswerKey || !isTutor}
                 onChange={(e) => onPickAnswerKey(e.target.files)}
               />
               {uploadingAnswerKey ? (

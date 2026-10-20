@@ -79,8 +79,9 @@ export const TuitionDetailDialog = ({ tuition, onClose }: Props) => {
     }
     updateTuition.mutate({
       amount: amountNum,
-      dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-      paidDate: paidDate ? new Date(paidDate).toISOString() : undefined,
+      // Ô ngày bị xóa thì gửi `null` để BE xóa ngày (undefined sẽ bị bỏ qua).
+      dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+      paidDate: paidDate ? new Date(paidDate).toISOString() : null,
       status,
       note: note.trim() || undefined,
     });

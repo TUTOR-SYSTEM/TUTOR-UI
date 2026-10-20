@@ -31,7 +31,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 
 import { useUserActions } from "@/lib/services/user.service";
-import { useQueryClient } from "@tanstack/react-query";
+import { apiUploadFile } from "@/lib/services/student.service";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import type { UserRole } from "@/lib/rbac/roles";
 import { useTheme } from "@/components/providers/theme.provider";
@@ -747,14 +747,11 @@ function ProfilePanel() {
 
     setAvatarUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("avatar", file);
-      const raw = await axiosInstance.post("/users/avatar", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      const result = unwrapApiData<{ avatar: string }>(raw.data);
+      const uploaded = await apiUploadFile(file);
+      const raw = await axiosInstance.put("/users", { avatar: uploaded.url });
+      const updatedUser = unwrapApiData<Partial<ApiUser>>(raw.data);
       if (user) {
-        setUser({ ...user, avatar: result.avatar });
+        setUser({ ...user, avatar: uploaded.url, ...updatedUser });
       }
       setAvatarPreview(null);
     } catch {
@@ -1457,66 +1454,7 @@ function AppearancePanel() {
   );
 }
 
-type GradeItem = { id: string; name: string; level: number };
-
-function groupGrades(grades: GradeItem[]) {
-  return [
-    { label: "Tiểu học", grades: grades.filter((g) => g.level <= 5) },
-    {
-      label: "THCS",
-      grades: grades.filter((g) => g.level >= 6 && g.level <= 9),
-    },
-    { label: "THPT", grades: grades.filter((g) => g.level >= 10) },
-  ];
-}
-
 function ClassesPanel() {
-  const qc = useQueryClient();
-  const [localSelected, setLocalSelected] = useState<string[] | null>(null);
-  const [gradeSaved, setGradeSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const userActions = useUserActions();
-  const { data: allGrades, isLoading: allLoading } = userActions.allGrades;
-  const { data: userGrades, isLoading: userGradesLoading } =
-    userActions.userGrades;
-
-  const serverSelectedIds = useMemo<string[]>(() => {
-    return (userGrades ?? []).map((g) => g.id);
-  }, [userGrades]);
-
-  const selectedIds = localSelected ?? serverSelectedIds;
-
-  const toggle = (id: string) => {
-    setLocalSelected((prev) => {
-      const base = prev ?? serverSelectedIds;
-      return base.includes(id) ? base.filter((g) => g !== id) : [...base, id];
-    });
-    setGradeSaved(false);
-  };
-
-  const gradesLoading = allLoading || userGradesLoading;
-  const gradeGroups = useMemo(() => groupGrades(allGrades ?? []), [allGrades]);
-  const selectedNames = (allGrades ?? [])
-    .filter((g) => selectedIds.includes(g.id))
-    .map((g) => g.name);
-
-  const handleGradeSave = async () => {
-    setSaving(true);
-    try {
-      await axiosInstance.put("/users/grade", { gradesId: selectedIds });
-      await qc.invalidateQueries({ queryKey: ["user-grades"] });
-      setLocalSelected(null);
-      setGradeSaved(true);
-      toast.success("Đã lưu khối lớp");
-      setTimeout(() => setGradeSaved(false), 2000);
-    } catch (err) {
-      toast.error(getErrorMessage(err, "Lưu thất bại"));
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <div className="grid grid-cols-2 gap-6 w-full">
       <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">

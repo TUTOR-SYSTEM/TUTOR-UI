@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  clearAuthTokens,
+  AUTH_STORE_KEY,
+  clearLegacyAuthTokens,
   getAccessToken,
-  getRefreshToken,
-  setAuthTokens,
 } from "@/lib/axios/auth-storage";
 
 describe("auth-storage", () => {
@@ -17,40 +16,33 @@ describe("auth-storage", () => {
     localStorage.clear();
   });
 
-  it("stores the access token and, when given, the refresh token", () => {
-    setAuthTokens("access-1", "refresh-1");
+  it("reads the access token from the single persisted auth-store key", () => {
+    localStorage.setItem(AUTH_STORE_KEY, JSON.stringify({ state: { accessToken: "access-1" }, version: 0 }));
     expect(getAccessToken()).toBe("access-1");
-    expect(getRefreshToken()).toBe("refresh-1");
   });
 
-  it("leaves the refresh token untouched when the argument is omitted", () => {
-    setAuthTokens("access-1", "refresh-1");
-    setAuthTokens("access-2");
-    expect(getAccessToken()).toBe("access-2");
-    expect(getRefreshToken()).toBe("refresh-1");
-  });
-
-  it("removes the refresh token when it is passed as null", () => {
-    setAuthTokens("access-1", "refresh-1");
-    setAuthTokens("access-2", null);
-    expect(getRefreshToken()).toBeNull();
-  });
-
-  it("clearAuthTokens removes both tokens", () => {
-    setAuthTokens("a", "r");
-    clearAuthTokens();
+  it("returns null when nothing is persisted or the payload is malformed", () => {
     expect(getAccessToken()).toBeNull();
-    expect(getRefreshToken()).toBeNull();
+    localStorage.setItem(AUTH_STORE_KEY, "{not json");
+    expect(getAccessToken()).toBeNull();
+  });
+
+  it("clearLegacyAuthTokens removes the old separate access/refresh keys", () => {
+    localStorage.setItem("accessToken", "a");
+    localStorage.setItem("refreshToken", "r");
+    clearLegacyAuthTokens();
+    expect(localStorage.getItem("accessToken")).toBeNull();
+    expect(localStorage.getItem("refreshToken")).toBeNull();
   });
 
   it("swallows storage errors and returns null on read", () => {
     vi.spyOn(localStorage, "getItem").mockImplementation(() => {
       throw new Error("denied");
     });
-    vi.spyOn(localStorage, "setItem").mockImplementation(() => {
+    vi.spyOn(localStorage, "removeItem").mockImplementation(() => {
       throw new Error("denied");
     });
     expect(getAccessToken()).toBeNull();
-    expect(() => setAuthTokens("a", "r")).not.toThrow();
+    expect(() => clearLegacyAuthTokens()).not.toThrow();
   });
 });

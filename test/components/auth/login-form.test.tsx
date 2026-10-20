@@ -20,9 +20,6 @@ vi.mock("@/lib/services/auth.service", () => ({
   useAuthActions: () => mutation,
 }));
 
-const saveTokens = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/axios", () => ({ setAuthTokens: saveTokens }));
-
 const oauth = vi.hoisted(() => ({
   startGoogleOAuth: vi.fn(),
   startFacebookOAuth: vi.fn(),
@@ -49,6 +46,10 @@ function submit() {
   fireEvent.click(screen.getByRole("button", { name: new RegExp(t.submit) }));
 }
 
+function typePassword(container: HTMLElement, value = "pw") {
+  fireEvent.change(container.querySelector("#password")!, { target: { value } });
+}
+
 function chooseRole(label: string) {
   fireEvent.click(screen.getByRole("button", { name: label }));
 }
@@ -58,7 +59,6 @@ describe("LoginForm", () => {
     mutation.login.mutate.mockReset();
     mutation.login.isPending = false;
     router.replace.mockReset();
-    saveTokens.mockReset();
     oauth.startGoogleOAuth.mockReset();
     oauth.startFacebookOAuth.mockReset();
     useAuthStore.setState(initialAuth, true);
@@ -91,12 +91,6 @@ describe("LoginForm", () => {
       expect(password.autocomplete).toBe("current-password");
       const forgot = screen.getByRole("link", { name: t.forgotPassword });
       expect(forgot).toHaveAttribute("href", "/forgot-password");
-    });
-
-    it("renders the remember-me checkbox unchecked", () => {
-      render(<LoginForm />);
-      const checkbox = screen.getByRole("checkbox", { name: t.rememberMe });
-      expect(checkbox).not.toBeChecked();
     });
 
     it("applies a custom className to the root element", () => {
@@ -172,10 +166,11 @@ describe("LoginForm", () => {
       fireEvent.change(container.querySelector("#identifier")!, {
         target: { value: "STU001" },
       });
+      fireEvent.change(container.querySelector("#password")!, { target: { value: "stu-pw" } });
       submit();
       expect(mutation.login.mutate.mock.calls[0][0]).toEqual({
         userCode: "STU001",
-        password: "",
+        password: "stu-pw",
         role: "STUDENT",
       });
     });
@@ -186,10 +181,11 @@ describe("LoginForm", () => {
       fireEvent.change(container.querySelector("#identifier")!, {
         target: { value: "PAR009" },
       });
+      typePassword(container, "par-pw");
       submit();
       expect(mutation.login.mutate.mock.calls[0][0]).toEqual({
         userCode: "PAR009",
-        password: "",
+        password: "par-pw",
         role: "PARENT",
       });
     });
@@ -200,101 +196,103 @@ describe("LoginForm", () => {
       fireEvent.change(container.querySelector("#identifier")!, {
         target: { value: "    " },
       });
+      typePassword(container);
       submit();
-      expect(mutation.login.mutate.mock.calls[0][0]).toMatchObject({
-        userCode: "",
-        role: "STUDENT",
-      });
+      // Identifier rỗng sau khi trim bị chặn ở FE, không gửi request.
+      expect(mutation.login.mutate).not.toHaveBeenCalled();
+      expect(screen.getByText(shared.requiredField)).toBeInTheDocument();
     });
 
-    it("does not call mutate twice on a single click", () => {
-      render(<LoginForm />);
+    it("blocks submit with an empty password and shows the required message", () => {
+      const { container } = render(<LoginForm />);
+      fireEvent.change(container.querySelector("#email")!, { target: { value: "a@b.co" } });
+      submit();
+      expect(mutation.login.mutate).not.toHaveBeenCalled();
+      expect(screen.getByText(shared.requiredField)).toBeInTheDocument();
+    });
+
+    it("does not block a short password (legacy accounts) but rejects one over 100 characters", () => {
+      const { container } = render(<LoginForm />);
+      fireEvent.change(container.querySelector("#email")!, { target: { value: "a@b.co" } });
+      typePassword(container, "123");
       submit();
       expect(mutation.login.mutate).toHaveBeenCalledTimes(1);
+      mutation.login.mutate.mockReset();
+      typePassword(container, "x".repeat(101));
+      submit();
+      expect(mutation.login.mutate).not.toHaveBeenCalled();
+      expect(screen.getByText(shared.passwordTooLong)).toBeInTheDocument();
     });
   });
 
   describe("login success", () => {
-    it("stores tokens in the auth store and in storage, then redirects home", () => {
-      render(<LoginForm />);
+    it("starts a session with the access token only, then redirects home", () => {
+      const { container } = render(<LoginForm />);
+      fireEvent.change(container.querySelector("#email")!, { target: { value: "a@b.co" } });
+      typePassword(container);
       submit();
-      act(() =>
-        lastMutateOptions().onSuccess({
-          data: { accessToken: "acc-1", refreshToken: "ref-1" },
-        }),
-      );
+      act(() => lastMutateOptions().onSuccess({ data: { accessToken: "acc-1" } }));
 
-      expect(useAuthStore.getState().accessToken).toBe("acc-1");
-      expect(useAuthStore.getState().refreshToken).toBe("ref-1");
-      expect(saveTokens).toHaveBeenCalledWith("acc-1", "ref-1");
+      const state = useAuthStore.getState();
+      expect(state.accessToken).toBe("acc-1");
+      expect(state.sessionChecked).toBe(false);
       expect(router.replace).toHaveBeenCalledWith("/");
     });
 
-    it("accepts the snake_case access_token and refresh_token fields", () => {
-      render(<LoginForm />);
+    it("accepts the snake_case access_token field", () => {
+      const { container } = render(<LoginForm />);
+      fireEvent.change(container.querySelector("#email")!, { target: { value: "a@b.co" } });
+      typePassword(container);
       submit();
-      act(() =>
-        lastMutateOptions().onSuccess({
-          access_token: "acc-snake",
-          refresh_token: "ref-snake",
-        }),
-      );
-      expect(saveTokens).toHaveBeenCalledWith("acc-snake", "ref-snake");
+      act(() => lastMutateOptions().onSuccess({ access_token: "acc-snake" }));
       expect(useAuthStore.getState().accessToken).toBe("acc-snake");
     });
 
     it("accepts the generic token field when no accessToken is present", () => {
-      render(<LoginForm />);
+      const { container } = render(<LoginForm />);
+      fireEvent.change(container.querySelector("#email")!, { target: { value: "a@b.co" } });
+      typePassword(container);
       submit();
       act(() => lastMutateOptions().onSuccess({ token: "generic-token" }));
-      expect(saveTokens).toHaveBeenCalledWith("generic-token", null);
+      expect(useAuthStore.getState().accessToken).toBe("generic-token");
     });
 
-    it("stores null refresh token when the response omits it", () => {
-      render(<LoginForm />);
-      submit();
-      act(() => lastMutateOptions().onSuccess({ accessToken: "only-access" }));
-      expect(saveTokens).toHaveBeenCalledWith("only-access", null);
-      expect(useAuthStore.getState().refreshToken).toBeNull();
-    });
-
-    it("keeps an explicit null refresh token as null in the store", () => {
-      render(<LoginForm />);
-      submit();
-      act(() => lastMutateOptions().onSuccess({ accessToken: "a", refreshToken: null }));
-      expect(saveTokens).toHaveBeenCalledWith("a", null);
-      expect(useAuthStore.getState().refreshToken).toBeNull();
-    });
-
-    it("unwraps the { data } envelope before reading tokens", () => {
-      render(<LoginForm />);
+    it("unwraps the { data } envelope before reading the token", () => {
+      const { container } = render(<LoginForm />);
+      fireEvent.change(container.querySelector("#email")!, { target: { value: "a@b.co" } });
+      typePassword(container);
       submit();
       act(() => lastMutateOptions().onSuccess({ data: { accessToken: "wrapped" } }));
-      expect(saveTokens).toHaveBeenCalledWith("wrapped", null);
+      expect(useAuthStore.getState().accessToken).toBe("wrapped");
+    });
+
+    it("replaces a previous account's session when a new login succeeds", () => {
+      useAuthStore.setState({ accessToken: "old", user: { id: "old-user" } as never, sessionChecked: true }, false);
+      const { container } = render(<LoginForm />);
+      fireEvent.change(container.querySelector("#email")!, { target: { value: "a@b.co" } });
+      typePassword(container);
+      submit();
+      act(() => lastMutateOptions().onSuccess({ accessToken: "new" }));
+      expect(useAuthStore.getState().accessToken).toBe("new");
+      expect(useAuthStore.getState().user).toBeNull();
     });
 
     it("shows an error and stays on the login page when no token is returned", () => {
-      render(<LoginForm />);
+      const { container } = render(<LoginForm />);
+      fireEvent.change(container.querySelector("#email")!, { target: { value: "a@b.co" } });
+      typePassword(container);
       submit();
       act(() => lastMutateOptions().onSuccess({ data: {} }));
-      expect(saveTokens).not.toHaveBeenCalled();
       expect(useAuthStore.getState().accessToken).toBeNull();
       expect(router.replace).not.toHaveBeenCalled();
-    });
-
-    it("clears a stale refresh token when the response carries none", () => {
-      useAuthStore.setState({ refreshToken: "old-account-refresh" }, false);
-      render(<LoginForm />);
-      submit();
-      act(() => lastMutateOptions().onSuccess({ data: { accessToken: "new-access" } }));
-      expect(useAuthStore.getState().refreshToken).toBeNull();
-      expect(saveTokens).toHaveBeenCalledWith("new-access", null);
     });
   });
 
   describe("login error", () => {
     it("maps 422 field errors onto the matching input", async () => {
-      render(<LoginForm />);
+      const { container } = render(<LoginForm />);
+      fireEvent.change(container.querySelector("#email")!, { target: { value: "a@b.co" } });
+      typePassword(container);
       submit();
       const error = new ApiError("Validation failed", 422, {
         errors: [{ field: "password", message: "Mật khẩu quá ngắn" }],
@@ -305,7 +303,9 @@ describe("LoginForm", () => {
     });
 
     it("shows a root server error when a 422 has no mappable field", async () => {
-      render(<LoginForm />);
+      const { container } = render(<LoginForm />);
+      fireEvent.change(container.querySelector("#email")!, { target: { value: "a@b.co" } });
+      typePassword(container);
       submit();
       const error = new ApiError("Validation failed", 422, {
         issues: [],
@@ -318,17 +318,19 @@ describe("LoginForm", () => {
     });
 
     it("does not navigate or store tokens on error", () => {
-      render(<LoginForm />);
+      const { container } = render(<LoginForm />);
+      fireEvent.change(container.querySelector("#email")!, { target: { value: "a@b.co" } });
+      typePassword(container);
       submit();
       act(() => lastMutateOptions().onError(new ApiError("Unauthorized", 401)));
       expect(router.replace).not.toHaveBeenCalled();
-      expect(saveTokens).not.toHaveBeenCalled();
+      expect(useAuthStore.getState().accessToken).toBeNull();
     });
   });
 
   describe("auth redirect", () => {
     it("redirects to home when the user is already authenticated", () => {
-      useAuthStore.setState({ accessToken: "t", sessionChecked: true }, false);
+      useAuthStore.setState({ accessToken: "t", user: { id: "u" } as never, sessionChecked: true }, false);
       render(<LoginForm />);
       expect(router.replace).toHaveBeenCalledWith("/");
     });

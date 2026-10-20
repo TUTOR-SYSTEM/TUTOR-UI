@@ -58,10 +58,11 @@ export type CreateTuitionPayload = {
   note?: string;
 };
 
+/** `null` xóa ngày (BE cho phép). */
 export type UpdateTuitionPayload = {
   amount?: number;
-  dueDate?: string;
-  paidDate?: string;
+  dueDate?: string | null;
+  paidDate?: string | null;
   status?: TuitionStatus;
   note?: string;
 };

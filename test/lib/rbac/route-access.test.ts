@@ -29,10 +29,19 @@ describe("getRouteAccess", () => {
     expect(getRouteAccess("/students-archive")).toBeNull();
   });
 
-  it("every declared rule has a non-empty allow-list", () => {
+  it("every declared rule has a non-empty allow-list, except explicitly locked legacy pages", () => {
     for (const rule of ROUTE_ACCESS) {
+      if (rule.allow.length === 0) {
+        expect(["/accounts", "/transactions", "/budgets", "/categories", "/analytics", "/investments", "/practice-exams"]).toContain(rule.prefix);
+        continue;
+      }
       expect(rule.allow.length, rule.prefix).toBeGreaterThan(0);
     }
+  });
+
+  it("locks legacy finance pages for every role instead of leaving them open", () => {
+    expect(getRouteAccess("/transactions/new")).toEqual([]);
+    expect(getRouteAccess("/budgets")).toEqual([]);
   });
 });
 

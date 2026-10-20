@@ -359,6 +359,16 @@ component/service/hook.
 
 - **Chỉ gửi field cần đổi** — đừng gửi nguyên object state kèm field không đổi nếu field đó có thể
   bị chặn theo role ở BE (validate theo **sự có mặt của key**, không phải giá trị).
+- **Gắn phụ huynh có sẵn (`parentId`) thay vì tạo mới**: khi học sinh liên kết một PHỤ HUYNH đã tồn
+  tại (chọn từ `ParentPicker`, `components/students/parent-picker.tsx`), payload chỉ gửi `parentId` —
+  **không** gửi `parentName`/`parentPhone`/`parentEmail`/... Lý do: BE sửa trực tiếp bản ghi phụ huynh
+  đang liên kết (`student.service` update → `updateParent`), gửi field phụ huynh sẽ đổi thông tin của
+  phụ huynh dùng chung cho nhiều học sinh. Phụ huynh mới thì gửi các field text như cũ.
+- **Id nằm trong URL, không nằm trong body**: `usePut`/`useDelete` gửi nguyên payload làm body. Nếu
+  payload mang `id` (để hook dùng chung cho nhiều dòng), body sẽ có key `id` và BE `.strict()` trả
+  422 `Unrecognized key: "id"`. Khi đó dùng `useMutation` + `apiPut(\`/x/${id}\`, body)` tách `id` ra
+  (xem `useUpdateTutorById` trong `hooks/useAdminUsers.hook.ts`, `toggleStatus` trong
+  `lib/services/user.service.ts`).
 - **422 Nest validation pipe**: `errors[]` (field + message) hoặc `issues[]` (path + message) — dùng
   `handleFormApiError()` để map vào React Hook Form.
 

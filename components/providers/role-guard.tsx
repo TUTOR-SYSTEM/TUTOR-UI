@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
+import { useCurrentUserRoleOrNull } from "@/hooks/useCurrentUserRole";
 import { ROLE_HOME, isRoleAllowed, type UserRole } from "@/lib/rbac/roles";
 
 /**
@@ -25,14 +25,15 @@ export function RoleGuard({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const role = useCurrentUserRole();
-  const allowed = isRoleAllowed(role, allow);
+  // Role chưa xác định (null) thì KHÔNG cho vào: không mặc định thành role có quyền.
+  const role = useCurrentUserRoleOrNull();
+  const allowed = role !== null && isRoleAllowed(role, allow);
 
   useEffect(() => {
-    if (!allowed) {
+    if (role !== null && !isRoleAllowed(role, allow)) {
       router.replace(ROLE_HOME[role]);
     }
-  }, [allowed, role, router]);
+  }, [allow, role, router]);
 
   if (!allowed) {
     return (

@@ -4,108 +4,75 @@ const postAuthRefresh = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/axios/auth-refresh", () => ({ postAuthRefresh }));
 
 import { performRefresh, refreshAccessTokenViaStore } from "@/lib/axios/refresh-access-token";
-import { getAccessToken, getRefreshToken } from "@/lib/axios/auth-storage";
 import { useAuthStore } from "@/zustand/auth.store";
 
 const initial = useAuthStore.getState();
 
+const httpError = (status?: number) =>
+  Object.assign(new Error("http"), {
+    isAxiosError: true,
+    response: status === undefined ? undefined : { status },
+  });
+
 describe("performRefresh", () => {
   beforeEach(() => {
     postAuthRefresh.mockReset();
-    localStorage.clear();
-    useAuthStore.setState({ ...initial, accessToken: "old-a", refreshToken: "old-r", user: null }, false);
+    useAuthStore.setState({ ...initial, accessToken: "old-a", user: null }, false);
   });
 
-  it("stores rotated tokens in the store and in localStorage on success", async () => {
-    postAuthRefresh.mockResolvedValue({ accessToken: "new-a", refreshToken: "new-r" });
+  it("stores the new access token and keeps the profile on success", async () => {
+    useAuthStore.setState({ user: { id: "u1" } as never }, false);
+    postAuthRefresh.mockResolvedValue({ accessToken: "new-a" });
 
-    await expect(performRefresh()).resolves.toBe(true);
+    await expect(performRefresh()).resolves.toBe("refreshed");
 
-    expect(postAuthRefresh).toHaveBeenCalledWith("old-r");
     expect(useAuthStore.getState().accessToken).toBe("new-a");
-    expect(useAuthStore.getState().refreshToken).toBe("new-r");
-    expect(getAccessToken()).toBe("new-a");
-    expect(getRefreshToken()).toBe("new-r");
+    expect(useAuthStore.getState().user).toEqual({ id: "u1" });
   });
 
-  it("clears auth and returns false when there is no refresh token", async () => {
-    useAuthStore.setState({ refreshToken: null }, false);
+  it("ends the session when the refresh cookie is rejected (401)", async () => {
+    postAuthRefresh.mockRejectedValue(httpError(401));
 
-    await expect(performRefresh()).resolves.toBe(false);
-    expect(postAuthRefresh).not.toHaveBeenCalled();
+    await expect(performRefresh()).resolves.toBe("rejected");
     expect(useAuthStore.getState().accessToken).toBeNull();
   });
 
-  it("clears auth and returns false when the refresh call fails", async () => {
-    postAuthRefresh.mockRejectedValue(new Error("401"));
+  it("keeps the session on a network error or 5xx", async () => {
+    postAuthRefresh.mockRejectedValue(httpError(undefined));
+    await expect(performRefresh()).resolves.toBe("failed");
+    expect(useAuthStore.getState().accessToken).toBe("old-a");
 
-    await expect(performRefresh()).resolves.toBe(false);
-    expect(useAuthStore.getState().accessToken).toBeNull();
-    expect(useAuthStore.getState().refreshToken).toBeNull();
+    postAuthRefresh.mockRejectedValue(httpError(503));
+    await expect(performRefresh()).resolves.toBe("failed");
+    expect(useAuthStore.getState().accessToken).toBe("old-a");
   });
 });
 
 describe("refreshAccessTokenViaStore", () => {
   beforeEach(() => {
     postAuthRefresh.mockReset();
-    useAuthStore.setState({ ...initial, accessToken: "a", refreshToken: "r" }, false);
+    useAuthStore.setState({ ...initial, accessToken: "a" }, false);
   });
 
   it("shares one in-flight refresh between concurrent 401 callers", async () => {
-    let resolve!: (v: { accessToken: string; refreshToken: string }) => void;
+    let resolve!: (v: { accessToken: string }) => void;
     postAuthRefresh.mockReturnValue(new Promise((r) => (resolve = r)));
 
     const first = refreshAccessTokenViaStore();
     const second = refreshAccessTokenViaStore();
-    resolve({ accessToken: "a2", refreshToken: "r2" });
+    resolve({ accessToken: "a2" });
 
-    await expect(Promise.all([first, second])).resolves.toEqual([true, true]);
+    await expect(Promise.all([first, second])).resolves.toEqual(["refreshed", "refreshed"]);
     expect(postAuthRefresh).toHaveBeenCalledTimes(1);
   });
 
   it("starts a new refresh once the previous one has settled", async () => {
-    postAuthRefresh.mockResolvedValue({ accessToken: "a2", refreshToken: "r2" });
+    postAuthRefresh.mockResolvedValue({ accessToken: "a2" });
     await refreshAccessTokenViaStore();
 
-    postAuthRefresh.mockResolvedValue({ accessToken: "a3", refreshToken: "r3" });
+    postAuthRefresh.mockResolvedValue({ accessToken: "a3" });
     await refreshAccessTokenViaStore();
 
     expect(postAuthRefresh).toHaveBeenCalledTimes(2);
-    expect(postAuthRefresh).toHaveBeenLastCalledWith("r2");
-  });
-});
-
-describe("performRefresh failure modes", () => {
-  beforeEach(() => {
-    postAuthRefresh.mockReset();
-    localStorage.clear();
-    useAuthStore.setState({ ...initial, accessToken: "old-a", refreshToken: "old-r", user: null }, false);
-  });
-
-  it("keeps the session on a network error (refresh token may still be valid)", async () => {
-    const networkError = Object.assign(new Error("Network Error"), {
-      isAxiosError: true,
-      response: undefined,
-    });
-    postAuthRefresh.mockRejectedValue(networkError);
-
-    await expect(performRefresh()).resolves.toBe(false);
-
-    expect(useAuthStore.getState().accessToken).toBe("old-a");
-    expect(useAuthStore.getState().refreshToken).toBe("old-r");
-  });
-
-  it("ends the session when the refresh token is rejected with 401", async () => {
-    const rejected = Object.assign(new Error("Unauthorized"), {
-      isAxiosError: true,
-      response: { status: 401 },
-    });
-    postAuthRefresh.mockRejectedValue(rejected);
-
-    await expect(performRefresh()).resolves.toBe(false);
-
-    expect(useAuthStore.getState().accessToken).toBeNull();
-    expect(getAccessToken()).toBeNull();
-    expect(getRefreshToken()).toBeNull();
   });
 });

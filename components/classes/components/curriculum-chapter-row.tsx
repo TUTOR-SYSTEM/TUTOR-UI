@@ -13,7 +13,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
 import { TableRow, TableCell } from "@/components/ui/table.ui";
 import { LessonRow, type Lesson } from "./curriculum-lesson-row";
 
-/** Row of `GET /chapter?curriculumId=` (gateway `chapter.getAll` → `{ chapters, pagination }`). */
+/** Row of `GET /chapters?curriculumId=` (gateway `chapter.getAll` → `{ chapters, pagination }`). */
 export type Chapter = {
   id: string;
   curriculumId: string;

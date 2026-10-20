@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
 import { useDelete } from "@/lib/axios/query";
 import { getErrorMessage } from "@/lib/axios";
 import { useCurriculumCopy } from "@/hooks/useCurriculumCopy.hook";
+import { CURRICULUM_QUERY_KEY } from "@/lib/services/curriculum.service";
 
 type Props = {
   framework: { id: string; subject: string } | null;
@@ -23,7 +24,7 @@ export function DeleteCurriculumDialog({ framework, onClose }: Props) {
     (id) => `/curriculum/${id}`,
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["curriculum-frameworks"] });
+        queryClient.invalidateQueries({ queryKey: CURRICULUM_QUERY_KEY });
         toast.success(t.toastSuccess);
         onClose();
       },

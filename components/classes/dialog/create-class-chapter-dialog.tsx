@@ -8,7 +8,7 @@ import { axiosInstance, getErrorMessage } from "@/lib/axios";
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
 
-/** Create-chapter dialog on the per-class curriculum page (`POST /chapter/:curriculumId`). */
+/** Create-chapter dialog on the per-class curriculum page (`POST /chapters/:curriculumId`). */
 export const CreateClassChapterDialog = ({
   curriculumId,
   onClose,
@@ -25,7 +25,7 @@ export const CreateClassChapterDialog = ({
     if (!title.trim() || !curriculumId) return;
     setSubmitting(true);
     try {
-      await axiosInstance.post(`/chapter/${curriculumId}`, {
+      await axiosInstance.post(`/chapters/${curriculumId}`, {
         title: title.trim(),
       });
       toast.success("Đã tạo chương mới");

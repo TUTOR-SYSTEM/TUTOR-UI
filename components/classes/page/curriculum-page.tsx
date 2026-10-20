@@ -51,7 +51,7 @@ export const CurriculumPage = ({ classId }: CurriculumPageProps) => {
     isLoading: chaptersLoading,
     error,
     refetch: refetchChapters,
-  } = useGet<unknown>(chapterKey, "/chapter", {
+  } = useGet<unknown>(chapterKey, "/chapters", {
     params: { curriculumId, limit: 100 },
     enabled: !!curriculumId,
   });
@@ -65,7 +65,7 @@ export const CurriculumPage = ({ classId }: CurriculumPageProps) => {
   const handleDeleteChapter = useCallback(
     async (chapterId: string) => {
       try {
-        await axiosInstance.delete(`/chapter/${chapterId}`);
+        await axiosInstance.delete(`/chapters/${chapterId}`);
         await refetchChapters();
         toast.success("Đã xóa chương");
       } catch (err) {

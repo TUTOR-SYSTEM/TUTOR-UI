@@ -12,6 +12,7 @@ import {
 } from "@/lib/services/notification.service";
 import { getErrorMessage } from "@/lib/axios";
 import type { NotificationType } from "@/types";
+import { safeRedirectHref } from "@/lib/notification-redirect";
 
 const TYPE_LABELS: Record<NotificationType, string> = {
   SYSTEM: "Hệ thống",
@@ -148,9 +149,9 @@ export default function NotificationDetailPage() {
         )}
 
         {/* Action link */}
-        {notification.redirectUrl && (
+        {safeRedirectHref(notification.redirectUrl) && (
           <a
-            href={notification.redirectUrl}
+            href={safeRedirectHref(notification.redirectUrl) ?? undefined}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block rounded-lg border border-[#E7EEEC] px-4 py-2 text-sm font-medium text-[#0E9F8E] hover:bg-[#F1FBF9] transition-colors"

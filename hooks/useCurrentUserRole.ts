@@ -22,17 +22,24 @@ const roleFromToken = (accessToken: string | null): UserRole | null =>
   normalize(decodeJwtPayload<{ role?: string }>(accessToken)?.role);
 
 /**
- * Current user's role. Prefers the profile loaded into the zustand auth store
- * (`/users/detail-user`), falling back to the JWT claim for the brief window
- * before it resolves. Defaults to `TUTOR` when nothing is available (preserves
- * the management UX).
+ * Role của người dùng hiện tại, hoặc `null` khi chưa xác định được (chưa có token/profile). Dùng
+ * cho quyết định chặn route (`RoleGuard`): không được mặc định thành một role có quyền.
  */
-export function useCurrentUserRole(): UserRole {
+export function useCurrentUserRoleOrNull(): UserRole | null {
   const role = useAuthStore((s) => s.user?.role);
   const accessToken = useAuthStore((s) => s.accessToken);
 
   return useMemo(
-    () => normalize(role) ?? roleFromToken(accessToken) ?? "TUTOR",
+    () => normalize(role) ?? roleFromToken(accessToken),
     [role, accessToken],
   );
+}
+
+/**
+ * Role để hiển thị UI (label, menu). Khi chưa xác định, mặc định `TUTOR` như trước để giữ UX
+ * quản lý. Đây chỉ là gợi ý giao diện — quyền thật do BE enforce, và việc chặn route dùng
+ * `useCurrentUserRoleOrNull`.
+ */
+export function useCurrentUserRole(): UserRole {
+  return useCurrentUserRoleOrNull() ?? "TUTOR";
 }

@@ -36,6 +36,7 @@ import type {
   ClassFormat,
   FormState,
 } from "@/types";
+import { CURRICULUM_QUERY_KEY } from "@/lib/services/curriculum.service";
 
 /* ─── Constants (match create-class-modal) ─── */
 
@@ -135,7 +136,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
 
   /* curriculum fetch */
   const { data: frameworksRaw, isLoading: frameworksLoading } = useGet<unknown>(
-    ["curriculum-frameworks"],
+    [...CURRICULUM_QUERY_KEY, "frameworks"],
     "/curriculum",
     { enabled: open },
   );

@@ -1,11 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Plus, Search, ShieldOff } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  Loader2,
+  Pencil,
+  Plus,
+  Search,
+  ShieldOff,
+  Trash2,
+} from "lucide-react";
 
 import { getErrorMessage } from "@/lib/axios";
+import { cn } from "@/lib/utils";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
-import { useAdminTutors } from "@/hooks/useAdminUsers.hook";
+import {
+  useAdminTutors,
+  useDeleteTutor,
+} from "@/hooks/useAdminUsers.hook";
+import { useUserActions } from "@/lib/services/user.service";
 import { Button } from "@/components/ui/button.ui";
 import {
   Table,
@@ -16,12 +30,15 @@ import {
   TableRow,
 } from "@/components/ui/table.ui";
 import { AddTutorDialog } from "@/components/tutors/add-tutor-dialog";
+import { EditTutorDialog } from "@/components/tutors/edit-tutor-dialog";
+import { DeleteTutorDialog } from "@/components/tutors/delete-tutor-dialog";
 import UsageGuides, {
   type UsageGuideStep,
 } from "@/components/ui/usage-guide.ui";
 import type { ApiManagedUser } from "@/types";
 
 const PAGE_SIZE = 10;
+const TUTORS_QUERY_KEY = ["admin", "tutors"] as const;
 
 const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
   {
@@ -46,12 +63,12 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
   },
   {
     n: 4,
-    title: "Trạng thái tài khoản",
+    title: "Trạng thái và thao tác",
     body: (
       <>
-        Nhãn <span className="font-semibold text-[#0B7A6D]">Hoạt động</span>{" "}
-        / <span className="font-semibold text-[#DC2626]">Đã khoá</span> cho
-        biết gia sư có đang đăng nhập được không.
+        Nhấn nhãn <span className="font-semibold text-[#0B7A6D]">Hoạt động</span>{" "}
+        / <span className="font-semibold text-[#DC2626]">Đã khoá</span> để đổi
+        trạng thái. Biểu tượng bút chì để sửa, thùng rác để xoá gia sư.
       </>
     ),
   },
@@ -67,13 +84,30 @@ function fullName(t: ApiManagedUser): string {
   return [t.firstName, t.lastName].filter(Boolean).join(" ") || "Chưa đặt tên";
 }
 
-const COLUMNS = ["STT", "GIA SƯ", "MÔN DẠY", "SĐT", "SĨ SỐ LỚP", "HỌC SINH", "TRẠNG THÁI"];
+const COLUMNS = [
+  "STT",
+  "GIA SƯ",
+  "MÔN DẠY",
+  "SĐT",
+  "SĨ SỐ LỚP",
+  "HỌC SINH",
+  "TRẠNG THÁI",
+  "THAO TÁC",
+];
 
 export function TutorsPage() {
   const role = useCurrentUserRole();
+  const queryClient = useQueryClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingTutor, setEditingTutor] = useState<ApiManagedUser | null>(null);
+  const [deletingTutor, setDeletingTutor] = useState<ApiManagedUser | null>(
+    null,
+  );
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: TUTORS_QUERY_KEY });
 
   const params: { page: number; limit: number; search?: string } = {
     page,
@@ -85,6 +119,43 @@ export function TutorsPage() {
     params,
     role === "ADMIN",
   );
+
+  const { toggleStatus } = useUserActions();
+  const deleteTutor = useDeleteTutor();
+
+  const handleToggleStatus = (tutor: ApiManagedUser) => {
+    if (
+      tutor.isActive &&
+      !window.confirm(
+        `Khóa tài khoản của ${fullName(tutor)}? Gia sư này sẽ không thể đăng nhập.`,
+      )
+    ) {
+      return;
+    }
+    toggleStatus.mutate(
+      { id: tutor.id, isActive: !tutor.isActive },
+      {
+        onSuccess: () => {
+          invalidate();
+          toast.success("Cập nhật trạng thái thành công!");
+        },
+        onError: (err) =>
+          toast.error(getErrorMessage(err, "Cập nhật trạng thái thất bại")),
+      },
+    );
+  };
+
+  const handleDelete = (id: string) => {
+    deleteTutor.mutate(id, {
+      onSuccess: () => {
+        invalidate();
+        setDeletingTutor(null);
+        toast.success("Xóa gia sư thành công!");
+      },
+      onError: (err) =>
+        toast.error(getErrorMessage(err, "Xóa gia sư thất bại")),
+    });
+  };
 
   if (role !== "ADMIN") {
     return (
@@ -153,6 +224,19 @@ export function TutorsPage() {
         }}
       />
 
+      <EditTutorDialog
+        tutor={editingTutor}
+        onClose={() => setEditingTutor(null)}
+        onSaved={invalidate}
+      />
+
+      <DeleteTutorDialog
+        tutor={deletingTutor}
+        loading={deleteTutor.isPending}
+        onClose={() => setDeletingTutor(null)}
+        onConfirm={handleDelete}
+      />
+
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
         <Table>
@@ -161,9 +245,11 @@ export function TutorsPage() {
               {COLUMNS.map((col, i) => (
                 <TableHead
                   key={col}
-                  className={`h-auto px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9] ${
-                    i === 0 ? "w-14" : ""
-                  }`}
+                  className={cn(
+                    "h-auto px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+                    i === 0 ? "w-14" : "",
+                    col === "THAO TÁC" ? "text-right" : "text-left",
+                  )}
                 >
                   {col}
                 </TableHead>
@@ -238,15 +324,47 @@ export function TutorsPage() {
                 </TableCell>
 
                 <TableCell className="px-4 py-3.5">
-                  <span
-                    className={`rounded-md px-2.5 py-0.5 text-xs font-semibold ${
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleToggleStatus(t)}
+                    disabled={toggleStatus.isPending}
+                    title="Bấm để đổi trạng thái"
+                    className={cn(
+                      "h-auto! w-auto! rounded-md px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60",
                       t.isActive
-                        ? "bg-[#E4F6EF] text-[#0B7A6D]"
-                        : "bg-[#FEE2E2] text-[#DC2626]"
-                    }`}
+                        ? "bg-[#E4F6EF]! text-[#0B7A6D] hover:bg-[#E4F6EF]!"
+                        : "bg-[#FEE2E2]! text-[#DC2626] hover:bg-[#FEE2E2]!",
+                    )}
                   >
                     {t.isActive ? "Hoạt động" : "Đã khoá"}
-                  </span>
+                  </Button>
+                </TableCell>
+
+                <TableCell className="px-4 py-3.5">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Chỉnh sửa"
+                      onClick={() => setEditingTutor(t)}
+                      className="rounded-md text-[#8AA09B] hover:bg-[#E4F6EF] hover:text-[#0E9F8E]"
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Xóa"
+                      onClick={() => setDeletingTutor(t)}
+                      className="rounded-md text-[#8AA09B] hover:bg-red-50 hover:text-red-500"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

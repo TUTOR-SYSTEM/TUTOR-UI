@@ -34,7 +34,7 @@ export function CreateChapterDialog({
     if (!title.trim()) return;
     setSubmitting(true);
     try {
-      await axiosInstance.post(`/chapter/${frameworkId}`, {
+      await axiosInstance.post(`/chapters/${frameworkId}`, {
         title: title.trim(),
         description: desc.trim() || undefined,
         order,

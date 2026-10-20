@@ -16,6 +16,7 @@ import { useAuthCopy } from "@/hooks/useAuthCopy.hook";
 import { handleFormApiError } from "@/lib/axios/form-error";
 import { startFacebookOAuth, startGoogleOAuth } from "@/lib/oauth";
 import { useAuthActions } from "@/lib/services/auth.service";
+import { newPasswordError } from "@/lib/auth/password-policy";
 
 export type RegisterFormValues = {
   firstName: string;
@@ -49,6 +50,15 @@ export function RegisterForm() {
     form.clearErrors();
     const values = form.getValues();
 
+    const passwordError = newPasswordError(values.password, {
+      tooShort: shared.passwordTooShort,
+      tooLong: shared.passwordTooLong,
+    });
+    if (passwordError) {
+      form.setError("password", { message: passwordError });
+      return;
+    }
+
     if (values.password !== values.confirmPassword) {
       form.setError("confirmPassword", {
         message: t.passwordMismatch,
@@ -62,7 +72,6 @@ export function RegisterForm() {
         lastName: values.lastName,
         email: values.email.trim(),
         password: values.password,
-        confirmPassword: values.confirmPassword,
       },
       {
         onSuccess: () => {
