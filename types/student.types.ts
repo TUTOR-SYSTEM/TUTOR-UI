@@ -58,14 +58,26 @@ export type CreateStudentPayload = {
   gender: GENDER_ENUM;
   studentPhone?: string;
   school?: string;
+  /** Link an existing PARENT user instead of creating one from `parentName`/`parentPhone`/... */
+  parentId?: string;
   parentName?: string;
   parentRelationship?: string;
   parentPhone?: string;
   parentEmail?: string;
 };
 
+/** Existing PARENT user picked from search and linked to a student (not created from the form). */
+export type ParentOption = {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+};
+
 export type Student = {
   id: string;
+  /** Linked PARENT user id — null when the student has no parent account. */
+  parentId: string | null;
   initials: string;
   avatarColor: string;
   name: string;
@@ -162,6 +174,8 @@ export type UpdateStudentPayload = {
   province?: string;
   /** Replaces (not adds to) the student's current class enrollment; "" un-enrolls. */
   classId?: string;
+  /** Link an existing PARENT user; sent alone (without parent fields) so the shared parent is untouched. */
+  parentId?: string;
   parentName?: string;
   parentPhone?: string;
   parentEmail?: string;

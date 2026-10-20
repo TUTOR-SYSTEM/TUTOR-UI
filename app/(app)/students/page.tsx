@@ -76,6 +76,7 @@ function mapApiToStudent(api: ApiStudent): Student {
   const classes = api.classes ?? [];
   return {
     id: api.id,
+    parentId: api.parentId ?? null,
     initials: initials(fullName),
     avatarColor: SUBJECT_COLORS[prefix] ?? "#0E9F8E",
     name: fullName,

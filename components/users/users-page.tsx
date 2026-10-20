@@ -131,7 +131,7 @@ export function UsersPage() {
   );
 
   const users = useMemo(
-    () => (apiPayload?.data ?? []).map(mapApiToManagedUser),
+    () => (apiPayload?.users ?? []).map(mapApiToManagedUser),
     [apiPayload],
   );
 

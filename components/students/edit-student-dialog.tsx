@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,9 +17,10 @@ import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { useClassActions } from "@/lib/services/class.service";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import { useStudentsCopy } from "@/hooks/useStudentsCopy.hook";
+import { ParentPicker } from "@/components/students/parent-picker";
 import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
 import type { StudentsDictionary } from "@/lib/i18n/students.dictionary";
-import type { Student, UpdateStudentPayload } from "@/types";
+import type { ParentOption, Student, UpdateStudentPayload } from "@/types";
 
 type ClassOption = { id: string; name: string; code: string };
 
@@ -146,15 +147,66 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
     handleSubmit,
     reset,
     setError,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: student ? getDefaultValues(student) : undefined,
   });
+  /* another existing parent picked for the student shown (null = keep the current parent);
+   * ignored once a different student is opened */
+  const [picked, setPicked] = useState<{
+    studentId: string;
+    parent: ParentOption;
+  } | null>(null);
+  const otherParent =
+    student && picked?.studentId === student.id ? picked.parent : null;
+  /* a different existing parent is picked — its details are shown locked and sent as parentId only */
+  const relinksParent = otherParent !== null;
+
+  /* restore the parent fields (except the name) from the student's saved data */
+  const restoreParentFields = () => {
+    if (!student) return;
+    const saved = getDefaultValues(student);
+    (
+      [
+        "parentRelationship",
+        "parentPhone",
+        "parentEmail",
+        "parentAddress",
+        "parentDistrict",
+        "parentProvince",
+      ] as const
+    ).forEach((key) => setValue(key, saved[key]));
+  };
+
+  const pickParent = (parent: ParentOption) => {
+    if (!student) return;
+    if (parent.id === student.parentId) {
+      setPicked(null);
+      restoreParentFields();
+      return;
+    }
+    setPicked({ studentId: student.id, parent });
+    setValue("parentRelationship", "");
+    setValue("parentPhone", parent.phone ?? "");
+    setValue("parentEmail", parent.email ?? "");
+    setValue("parentAddress", "");
+    setValue("parentDistrict", "");
+    setValue("parentProvince", "");
+  };
+
+  /* name typed away from the picked parent: go back to the student's own parent */
+  const unpickParent = () => {
+    setPicked(null);
+    restoreParentFields();
+  };
 
   /* re-fill form whenever a different student is opened */
   useEffect(() => {
-    if (student) reset(getDefaultValues(student));
+    if (student) {
+      reset(getDefaultValues(student));
+    }
   }, [student, reset]);
 
   /* classes for the class picker */
@@ -197,13 +249,17 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
       // Always send classId — it directly reflects the picker's current state, and "" is a
       // meaningful value (explicitly un-enroll), not "leave unchanged" like the fields above.
       classId: values.classId ?? "",
-      parentName: values.parentName?.trim() || undefined,
-      parentPhone: values.parentPhone?.trim() || undefined,
-      parentEmail: values.parentEmail?.trim() || undefined,
-      parentRelationship: values.parentRelationship || undefined,
-      parentAddress: values.parentAddress?.trim() || undefined,
-      parentDistrict: values.parentDistrict?.trim() || undefined,
-      parentProvince: values.parentProvince?.trim() || undefined,
+      ...(otherParent
+        ? { parentId: otherParent.id }
+        : {
+            parentName: values.parentName?.trim() || undefined,
+            parentPhone: values.parentPhone?.trim() || undefined,
+            parentEmail: values.parentEmail?.trim() || undefined,
+            parentRelationship: values.parentRelationship || undefined,
+            parentAddress: values.parentAddress?.trim() || undefined,
+            parentDistrict: values.parentDistrict?.trim() || undefined,
+            parentProvince: values.parentProvince?.trim() || undefined,
+          }),
     };
 
     updateStudent.mutate(payload, {
@@ -424,20 +480,26 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
             </p>
           )}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Họ và tên phụ huynh */}
-            <Field
-              label={copy.editDialog.parentNameLabel}
-              error={errors.parentName?.message}
-            >
-              <Input
-                {...register("parentName")}
+          {/* Họ và tên phụ huynh — gõ để tìm phụ huynh có sẵn. Re-linking is an admin action like the
+              other parent edits (BE PUT /students is ADMIN-only). */}
+          <Controller
+            name="parentName"
+            control={control}
+            render={({ field }) => (
+              <ParentPicker
+                label={copy.editDialog.parentNameLabel}
                 placeholder={copy.editDialog.parentNamePlaceholder}
-                invalid={!!errors.parentName}
-                disabled={isPending || isTutor}
+                value={field.value ?? ""}
+                onValueChange={field.onChange}
+                linked={otherParent}
+                onLink={pickParent}
+                onUnlink={unpickParent}
+                disabled={isPending || isTutor || relinksParent}
               />
-            </Field>
+            )}
+          />
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {/* Quan hệ */}
             <Field
               label={copy.editDialog.relationshipLabel}
@@ -452,7 +514,7 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
                     value={field.value ?? ""}
                     onValueChange={field.onChange}
                     placeholder={copy.editDialog.relationshipPlaceholder}
-                    disabled={isPending || isTutor}
+                    disabled={isPending || isTutor || relinksParent}
                     invalid={!!errors.parentRelationship}
                   />
                 )}
@@ -469,7 +531,7 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
                 type="tel"
                 placeholder={copy.editDialog.parentPhonePlaceholder}
                 invalid={!!errors.parentPhone}
-                disabled={isPending || isTutor}
+                disabled={isPending || isTutor || relinksParent}
               />
             </Field>
 
@@ -483,7 +545,7 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
                 type="email"
                 placeholder={copy.editDialog.parentEmailPlaceholder}
                 invalid={!!errors.parentEmail}
-                disabled={isPending || isTutor}
+                disabled={isPending || isTutor || relinksParent}
               />
             </Field>
 
@@ -496,7 +558,7 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
                 {...register("parentAddress")}
                 placeholder={copy.editDialog.parentAddressPlaceholder}
                 invalid={!!errors.parentAddress}
-                disabled={isPending || isTutor}
+                disabled={isPending || isTutor || relinksParent}
               />
             </Field>
 
@@ -509,7 +571,7 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
                 {...register("parentDistrict")}
                 placeholder={copy.editDialog.parentDistrictPlaceholder}
                 invalid={!!errors.parentDistrict}
-                disabled={isPending || isTutor}
+                disabled={isPending || isTutor || relinksParent}
               />
             </Field>
 
@@ -522,7 +584,7 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
                 {...register("parentProvince")}
                 placeholder={copy.editDialog.parentProvincePlaceholder}
                 invalid={!!errors.parentProvince}
-                disabled={isPending || isTutor}
+                disabled={isPending || isTutor || relinksParent}
               />
             </Field>
           </div>

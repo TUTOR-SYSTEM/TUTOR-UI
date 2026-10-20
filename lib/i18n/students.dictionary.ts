@@ -115,6 +115,12 @@ export type StudentsDictionary = {
       classCountSub: string;
     };
   };
+  parentPicker: {
+    searching: string;
+    noResults: string;
+    matchedGroup: string;
+    similarGroup: string;
+  };
   addDialog: {
     title: string;
     subtitle: string;
@@ -324,6 +330,12 @@ const vi: StudentsDictionary = {
       pendingSuffix: " chờ/khác",
       classCountSub: "Tổng số lớp học sinh đang tham gia",
     },
+  },
+  parentPicker: {
+    searching: "Đang tìm...",
+    noResults: "Không tìm thấy phụ huynh. Nhập thông tin bên dưới để tạo phụ huynh mới.",
+    matchedGroup: "Phụ huynh trùng tên",
+    similarGroup: "Phụ huynh gần giống",
   },
   addDialog: {
     title: "Thêm học sinh mới",
@@ -537,6 +549,12 @@ const en: StudentsDictionary = {
       pendingSuffix: " pending/other",
       classCountSub: "Total number of classes the student is enrolled in",
     },
+  },
+  parentPicker: {
+    searching: "Searching...",
+    noResults: "No parent found. Enter the details below to create a new parent.",
+    matchedGroup: "Name matches",
+    similarGroup: "Similar names",
   },
   addDialog: {
     title: "Add new student",
