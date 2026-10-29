@@ -167,8 +167,8 @@ const AppSidebar = () => {
         href={item.url}
         className={`flex h-10 w-full items-center gap-3 rounded-lg px-3.25 text-sm font-medium transition-colors ${
           active
-            ? "bg-[#0e9f8e] text-white font-semibold"
-            : "text-[#5c726d] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
+            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         }`}
       >
         <item.icon className="size-4.5 shrink-0" strokeWidth={1.8} />
@@ -208,12 +208,12 @@ const AppSidebar = () => {
     <SidebarProvider>
       {/* Header */}
       <div className="flex items-center gap-2.75 px-6 pt-6 pb-4">
-        <div className="flex size-9.5 shrink-0 items-center justify-center rounded-[11px] bg-linear-to-br from-[#12b3a0] to-[#0e9f8e] text-[18px] font-extrabold text-white">
+        <div className="flex size-9.5 shrink-0 items-center justify-center rounded-[11px] bg-linear-to-br from-primary to-primary-hover text-[18px] font-extrabold text-primary-foreground">
           G
         </div>
         <div>
           <div
-            className="mt-0.5 font-sans text-base font-bold leading-none text-[#16302b]"
+            className="mt-0.5 font-sans text-base font-bold leading-none text-foreground"
             style={{ letterSpacing: "0.264px" }}
           >
             {brand.name}

@@ -178,21 +178,21 @@ describe("AppSidebar", () => {
     it("marks only the home link active on the root path", () => {
       nav.pathname = "/";
       render(<AppSidebar />);
-      const active = navLinks().filter((l) => l.className.includes("bg-[#0e9f8e]"));
+      const active = navLinks().filter((l) => l.className.includes("bg-sidebar-primary"));
       expect(active.map((l) => l.getAttribute("href"))).toEqual(["/"]);
     });
 
     it("marks a nested route active under its section", () => {
       nav.pathname = "/classes/abc-123/curriculum";
       render(<AppSidebar />);
-      const active = navLinks().filter((l) => l.className.includes("bg-[#0e9f8e]"));
+      const active = navLinks().filter((l) => l.className.includes("bg-sidebar-primary"));
       expect(active.map((l) => l.getAttribute("href"))).toEqual(["/classes"]);
     });
 
     it("does not treat a sibling prefix as active", () => {
       nav.pathname = "/classes-archive";
       render(<AppSidebar />);
-      const active = navLinks().filter((l) => l.className.includes("bg-[#0e9f8e]"));
+      const active = navLinks().filter((l) => l.className.includes("bg-sidebar-primary"));
       expect(active).toHaveLength(0);
     });
 
@@ -200,7 +200,7 @@ describe("AppSidebar", () => {
       nav.pathname = "/schedule";
       render(<AppSidebar />);
       const home = navLinks().find((l) => l.getAttribute("href") === "/")!;
-      expect(home.className).not.toContain("bg-[#0e9f8e]");
+      expect(home.className).not.toContain("bg-sidebar-primary");
     });
   });
 

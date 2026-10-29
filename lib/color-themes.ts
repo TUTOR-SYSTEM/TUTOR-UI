@@ -606,3 +606,90 @@ export const clearColorThemeVars = () => {
     root.style.removeProperty(cssVar),
   );
 };
+
+// ─── Accent (màu nhấn) ───────────────────────────────────────────────────────
+// Chỉ ghi đè nhóm biến "primary" — không đụng radius/nền/card nên không đổi kiểu dáng
+// button, khác với `ColorTheme` (preset đầy đủ). Áp SAU theme đầy đủ.
+
+export type AccentId = "teal" | "blue" | "purple" | "pink" | "orange";
+
+export const DEFAULT_ACCENT_ID = "default" as const;
+
+export type AccentSelection = AccentId | typeof DEFAULT_ACCENT_ID;
+
+type AccentVars = {
+  primary: string;
+  foreground: string;
+  hover: string;
+  light: string;
+  soft: string;
+};
+
+export type Accent = {
+  id: AccentId;
+  /** Màu hiển thị trên swatch. */
+  hex: string;
+  light: AccentVars;
+  dark: AccentVars;
+};
+
+export const accents: Accent[] = [
+  {
+    id: "teal",
+    hex: "#0E9F8E",
+    light: { primary: "#0e9f8e", foreground: "#ffffff", hover: "#0b7a6d", light: "#e4f6ef", soft: "#f1fbf9" },
+    dark: { primary: "#15c2a8", foreground: "#072820", hover: "#0e9f8e", light: "#0b3830", soft: "#072820" },
+  },
+  {
+    id: "blue",
+    hex: "#3B82F6",
+    light: { primary: "#3b82f6", foreground: "#ffffff", hover: "#2563eb", light: "#dbeafe", soft: "#eff6ff" },
+    dark: { primary: "#60a5fa", foreground: "#0b1220", hover: "#3b82f6", light: "#172554", soft: "#0f1b3d" },
+  },
+  {
+    id: "purple",
+    hex: "#8B5CF6",
+    light: { primary: "#8b5cf6", foreground: "#ffffff", hover: "#7c3aed", light: "#ede9fe", soft: "#f5f3ff" },
+    dark: { primary: "#a78bfa", foreground: "#150b2e", hover: "#8b5cf6", light: "#2e1065", soft: "#1e1038" },
+  },
+  {
+    id: "pink",
+    hex: "#EC4899",
+    light: { primary: "#ec4899", foreground: "#ffffff", hover: "#db2777", light: "#fce7f3", soft: "#fdf2f8" },
+    dark: { primary: "#f472b6", foreground: "#2a0617", hover: "#ec4899", light: "#500724", soft: "#33071a" },
+  },
+  {
+    id: "orange",
+    hex: "#F97316",
+    light: { primary: "#f97316", foreground: "#ffffff", hover: "#ea580c", light: "#ffedd5", soft: "#fff7ed" },
+    dark: { primary: "#fb923c", foreground: "#2a1004", hover: "#f97316", light: "#431407", soft: "#2b0d04" },
+  },
+];
+
+export const findAccent = (id: AccentSelection): Accent | undefined =>
+  accents.find((accent) => accent.id === id);
+
+export const applyAccentVars = (accent: Accent, mode: "light" | "dark") => {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const v = mode === "dark" ? accent.dark : accent.light;
+  const style = document.documentElement.style;
+  const tint = mode === "dark" ? v.light : v.soft;
+
+  style.setProperty("--primary", v.primary);
+  style.setProperty("--primary-foreground", v.foreground);
+  style.setProperty("--primary-hover", v.hover);
+  style.setProperty("--primary-light", v.light);
+  style.setProperty("--primary-soft", v.soft);
+  style.setProperty("--ring", v.primary);
+  style.setProperty("--accent", v.light);
+  style.setProperty("--accent-foreground", mode === "dark" ? v.primary : v.hover);
+  style.setProperty("--secondary", tint);
+  style.setProperty("--sidebar-primary", v.primary);
+  style.setProperty("--sidebar-primary-foreground", v.foreground);
+  style.setProperty("--sidebar-ring", v.primary);
+  style.setProperty("--sidebar-accent", tint);
+  style.setProperty("--sidebar-accent-foreground", mode === "dark" ? v.primary : v.hover);
+};
