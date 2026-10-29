@@ -128,6 +128,20 @@
   không đẩy layout của page, không phụ thuộc padding/margin của container gốc từng page. Chỉ 4 step
   bị ẩn khi bấm nút toggle (icon `ChevronUp`/`ChevronDown`); phần `warning` luôn hiển thị. Xem
   `app/(app)/notifications/page.tsx` làm mẫu đầy đủ nhất.
+- **Dark mode / màu**: không hardcode hex hay `bg-white` cho nền/chữ/viền UI — dùng token theme
+  (`app/globals.css` khai `:root` + `.dark`, map qua `@theme inline`) để tự đổi theo `html.dark` và
+  color theme: `bg-card`, `bg-muted`, `bg-primary-light`/`bg-primary-soft`, `text-foreground`,
+  `text-muted-foreground`, `border-border`/`border-border-light`, `bg-primary`/`hover:bg-primary-hover`,
+  `text-accent-foreground`, sidebar dùng `text-sidebar-foreground`. Hex cố định chỉ giữ cho thứ có
+  màu riêng cố ý: logo Google/Facebook, mockup xem trước theme sáng/tối, gradient banner, màu lỗi
+  `#ef4444`, núm toggle trắng; thẻ nền pastel cần thêm biến thể `dark:` (vd `dark:bg-[#4285F4]/10`).
+  **Màu nhấn ≠ color theme**: "Màu nhấn" ở Cài đặt dùng `accent`/`setAccent` của `useColorTheme()`
+  (`accents` trong `lib/color-themes.ts`, lưu `accent-color-preference`) — chỉ ghi đè nhóm biến
+  primary/ring/sidebar-primary, **không** đổi radius/nền nên không đổi kiểu dáng button; preset đầy đủ
+  (`colorTheme`, đổi cả radius) chỉ chọn qua theme picker ở header. Mục sidebar active dùng
+  `bg-sidebar-primary text-sidebar-primary-foreground` để đi theo màu nhấn — đừng hardcode hex teal.
+  Đã sửa trọn ở `app/(app)/settings/page.tsx` và `components/layout/app-sidebar.tsx`; các trang khác
+  vẫn còn hex cố định (nợ kỹ thuật) — khi sửa trang nào thì chuyển sang token luôn.
 - **Style**: Tailwind v4. Một PostToolUse hook chạy `eslint --fix` best-effort trên file vừa sửa — cứ
   bám phong cách xung quanh, để hook chuẩn hoá.
 - **`SectionCard`/`Panel` (khung card có header icon+title cho trang "watch"/detail) không phải

@@ -36,8 +36,8 @@ import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import type { UserRole } from "@/lib/rbac/roles";
 import { useTheme } from "@/components/providers/theme.provider";
 import { useColorTheme } from "@/components/providers/color-theme.provider";
+import { accents } from "@/lib/color-themes";
 import { useLocale } from "@/hooks/useLocale.hook";
-import type { ColorThemeSelection } from "@/lib/color-themes";
 
 /* ─── Types ─── */
 type Tab =
@@ -128,10 +128,10 @@ function TextInput({
       onChange={onChange}
       readOnly={readOnly}
       placeholder={placeholder}
-      className={`h-10 w-full rounded-lg border px-3 text-sm placeholder:text-[#9AAEA9] transition-colors ${
+      className={`h-10 w-full rounded-lg border px-3 text-sm placeholder:text-muted-foreground transition-colors ${
         readOnly
-          ? "cursor-not-allowed border-[#E7EEEC] bg-[#F3F7F5] text-[#5c726d]"
-          : "border-[#E7EEEC] bg-white text-[#16302b] focus:border-[#0E9F8E] focus:outline-none focus:ring-2 focus:ring-[#0E9F8E]/20"
+          ? "cursor-not-allowed border-border bg-muted text-muted-foreground"
+          : "border-border bg-card text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
       }`}
     />
   );
@@ -154,7 +154,7 @@ function Textarea({
       onChange={onChange}
       placeholder={placeholder}
       rows={rows}
-      className="w-full resize-none rounded-lg border border-[#E7EEEC] bg-white px-3 py-2.5 text-sm text-[#16302b] placeholder:text-[#9AAEA9] focus:border-[#0E9F8E] focus:outline-none focus:ring-2 focus:ring-[#0E9F8E]/20 transition-colors"
+      className="w-full resize-none rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
     />
   );
 }
@@ -172,13 +172,13 @@ function Toggle({
   return (
     <div className="flex items-center justify-between py-3">
       <div>
-        <p className="text-sm font-medium text-[#16302b]">{label}</p>
-        {desc && <p className="mt-0.5 text-xs text-[#9AAEA9]">{desc}</p>}
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        {desc && <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>}
       </div>
       <button
         type="button"
         onClick={() => setOn((v) => !v)}
-        className={`relative h-6 w-11 rounded-full transition-colors ${on ? "bg-[#0E9F8E]" : "bg-[#E7EEEC]"}`}
+        className={`relative h-6 w-11 rounded-full transition-colors ${on ? "bg-primary" : "bg-border"}`}
       >
         <span
           className={`absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-sm transition-transform ${on ? "translate-x-5" : "translate-x-0"}`}
@@ -199,7 +199,7 @@ function LabelField({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-sm text-[#9AAEA9]">{label}</label>
+      <label className="mb-1.5 block text-sm text-muted-foreground">{label}</label>
       {children}
     </div>
   );
@@ -241,14 +241,14 @@ function SubjectsChipInput({
       {subjects.map((subject) => (
         <span
           key={subject}
-          className="flex items-center gap-1.5 rounded-full bg-[#E4F6EF] px-3 py-1 text-xs font-medium text-[#0B7A6D]"
+          className="flex items-center gap-1.5 rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-accent-foreground"
         >
           {subject}
           <button
             type="button"
             onClick={() => removeSubject(subject)}
             aria-label={`Xoá ${subject}`}
-            className="text-[#0B7A6D]/60 hover:text-[#0B7A6D]"
+            className="text-accent-foreground/60 hover:text-accent-foreground"
           >
             ×
           </button>
@@ -271,13 +271,13 @@ function SubjectsChipInput({
             }
           }}
           placeholder="Tên môn học"
-          className="h-7 w-32 rounded-full border border-[#0E9F8E] bg-white px-3 text-xs text-[#16302b] focus:outline-none"
+          className="h-7 w-32 rounded-full border border-primary bg-card px-3 text-xs text-foreground focus:outline-none"
         />
       ) : (
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="rounded-full border border-dashed border-[#0E9F8E]/50 px-3 py-1 text-xs font-medium text-[#0E9F8E] hover:bg-[#E4F6EF]"
+          className="rounded-full border border-dashed border-primary/50 px-3 py-1 text-xs font-medium text-primary hover:bg-primary-light"
         >
           + Thêm môn
         </button>
@@ -295,8 +295,8 @@ function FormRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-[#EEF3F1] py-3 last:border-0">
-      <span className="w-36 shrink-0 text-sm text-[#9AAEA9]">{label}</span>
+    <div className="flex items-center justify-between gap-4 border-b border-border-light py-3 last:border-0">
+      <span className="w-36 shrink-0 text-sm text-muted-foreground">{label}</span>
       <div className="flex-1">{children}</div>
     </div>
   );
@@ -304,14 +304,14 @@ function FormRow({
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[#9AAEA9]">
+    <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
       {children}
     </h3>
   );
 }
 
 function Divider() {
-  return <hr className="my-6 border-[#EEF3F1]" />;
+  return <hr className="my-6 border-border-light" />;
 }
 
 function SaveButton({ label = "Lưu thay đổi" }: { label?: string }) {
@@ -326,7 +326,7 @@ function SaveButton({ label = "Lưu thay đổi" }: { label?: string }) {
         type="button"
         onClick={handle}
         className={`flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-all ${
-          saved ? "bg-[#0b7a6d]" : "bg-[#0E9F8E] hover:bg-[#0b7a6d]"
+          saved ? "bg-primary-hover" : "bg-primary hover:bg-primary-hover"
         }`}
       >
         {saved && <Check className="size-4" />}
@@ -380,7 +380,7 @@ function SocialAccounts() {
       email: "chienbinhthephai@gmail.com",
       connected: true,
       icon: <GoogleIcon />,
-      color: "bg-[#F3F8FF]",
+      color: "bg-[#F3F8FF] dark:bg-[#4285F4]/10",
       border: "border-[#4285F4]/20",
     },
     {
@@ -389,7 +389,7 @@ function SocialAccounts() {
       email: null,
       connected: false,
       icon: <FacebookIcon />,
-      color: "bg-[#F0F4FF]",
+      color: "bg-[#F0F4FF] dark:bg-[#1877F2]/10",
       border: "border-[#1877F2]/20",
     },
   ]);
@@ -414,26 +414,26 @@ function SocialAccounts() {
         <div
           key={a.id}
           className={`flex items-center justify-between rounded-xl border px-4 py-3.5 transition-colors ${
-            a.connected ? `${a.color} ${a.border}` : "border-[#E7EEEC] bg-white"
+            a.connected ? `${a.color} ${a.border}` : "border-border bg-card"
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg border border-[#E7EEEC] bg-white shadow-sm">
+            <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-card shadow-sm">
               {a.icon}
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#16302b]">{a.label}</p>
+              <p className="text-sm font-semibold text-foreground">{a.label}</p>
               {a.connected && a.email ? (
-                <p className="mt-0.5 text-xs text-[#9AAEA9]">{a.email}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{a.email}</p>
               ) : (
-                <p className="mt-0.5 text-xs text-[#9AAEA9]">Chưa liên kết</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Chưa liên kết</p>
               )}
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             {a.connected && (
-              <span className="flex items-center gap-1 rounded-full bg-[#E4F6EF] px-2.5 py-0.5 text-[11px] font-semibold text-[#0E9F8E]">
+              <span className="flex items-center gap-1 rounded-full bg-primary-light px-2.5 py-0.5 text-[11px] font-semibold text-primary">
                 <Check className="size-3" />
                 Đã liên kết
               </span>
@@ -443,8 +443,8 @@ function SocialAccounts() {
               onClick={() => toggle(a.id)}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                 a.connected
-                  ? "border border-[#E7EEEC] bg-white text-[#ef4444] hover:bg-[#ef4444]/5"
-                  : "bg-[#0E9F8E] text-white hover:bg-[#0b7a6d]"
+                  ? "border border-border bg-card text-[#ef4444] hover:bg-[#ef4444]/5"
+                  : "bg-primary text-white hover:bg-primary-hover"
               }`}
             >
               {a.connected ? "Huỷ liên kết" : "Liên kết"}
@@ -453,7 +453,7 @@ function SocialAccounts() {
         </div>
       ))}
 
-      <p className="text-xs text-[#9AAEA9]">
+      <p className="text-xs text-muted-foreground">
         Liên kết tài khoản mạng xã hội để đăng nhập nhanh mà không cần mật khẩu.
       </p>
     </div>
@@ -514,8 +514,8 @@ function TutorProfilePanel({
   return (
     <div className="flex flex-col gap-6">
       {/* Avatar card */}
-      <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">
-        <p className="mb-3 text-sm font-semibold text-[#16302b]">
+      <div className="rounded-lg border border-border-light p-4 shadow-sm">
+        <p className="mb-3 text-sm font-semibold text-foreground">
           Ảnh đại diện
         </p>
         <div className="flex items-center gap-4">
@@ -528,12 +528,12 @@ function TutorProfilePanel({
               className="size-20 rounded-xl object-cover"
             />
           ) : (
-            <div className="flex size-20 items-center justify-center rounded-xl bg-[#0E9F8E] text-2xl font-bold text-white">
+            <div className="flex size-20 items-center justify-center rounded-xl bg-primary text-2xl font-bold text-white">
               {initials}
             </div>
           )}
           <div>
-            <p className="text-xs text-[#9AAEA9]">
+            <p className="text-xs text-muted-foreground">
               PNG hoặc JPG, tối thiểu 400×400px. Tối đa 2MB.
             </p>
             <div className="mt-2 flex items-center gap-2">
@@ -541,7 +541,7 @@ function TutorProfilePanel({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={avatarUploading}
-                className="flex items-center gap-1.5 rounded-lg bg-[#0E9F8E] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#0b7a6d] disabled:opacity-60"
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
               >
                 {avatarUploading && (
                   <Loader2 className="size-3.5 animate-spin" />
@@ -552,7 +552,7 @@ function TutorProfilePanel({
                 type="button"
                 onClick={handleAvatarRemove}
                 disabled={avatarRemoving || !avatarSrc}
-                className="flex items-center gap-1.5 rounded-lg border border-[#E7EEEC] px-3 py-1.5 text-xs font-semibold text-[#5c726d] transition-colors hover:bg-[#F3F7F5] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {avatarRemoving && (
                   <Loader2 className="size-3.5 animate-spin" />
@@ -572,8 +572,8 @@ function TutorProfilePanel({
       </div>
 
       {/* Personal info card */}
-      <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">
-        <p className="mb-4 text-sm font-semibold text-[#16302b]">
+      <div className="rounded-lg border border-border-light p-4 shadow-sm">
+        <p className="mb-4 text-sm font-semibold text-foreground">
           Thông tin cá nhân
         </p>
         <div className="grid grid-cols-2 gap-4">
@@ -624,8 +624,8 @@ function TutorProfilePanel({
       </div>
 
       {/* Address card */}
-      <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">
-        <p className="mb-4 text-sm font-semibold text-[#16302b]">Địa chỉ</p>
+      <div className="rounded-lg border border-border-light p-4 shadow-sm">
+        <p className="mb-4 text-sm font-semibold text-foreground">Địa chỉ</p>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <LabelField label="Địa chỉ">
@@ -656,7 +656,7 @@ function TutorProfilePanel({
           onClick={handleProfileSave}
           disabled={profileSaving}
           className={`flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-all ${
-            profileSaved ? "bg-[#0b7a6d]" : "bg-[#0E9F8E] hover:bg-[#0b7a6d]"
+            profileSaved ? "bg-primary-hover" : "bg-primary hover:bg-primary-hover"
           } disabled:opacity-60`}
         >
           {profileSaving ? (
@@ -847,7 +847,7 @@ function ProfilePanel() {
               className="size-20 rounded-full object-cover"
             />
           ) : (
-            <div className="flex size-20 items-center justify-center rounded-full bg-[#0E9F8E] text-2xl font-bold text-white">
+            <div className="flex size-20 items-center justify-center rounded-full bg-primary text-2xl font-bold text-white">
               {initials}
             </div>
           )}
@@ -855,7 +855,7 @@ function ProfilePanel() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={avatarUploading}
-            className="absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border-2 border-white bg-[#0E9F8E] text-white shadow-sm hover:bg-[#0b7a6d] transition-colors disabled:opacity-60"
+            className="absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border-2 border-card bg-primary text-white shadow-sm hover:bg-primary-hover transition-colors disabled:opacity-60"
           >
             {avatarUploading ? (
               <Loader2 className="size-3.5 animate-spin" />
@@ -865,13 +865,13 @@ function ProfilePanel() {
           </button>
         </div>
         <div>
-          <p className="text-sm font-semibold text-[#16302b]">Ảnh đại diện</p>
-          <p className="mt-0.5 text-xs text-[#9AAEA9]">JPG, PNG tối đa 2MB</p>
+          <p className="text-sm font-semibold text-foreground">Ảnh đại diện</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">JPG, PNG tối đa 2MB</p>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={avatarUploading}
-            className="mt-2 rounded-lg border border-[#E7EEEC] px-3 py-1.5 text-xs font-medium text-[#16302b] hover:bg-[#F3F7F5] transition-colors disabled:opacity-50"
+            className="mt-2 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
           >
             {avatarUploading ? "Đang tải..." : "Tải ảnh lên"}
           </button>
@@ -888,7 +888,7 @@ function ProfilePanel() {
       <Divider />
       <SectionTitle>Thông tin cơ bản</SectionTitle>
 
-      <div className="rounded-lg border border-[#EEF3F1] px-4">
+      <div className="rounded-lg border border-border-light px-4">
         <FormRow label="Họ">
           <TextInput
             value={form.firstName}
@@ -899,7 +899,7 @@ function ProfilePanel() {
             }
           />
           {isNameLocked && (
-            <p className="mt-1.5 text-xs text-[#9AAEA9]">
+            <p className="mt-1.5 text-xs text-muted-foreground">
               Học sinh không thể tự đổi họ tên — liên hệ gia sư hoặc quản trị
               viên nếu cần chỉnh sửa.
             </p>
@@ -950,7 +950,7 @@ function ProfilePanel() {
           <Divider />
           <SectionTitle>Học sinh liên kết</SectionTitle>
 
-          <p className="text-sm text-[#9AAEA9]">
+          <p className="text-sm text-muted-foreground">
             Chức năng xem học sinh liên kết hiện chưa khả dụng.
           </p>
         </>
@@ -959,7 +959,7 @@ function ProfilePanel() {
       <Divider />
       <SectionTitle>Địa chỉ</SectionTitle>
 
-      <div className="rounded-lg border border-[#EEF3F1] px-4">
+      <div className="rounded-lg border border-border-light px-4">
         <FormRow label="Địa chỉ">
           <TextInput
             value={form.address}
@@ -986,7 +986,7 @@ function ProfilePanel() {
           onClick={handleProfileSave}
           disabled={profileSaving}
           className={`flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-all ${
-            profileSaved ? "bg-[#0b7a6d]" : "bg-[#0E9F8E] hover:bg-[#0b7a6d]"
+            profileSaved ? "bg-primary-hover" : "bg-primary hover:bg-primary-hover"
           } disabled:opacity-60`}
         >
           {profileSaving ? (
@@ -1049,23 +1049,23 @@ function PasswordInput({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-medium text-[#16302b]">
+      <label className="mb-1.5 block text-sm font-medium text-foreground">
         {label}
       </label>
       <div className="relative">
         <input
           {...registration}
           type={show ? "text" : "password"}
-          className={`h-10 w-full rounded-lg border bg-white px-3 pr-10 text-sm text-[#16302b] focus:outline-none focus:ring-2 transition-colors ${
+          className={`h-10 w-full rounded-lg border bg-card px-3 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 transition-colors ${
             error
               ? "border-[#ef4444] focus:border-[#ef4444] focus:ring-[#ef4444]/20"
-              : "border-[#E7EEEC] focus:border-[#0E9F8E] focus:ring-[#0E9F8E]/20"
+              : "border-border focus:border-primary focus:ring-primary/20"
           }`}
         />
         <button
           type="button"
           onClick={onToggle}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9AAEA9] hover:text-[#16302b] transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
         >
           {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
         </button>
@@ -1150,7 +1150,7 @@ function SecurityPanel() {
               registration={register("confirmPassword")}
               error={errors.confirmPassword?.message}
             />
-            <p className="text-xs text-[#9AAEA9]">
+            <p className="text-xs text-muted-foreground">
               Mật khẩu tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường và số.
             </p>
 
@@ -1158,7 +1158,7 @@ function SecurityPanel() {
               <button
                 type="submit"
                 disabled={isPending}
-                className="flex items-center gap-2 rounded-lg bg-[#0E9F8E] px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-[#0b7a6d] disabled:opacity-60"
+                className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-primary-hover disabled:opacity-60"
               >
                 {isPending && <Loader2 className="size-4 animate-spin" />}
                 {isPending ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
@@ -1167,7 +1167,7 @@ function SecurityPanel() {
           </form>
         </div>
 
-        <div className="hidden self-stretch border-l border-[#EEF3F1] lg:block" />
+        <div className="hidden self-stretch border-l border-border-light lg:block" />
 
         <div className="min-w-0 flex-1">
           <SectionTitle>Liên kết tài khoản mạng xã hội</SectionTitle>
@@ -1201,18 +1201,18 @@ function SecurityPanel() {
         ].map((s) => (
           <div
             key={s.device}
-            className="flex items-center justify-between rounded-lg border border-[#EEF3F1] px-4 py-3"
+            className="flex items-center justify-between rounded-lg border border-border-light px-4 py-3"
           >
             <div>
-              <p className="text-sm font-medium text-[#16302b]">
+              <p className="text-sm font-medium text-foreground">
                 {s.device}
                 {s.current && (
-                  <span className="ml-2 rounded-full bg-[#E4F6EF] px-2 py-0.5 text-[11px] font-semibold text-[#0E9F8E]">
+                  <span className="ml-2 rounded-full bg-primary-light px-2 py-0.5 text-[11px] font-semibold text-primary">
                     Hiện tại
                   </span>
                 )}
               </p>
-              <p className="mt-0.5 text-xs text-[#9AAEA9]">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {s.location} · {s.time}
               </p>
             </div>
@@ -1242,7 +1242,7 @@ function NotificationsPanel() {
   return (
     <div className="flex flex-col gap-2">
       <SectionTitle>Kênh thông báo</SectionTitle>
-      <div className="rounded-lg border border-[#EEF3F1] divide-y divide-[#EEF3F1] px-4">
+      <div className="rounded-lg border border-border-light divide-y divide-border-light px-4">
         <Toggle
           defaultChecked
           label="Thông báo trong ứng dụng"
@@ -1258,7 +1258,7 @@ function NotificationsPanel() {
 
       <Divider />
       <SectionTitle>Loại thông báo</SectionTitle>
-      <div className="rounded-lg border border-[#EEF3F1] divide-y divide-[#EEF3F1] px-4">
+      <div className="rounded-lg border border-border-light divide-y divide-border-light px-4">
         <Toggle
           defaultChecked
           label="Học phí"
@@ -1284,7 +1284,7 @@ function NotificationsPanel() {
 
       <Divider />
       <SectionTitle>Lịch nhận thông báo</SectionTitle>
-      <div className="rounded-lg border border-[#EEF3F1] divide-y divide-[#EEF3F1] px-4">
+      <div className="rounded-lg border border-border-light divide-y divide-border-light px-4">
         <Toggle
           defaultChecked
           label="Nhắc lịch trước 30 phút"
@@ -1303,39 +1303,20 @@ function NotificationsPanel() {
   );
 }
 
-const ACCENT_COLORS = [
-  { id: "teal", hex: "#0E9F8E", colorTheme: "supabase" as ColorThemeSelection },
-  { id: "blue", hex: "#3B82F6", colorTheme: "modern-minimal" as ColorThemeSelection },
-  { id: "purple", hex: "#8B5CF6", colorTheme: "violet-bloom" as ColorThemeSelection },
-  { id: "pink", hex: "#EC4899", colorTheme: "t3-chat" as ColorThemeSelection },
-  { id: "orange", hex: "#F97316", colorTheme: "tangerine" as ColorThemeSelection },
-] as const;
-
-type AccentId = (typeof ACCENT_COLORS)[number]["id"];
-
-const COLOR_THEME_TO_ACCENT: Record<string, AccentId> = {
-  supabase: "teal",
-  "modern-minimal": "blue",
-  "violet-bloom": "purple",
-  "t3-chat": "pink",
-  tangerine: "orange",
-};
-
 function AppearancePanel() {
   const { theme, setTheme } = useTheme();
-  const { colorTheme, setColorTheme } = useColorTheme();
+  const { accent, setAccent } = useColorTheme();
   const { language, setLocale } = useLocale();
 
   const resolvedTheme = theme === "system" ? "light" : theme;
-  const currentAccentId =
-    COLOR_THEME_TO_ACCENT[colorTheme] ?? "teal";
+  const currentAccentId = accent === "default" ? "teal" : accent;
   const currentLang = language ?? "vi";
 
   return (
     <div className="flex flex-col gap-6">
       {/* Chủ đề hiển thị */}
-      <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">
-        <p className="mb-4 text-sm font-semibold text-[#16302b]">
+      <div className="rounded-lg border border-border-light p-4 shadow-sm">
+        <p className="mb-4 text-sm font-semibold text-foreground">
           Chủ đề hiển thị
         </p>
         <div className="grid grid-cols-2 gap-4">
@@ -1346,8 +1327,8 @@ function AppearancePanel() {
               onClick={() => setTheme(t)}
               className={`rounded-xl border-2 p-3 text-left transition-all ${
                 resolvedTheme === t
-                  ? "border-[#0E9F8E]"
-                  : "border-[#E7EEEC] hover:border-[#0E9F8E]/40"
+                  ? "border-primary"
+                  : "border-border hover:border-primary/40"
               }`}
             >
               {/* Mini preview */}
@@ -1373,15 +1354,15 @@ function AppearancePanel() {
                 <span
                   className={`flex size-4 items-center justify-center rounded-full border-2 ${
                     resolvedTheme === t
-                      ? "border-[#0E9F8E] bg-[#0E9F8E]"
-                      : "border-[#E7EEEC]"
+                      ? "border-primary bg-primary"
+                      : "border-border"
                   }`}
                 >
                   {resolvedTheme === t && (
                     <span className="size-1.5 rounded-full bg-white" />
                   )}
                 </span>
-                <span className="text-sm font-medium text-[#16302b]">
+                <span className="text-sm font-medium text-foreground">
                   {t === "light" ? "Sáng" : "Tối"}
                 </span>
               </div>
@@ -1391,22 +1372,22 @@ function AppearancePanel() {
       </div>
 
       {/* Màu nhấn */}
-      <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">
-        <p className="text-sm font-semibold text-[#16302b]">Màu nhấn</p>
-        <p className="mt-0.5 text-xs text-[#9AAEA9]">
+      <div className="rounded-lg border border-border-light p-4 shadow-sm">
+        <p className="text-sm font-semibold text-foreground">Màu nhấn</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
           Màu chủ đạo cho nút và trạng thái hoạt động.
         </p>
         <div className="mt-4 flex items-center gap-3">
-          {ACCENT_COLORS.map((c) => (
+          {accents.map((c) => (
             <button
               key={c.id}
               type="button"
-              onClick={() => setColorTheme(c.colorTheme)}
+              onClick={() => setAccent(c.id)}
               aria-label={c.id}
               style={{ backgroundColor: c.hex }}
               className={`flex size-9 items-center justify-center rounded-full transition-all ${
                 currentAccentId === c.id
-                  ? "ring-2 ring-offset-2 ring-[#16302b]/20"
+                  ? "ring-2 ring-offset-2 ring-foreground/20"
                   : ""
               }`}
             >
@@ -1419,8 +1400,8 @@ function AppearancePanel() {
       </div>
 
       {/* Ngôn ngữ */}
-      <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">
-        <p className="mb-4 text-sm font-semibold text-[#16302b]">Ngôn ngữ</p>
+      <div className="rounded-lg border border-border-light p-4 shadow-sm">
+        <p className="mb-4 text-sm font-semibold text-foreground">Ngôn ngữ</p>
         <div className="grid grid-cols-2 gap-3">
           {[
             { code: "vi", label: "Tiếng Việt", sub: "Mặc định", flag: "🇻🇳" },
@@ -1432,19 +1413,19 @@ function AppearancePanel() {
               onClick={() => setLocale(l.code as "vi" | "en")}
               className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 transition-all ${
                 currentLang === l.code
-                  ? "border-[#0E9F8E]"
-                  : "border-[#E7EEEC] bg-white hover:border-[#0E9F8E]/40"
+                  ? "border-primary"
+                  : "border-border bg-card hover:border-primary/40"
               }`}
             >
               <span className="text-xl">{l.flag}</span>
               <div className="text-left">
-                <p className="text-sm font-medium text-[#16302b]">
+                <p className="text-sm font-medium text-foreground">
                   {l.label}
                 </p>
-                <p className="text-xs text-[#9AAEA9]">{l.sub}</p>
+                <p className="text-xs text-muted-foreground">{l.sub}</p>
               </div>
               {currentLang === l.code && (
-                <Check className="ml-auto size-4 text-[#0E9F8E]" />
+                <Check className="ml-auto size-4 text-primary" />
               )}
             </button>
           ))}
@@ -1457,15 +1438,15 @@ function AppearancePanel() {
 function ClassesPanel() {
   return (
     <div className="grid grid-cols-2 gap-6 w-full">
-      <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">
-        <p className="mb-4 text-sm font-semibold text-[#16302b]">
+      <div className="rounded-lg border border-border-light p-4 shadow-sm">
+        <p className="mb-4 text-sm font-semibold text-foreground">
           Mặc định buổi học
         </p>
         <div className="grid grid-4 gap-4">
           <LabelField label="Thời lượng buổi học">
             <select
               defaultValue="90 phút"
-              className="h-10 w-full rounded-lg border border-[#E7EEEC] bg-white px-3 text-sm text-[#16302b] focus:border-[#0E9F8E] focus:outline-none"
+              className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:border-primary focus:outline-none"
             >
               <option>60 phút</option>
               <option>90 phút</option>
@@ -1478,15 +1459,15 @@ function ClassesPanel() {
                 type="text"
                 inputMode="numeric"
                 defaultValue="250.000"
-                className="h-10 w-full rounded-lg border border-[#E7EEEC] bg-white px-3 pr-8 text-sm text-[#16302b] focus:border-[#0E9F8E] focus:outline-none"
+                className="h-10 w-full rounded-lg border border-border bg-card px-3 pr-8 text-sm text-foreground focus:border-primary focus:outline-none"
               />
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#9AAEA9]">
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                 đ
               </span>
             </div>
           </LabelField>
           <LabelField label="Múi giờ">
-            <select className="h-10 w-full rounded-lg border border-[#E7EEEC] bg-white px-3 text-sm text-[#16302b] focus:border-[#0E9F8E] focus:outline-none">
+            <select className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:border-primary focus:outline-none">
               <option>(GMT+7) Hà Nội</option>
               <option>(GMT+7) TP. Hồ Chí Minh</option>
               <option>(GMT+7) Đà Nẵng</option>
@@ -1496,13 +1477,13 @@ function ClassesPanel() {
             <input
               type="text"
               defaultValue="08:00 – 21:00"
-              className="h-10 w-full rounded-lg border border-[#E7EEEC] bg-white px-3 text-sm text-[#16302b] focus:border-[#0E9F8E] focus:outline-none"
+              className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:border-primary focus:outline-none"
             />
           </LabelField>
         </div>
       </div>
 
-      <div className="rounded-lg border border-[#EEF3F1] divide-y divide-[#EEF3F1] px-4 shadow-sm">
+      <div className="rounded-lg border border-border-light divide-y divide-border-light px-4 shadow-sm">
         <Toggle
           defaultChecked
           label="Tự động nhắc học sinh"
@@ -1587,8 +1568,8 @@ function FeesPanel() {
       </div>
 
       {/* Bank info card */}
-      <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">
-        <p className="mb-4 text-sm font-semibold text-[#16302b]">
+      <div className="rounded-lg border border-border-light p-4 shadow-sm">
+        <p className="mb-4 text-sm font-semibold text-foreground">
           Thông tin ngân hàng
         </p>
         <div className="grid grid-cols-2 gap-4">
@@ -1620,53 +1601,53 @@ function FeesPanel() {
       </div>
 
       {/* QR card */}
-      <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">
+      <div className="rounded-lg border border-border-light p-4 shadow-sm">
         <div className="mb-1 flex items-center gap-2">
-          <p className="text-sm font-semibold text-[#16302b]">
+          <p className="text-sm font-semibold text-foreground">
             Mã QR nhận học phí
           </p>
-          <span className="rounded-full bg-[#E4F6EF] px-2 py-0.5 text-[11px] font-semibold text-[#0E9F8E]">
+          <span className="rounded-full bg-primary-light px-2 py-0.5 text-[11px] font-semibold text-primary">
             Tự động tạo
           </span>
         </div>
-        <p className="mb-4 text-xs text-[#9AAEA9]">
+        <p className="mb-4 text-xs text-muted-foreground">
           Mã được tạo từ thông tin ngân hàng ở trên. Phụ huynh quét để chuyển
           học phí trực tiếp vào tài khoản của bạn.
         </p>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-          <div className="w-full max-w-[180px] shrink-0 rounded-xl border border-[#EEF3F1] p-3 text-center">
-            <p className="mb-2 flex items-center justify-center gap-1 text-xs font-semibold text-[#16302b]">
-              <QrCode className="size-3.5 text-[#0E9F8E]" />
+          <div className="w-full max-w-[180px] shrink-0 rounded-xl border border-border-light p-3 text-center">
+            <p className="mb-2 flex items-center justify-center gap-1 text-xs font-semibold text-foreground">
+              <QrCode className="size-3.5 text-primary" />
               VietQR
             </p>
-            <div className="flex aspect-square items-center justify-center rounded-lg bg-[#F3F7F5]">
-              <QrCode className="size-16 text-[#16302b]" strokeWidth={1} />
+            <div className="flex aspect-square items-center justify-center rounded-lg bg-muted">
+              <QrCode className="size-16 text-foreground" strokeWidth={1} />
             </div>
-            <p className="mt-2 truncate text-xs font-medium text-[#16302b]">
+            <p className="mt-2 truncate text-xs font-medium text-foreground">
               {bank.accountHolder}
             </p>
-            <p className="text-[11px] text-[#9AAEA9]">
+            <p className="text-[11px] text-muted-foreground">
               {bank.bankName} · {maskedAccountNumber.slice(-4)}
             </p>
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex flex-col divide-y divide-[#EEF3F1]">
+            <div className="flex flex-col divide-y divide-border-light">
               <div className="flex items-center justify-between py-2 text-sm">
-                <span className="text-[#9AAEA9]">Ngân hàng</span>
-                <span className="font-medium text-[#16302b]">
+                <span className="text-muted-foreground">Ngân hàng</span>
+                <span className="font-medium text-foreground">
                   {bank.bankName}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 text-sm">
-                <span className="text-[#9AAEA9]">Số tài khoản</span>
-                <span className="font-medium text-[#16302b]">
+                <span className="text-muted-foreground">Số tài khoản</span>
+                <span className="font-medium text-foreground">
                   {bank.accountNumber}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 text-sm">
-                <span className="text-[#9AAEA9]">Chủ tài khoản</span>
-                <span className="font-medium text-[#16302b]">
+                <span className="text-muted-foreground">Chủ tài khoản</span>
+                <span className="font-medium text-foreground">
                   {bank.accountHolder}
                 </span>
               </div>
@@ -1674,7 +1655,7 @@ function FeesPanel() {
             <div className="mt-3 flex items-center gap-2">
               <button
                 type="button"
-                className="flex items-center gap-1.5 rounded-lg bg-[#0E9F8E] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#0b7a6d]"
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-hover"
               >
                 <Download className="size-3.5" />
                 Tải mã QR
@@ -1682,7 +1663,7 @@ function FeesPanel() {
               <button
                 type="button"
                 onClick={handleCopyAccountNumber}
-                className="flex items-center gap-1.5 rounded-lg border border-[#E7EEEC] px-3 py-1.5 text-xs font-semibold text-[#16302b] transition-colors hover:bg-[#F3F7F5]"
+                className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
               >
                 <Copy className="size-3.5" />
                 Sao chép số TK
@@ -1692,14 +1673,14 @@ function FeesPanel() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">
+      <div className="rounded-lg border border-border-light p-4 shadow-sm">
         <Toggle
           defaultChecked
           label="Gửi nhắc thanh toán tự động"
           desc="Nhắn phụ huynh khi học phí đến hạn."
         />
       </div>
-      <div className="rounded-lg border border-[#EEF3F1] p-4 shadow-sm">
+      <div className="rounded-lg border border-border-light p-4 shadow-sm">
         <Toggle
           label="Gửi biên lai điện tử"
           desc="Tự động gửi biên lai sau mỗi lần nhận tiền."
@@ -1776,8 +1757,8 @@ export default function SettingsPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
                   active
-                    ? "bg-[#0E9F8E] text-white"
-                    : "text-[#5c726d] hover:bg-[#F1FBF9] hover:text-[#16302b]"
+                    ? "bg-primary text-white"
+                    : "text-muted-foreground hover:bg-primary-soft hover:text-foreground"
                 }`}
               >
                 <Icon className="size-4 shrink-0" strokeWidth={1.8} />
@@ -1788,13 +1769,13 @@ export default function SettingsPage() {
                     {tab.label}
                   </p>
                   <p
-                    className={`text-[11px] truncate ${active ? "text-white/70" : "text-[#9AAEA9]"}`}
+                    className={`text-[11px] truncate ${active ? "text-white/70" : "text-muted-foreground"}`}
                   >
                     {tab.desc}
                   </p>
                 </div>
                 {!active && (
-                  <ChevronRight className="ml-auto size-3.5 shrink-0 text-[#9AAEA9]" />
+                  <ChevronRight className="ml-auto size-3.5 shrink-0 text-muted-foreground" />
                 )}
               </button>
             );
@@ -1804,9 +1785,9 @@ export default function SettingsPage() {
 
       {/* Content */}
       <div className="min-w-0 flex-1">
-        <div className="rounded-xl border border-[#E7EEEC] bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           {/* Panel header */}
-          <div className="mb-6 border-b border-[#EEF3F1] pb-5">
+          <div className="mb-6 border-b border-border-light pb-5">
             {(() => {
               const tab =
                 visibleTabs.find((t) => t.id === effectiveTab) ??
@@ -1822,17 +1803,17 @@ export default function SettingsPage() {
                   : tab.desc;
               return (
                 <div className="flex items-center gap-3">
-                  <span className="flex size-9 items-center justify-center rounded-lg bg-[#E4F6EF]">
+                  <span className="flex size-9 items-center justify-center rounded-lg bg-primary-light">
                     <Icon
-                      className="size-4.5 text-[#0E9F8E]"
+                      className="size-4.5 text-primary"
                       strokeWidth={1.8}
                     />
                   </span>
                   <div>
-                    <h2 className="text-base font-semibold text-[#16302b]">
+                    <h2 className="text-base font-semibold text-foreground">
                       {tab.label}
                     </h2>
-                    <p className="text-xs text-[#9AAEA9]">{desc}</p>
+                    <p className="text-xs text-muted-foreground">{desc}</p>
                   </div>
                 </div>
               );
