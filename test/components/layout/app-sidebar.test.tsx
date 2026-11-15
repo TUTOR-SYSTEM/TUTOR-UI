@@ -91,7 +91,7 @@ describe("AppSidebar", () => {
   });
 
   describe("navigation by role", () => {
-    it("shows the full tutor menu including fees, but not students (ADMIN-only list endpoint)", () => {
+    it("shows the full tutor menu including fees and students (tutor manages own students)", () => {
       signIn("TUTOR");
       render(<AppSidebar />);
       const labels = navLabels();
@@ -101,6 +101,7 @@ describe("AppSidebar", () => {
           copy.nav.schedule,
           copy.nav.notifications,
           copy.nav.classes,
+          copy.nav.students,
           copy.nav.curriculum,
           copy.nav.grades,
           copy.nav.fees,
@@ -108,7 +109,6 @@ describe("AppSidebar", () => {
           copy.nav.aiChat,
         ]),
       );
-      expect(labels).not.toContain(copy.nav.students);
       expect(labels).not.toContain(copy.nav.tutors);
       expect(labels).not.toContain(copy.nav.logger);
     });
@@ -170,7 +170,7 @@ describe("AppSidebar", () => {
       useAuthStore.setState({ accessToken: null, user: null }, false);
       render(<AppSidebar />);
       expect(navLabels()).toContain(copy.nav.fees);
-      expect(navLabels()).not.toContain(copy.nav.students);
+      expect(navLabels()).toContain(copy.nav.students);
     });
   });
 
@@ -232,7 +232,7 @@ describe("AppSidebar", () => {
 
     it("shows the full display name", () => {
       render(<AppSidebar />);
-      expect(screen.getByText("An Le")).toBeInTheDocument();
+      expect(screen.getByText("Le An")).toBeInTheDocument();
     });
 
     it("falls back to the default user label when there is no name", () => {
@@ -244,7 +244,7 @@ describe("AppSidebar", () => {
     it("renders the avatar image when the user has one", () => {
       signIn("TUTOR", { firstName: "An", lastName: "Le", avatar: "https://cdn.example.com/a.png" });
       render(<AppSidebar />);
-      const img = screen.getByRole("img", { name: "An Le" });
+      const img = screen.getByRole("img", { name: "Le An" });
       expect(img).toHaveAttribute("src", "https://cdn.example.com/a.png");
     });
 
@@ -264,7 +264,7 @@ describe("AppSidebar", () => {
 
   describe("user menu", () => {
     function openMenu() {
-      fireEvent.click(screen.getByText("An Le"));
+      fireEvent.click(screen.getByText("Le An"));
     }
 
     it("opens the menu with settings and sign-out actions", () => {

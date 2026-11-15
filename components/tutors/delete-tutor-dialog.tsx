@@ -1,6 +1,9 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
+import { useLocale } from "@/hooks/useLocale.hook";
+import { useTutorsCopy } from "@/hooks/useTutorsCopy.hook";
+import { formatPersonName } from "@/lib/format/person-name";
 import type { ApiManagedUser } from "@/types";
 
 type Props = {
@@ -16,8 +19,11 @@ export function DeleteTutorDialog({
   onClose,
   onConfirm,
 }: Props) {
+  const copy = useTutorsCopy();
+  const { language } = useLocale();
   const name = tutor
-    ? [tutor.firstName, tutor.lastName].filter(Boolean).join(" ")
+    ? formatPersonName(tutor.firstName, tutor.lastName, language) ||
+      copy.unnamed
     : "";
 
   return (
@@ -28,13 +34,10 @@ export function DeleteTutorDialog({
       onConfirm={() => {
         if (tutor) onConfirm(tutor.id);
       }}
-      description={
-        <>
-          Bạn có chắc muốn xóa gia sư{" "}
-          <span className="font-semibold text-foreground">{name}</span>? Tài
-          khoản sẽ bị xóa khỏi hệ thống. Hành động này không thể hoàn tác.
-        </>
-      }
+      title={copy.deleteDialog.title}
+      confirmLabel={copy.deleteDialog.confirm}
+      cancelLabel={copy.deleteDialog.cancel}
+      description={copy.deleteDialog.description(name)}
     />
   );
 }

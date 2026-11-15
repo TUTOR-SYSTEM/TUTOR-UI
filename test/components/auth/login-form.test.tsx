@@ -26,6 +26,9 @@ const oauth = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/oauth", () => oauth);
 
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+import { toast } from "sonner";
+
 import { LoginForm } from "@/components/auth/login-form";
 import { useAuthStore } from "@/zustand/auth.store";
 
@@ -300,6 +303,21 @@ describe("LoginForm", () => {
       act(() => lastMutateOptions().onError(error));
       expect(await screen.findByText("Mật khẩu quá ngắn")).toBeInTheDocument();
       expect(router.replace).not.toHaveBeenCalled();
+    });
+
+    it("toasts the error for a student 422 whose field is not rendered", async () => {
+      const { container } = render(<LoginForm />);
+      chooseRole(t.roleStudent);
+      fireEvent.change(container.querySelector("#identifier")!, { target: { value: "HS001" } });
+      typePassword(container);
+      submit();
+      const error = new ApiError("Mã người dùng không tồn tại", 422, {
+        errors: [{ field: "userCode", message: "Mã người dùng không tồn tại" }],
+      } as never);
+      act(() => lastMutateOptions().onError(error));
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Mã người dùng không tồn tại");
+      });
     });
 
     it("shows a root server error when a 422 has no mappable field", async () => {

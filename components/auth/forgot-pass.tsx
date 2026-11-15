@@ -42,7 +42,10 @@ const ForgotPass = () => {
     event.preventDefault();
     form.clearErrors();
     const values = form.getValues();
-    forgotPasswordMutation.mutate({ email: values.email.trim() }, mutateOptions);
+    forgotPasswordMutation.mutate(
+      { email: values.email.trim() },
+      mutateOptions,
+    );
   };
 
   const rootError = form.formState.errors.root?.serverError?.message;
@@ -70,11 +73,17 @@ const ForgotPass = () => {
           {t.sentMessageSuffix}
         </p>
 
+        <Link
+          href={`/reset-password?email=${encodeURIComponent(sentTo)}`}
+          className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-md transition hover:bg-primary-hover"
+        >
+          {t.enterCode}
+        </Link>
+
         <div className="flex flex-col gap-3">
           <button
             type="button"
             onClick={() => {
-              setSentTo(null);
               forgotPasswordMutation.mutate({ email: sentTo }, mutateOptions);
             }}
             disabled={forgotPasswordMutation.isPending}

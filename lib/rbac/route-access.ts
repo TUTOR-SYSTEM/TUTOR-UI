@@ -28,8 +28,8 @@ export const ROUTE_ACCESS: readonly RouteAccessRule[] = [
   { prefix: "/flow-request", allow: ["ADMIN"] },
   { prefix: "/api-gaps", allow: ["ADMIN"] },
   { prefix: "/reports", allow: ["ADMIN"] },
-  // Gateway `GET /students` is ADMIN-only; TUTOR has no list endpoint here.
-  { prefix: "/students", allow: ["ADMIN"] },
+  // Gateway `GET /students` cho ADMIN + TUTOR (TUTOR chỉ thấy học sinh của mình — BE lọc theo tutorId).
+  { prefix: "/students", allow: ["ADMIN", "TUTOR"] },
   { prefix: "/sessions", allow: ["TUTOR", "STUDENT"] },
   { prefix: "/curriculum", allow: ["TUTOR", "PARENT"] },
   { prefix: "/schedule", allow: ["TUTOR", "STUDENT", "PARENT"] },

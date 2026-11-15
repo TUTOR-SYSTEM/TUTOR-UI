@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
 import { Label } from "@/components/ui/label.ui";
+import { FormField } from "@/components/ui/form-field.ui";
 import { axiosInstance, getErrorMessage } from "@/lib/axios";
 import { useCurriculumCopy } from "@/hooks/useCurriculumCopy.hook";
 
@@ -29,9 +30,13 @@ export function CreateChapterDialog({
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [nameError, setNameError] = useState<string | undefined>();
 
   const handleSubmit = async () => {
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      setNameError(t.createChapterModal.nameRequired);
+      return;
+    }
     setSubmitting(true);
     try {
       await axiosInstance.post(`/chapters/${frameworkId}`, {
@@ -63,23 +68,23 @@ export function CreateChapterDialog({
       loading={submitting}
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label>
-            {t.createChapterModal.nameLabel}
-            <span className="ml-0.5 text-destructive">*</span>
-          </Label>
+        <FormField label={t.createChapterModal.nameLabel} required error={nameError}>
           <Input
             autoFocus
             type="text"
             placeholder={t.createChapterModal.namePlaceholder}
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            invalid={!!nameError}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              if (nameError) setNameError(undefined);
+            }}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             disabled={submitting}
           />
-        </div>
+        </FormField>
         <div className="flex flex-col gap-1.5">
-          <Label>
+          <Label className="font-medium">
             {t.createChapterModal.descriptionLabel}{" "}
             <span className="font-normal text-muted-foreground">
               {t.createChapterModal.descriptionOptionalHint}

@@ -132,6 +132,8 @@ export type ExerciseDetail = {
   studentId: string;
   issueUrls: SessionFile[];
   exerciseUrls: SessionFile[];
+  /** Đáp án/lời giải gia sư đã lưu khi chấm. */
+  answerKeyUrls: SessionFile[];
   status: ExerciseStatus;
   score: number | null;
   comment: string | null;
@@ -164,6 +166,8 @@ export type ResubmitExercisePayload = {
 export type GradeExercisePayload = {
   score: number;
   comment?: string;
+  /** Đáp án gia sư tải lên khi chấm (gửi đủ danh sách hiện có). */
+  answerKeyUrls?: SessionFile[];
 };
 
 /** Response shape of `POST /upload`. */

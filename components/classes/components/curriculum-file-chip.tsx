@@ -8,24 +8,12 @@ import { axiosInstance, getErrorMessage } from "@/lib/axios";
 import { isImageFile } from "@/lib/file-utils";
 import { Button } from "@/components/ui/button.ui";
 import { ImagePreview } from "@/components/common/image-preview";
+import { downloadStoredFile } from "@/lib/download-file";
 
 export type LessonFile = { name: string; url: string; key: string };
 
 /** Downloads via the backend proxy (auth-gated R2 objects can't be linked to directly). */
-export const downloadFile = async (key: string, name: string) => {
-  const res = await axiosInstance.get("/upload/download", {
-    params: { key },
-    responseType: "blob",
-  });
-  const blobUrl = URL.createObjectURL(res.data as Blob);
-  const a = document.createElement("a");
-  a.href = blobUrl;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(blobUrl);
-};
+export const downloadFile = (key: string, name: string) => downloadStoredFile(key, name);
 
 /** Downloadable file chip on the class curriculum page's lesson rows. */
 export const FileChip = ({

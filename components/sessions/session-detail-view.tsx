@@ -1,5 +1,6 @@
 "use client";
 
+import { currentPersonName } from "@/lib/format/person-name";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -19,6 +20,7 @@ import {
   MapPin,
   Plus,
   Search,
+  Send,
   Target,
   Users,
 } from "lucide-react";
@@ -28,6 +30,7 @@ import { useUserActions } from "@/lib/services/user.service";
 import { useClassActions } from "@/lib/services/class.service";
 import { useLessonActions } from "@/lib/services/lesson.service";
 import { useAttendanceActions } from "@/lib/services/attendance.service";
+import { useExerciseActions } from "@/lib/services/exercise.service";
 import { axiosInstance, getErrorMessage } from "@/lib/axios";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { cn } from "@/lib/utils";
@@ -47,6 +50,7 @@ import {
   SESSION_STATUS_META,
   StatusBadge,
   DownloadFileRow,
+  EXERCISE_STATUS_META,
   downloadFile,
   fmtDate,
 } from "./session-shared";
@@ -57,7 +61,7 @@ type AttStatus = "Có mặt" | "Vắng" | "Trễ";
 const fullName = (u?: {
   firstName?: string | null;
   lastName?: string | null;
-}) => [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
+}) => currentPersonName(u?.firstName, u?.lastName).trim();
 
 const initialsOf = (name: string) =>
   name
@@ -445,6 +449,15 @@ export const SessionDetailView = ({ sessionId }: { sessionId: string }) => {
       enabled: !!sessionId && (view === "STUDENT" || view === "PARENT"),
     },
   }).list;
+  /* ── Own exercise submission for this session (STUDENT) ── */
+  const { data: mySubmissions } = useExerciseActions({
+    list: { sessionId, studentId: currentUserId ?? undefined, limit: 1 },
+    listOptions: {
+      enabled: !!sessionId && !!currentUserId && view === "STUDENT",
+    },
+  }).list;
+  const mySubmission = mySubmissions?.[0] ?? null;
+
   const myAttendance = useMemo(() => {
     if (!attendanceRaw) return null;
     const targetId = view === "PARENT" ? child?.id : currentUserId;
@@ -831,6 +844,44 @@ export const SessionDetailView = ({ sessionId }: { sessionId: string }) => {
                   Chưa có bài tập được giao cho buổi học này.
                 </p>
               )}
+
+              {view === "STUDENT" &&
+                session.status !== "CANCELLED" &&
+                (exercises.length > 0 || mySubmission) && (
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Bài làm của tôi</span>
+                      <StatusBadge
+                        label={
+                          (mySubmission
+                            ? EXERCISE_STATUS_META[mySubmission.status]
+                            : EXERCISE_STATUS_META.NOT_SUBMITTED
+                          ).label
+                        }
+                        className={
+                          (mySubmission
+                            ? EXERCISE_STATUS_META[mySubmission.status]
+                            : EXERCISE_STATUS_META.NOT_SUBMITTED
+                          ).className
+                        }
+                      />
+                    </div>
+                    {mySubmission?.status === "GRADED" ? (
+                      <p className="text-xs text-muted-foreground">
+                        Bài đã được chấm — không thể nộp lại.
+                      </p>
+                    ) : (
+                      <Button asChild size="sm">
+                        <Link
+                          href={`/classes/${session.classId}/sessions/${sessionId}/exercise`}
+                        >
+                          <Send className="size-4" />
+                          {mySubmission ? "Nộp lại bài" : "Nộp bài"}
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                )}
             </Panel>
           </div>
 
@@ -895,13 +946,22 @@ export const SessionDetailView = ({ sessionId }: { sessionId: string }) => {
                   </div>
                 </div>
               ) : myAttendance ? (
+                // markedAt = null → chưa có bản ghi được tutor lưu (BE trả present=false mặc định).
                 <span
                   className={cn(
-                    "inline-flex items-center rounded-full px-4 py-1.5 text-sm font-medium text-white",
-                    myAttendance.present ? "bg-emerald-600" : "bg-rose-600",
+                    "inline-flex items-center rounded-full px-4 py-1.5 text-sm font-medium",
+                    !myAttendance.markedAt
+                      ? "bg-muted text-muted-foreground"
+                      : myAttendance.present
+                        ? "bg-emerald-600 text-white"
+                        : "bg-rose-600 text-white",
                   )}
                 >
-                  {myAttendance.present ? "Có mặt" : "Vắng mặt"}
+                  {!myAttendance.markedAt
+                    ? "Chưa điểm danh"
+                    : myAttendance.present
+                      ? "Có mặt"
+                      : "Vắng mặt"}
                 </span>
               ) : (
                 <p className="text-sm text-muted-foreground">

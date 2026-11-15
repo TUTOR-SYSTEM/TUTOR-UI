@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input.ui";
 import { Select } from "@/components/ui/select.ui";
 import { cn } from "@/lib/utils";
 import { usePut } from "@/lib/axios/query";
-import { handleFormApiError } from "@/lib/axios/form-error";
+import { showFormApiError } from "@/lib/axios/form-error";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { useClassActions } from "@/lib/services/class.service";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
@@ -66,6 +66,23 @@ function buildSchema(t: StudentsDictionary["editDialog"]) {
 }
 
 type FormValues = z.infer<ReturnType<typeof buildSchema>>;
+
+/** Fields this form renders; a 422 on any other field falls back to a toast. */
+const STUDENT_FORM_FIELDS = [
+  "studentName",
+  "classId",
+  "gender",
+  "birthday",
+  "studentPhone",
+  "school",
+  "address",
+  "district",
+  "province",
+  "parentName",
+  "parentRelationship",
+  "parentPhone",
+  "parentEmail",
+] as const;
 
 function getDefaultValues(student: Student): FormValues {
   return {
@@ -269,13 +286,14 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
         onSaved();
         onClose();
       },
-      onError: (error) => {
-        handleFormApiError<FormValues>(
+      // 422 → underline đúng ô; còn lại (trùng mã, lỗi server...) → toast với nội dung BE.
+      onError: (error) =>
+        showFormApiError<FormValues>(
           error,
           setError,
+          STUDENT_FORM_FIELDS,
           copy.editDialog.toastErrorFallback,
-        );
-      },
+        ),
     });
   };
 

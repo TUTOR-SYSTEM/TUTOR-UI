@@ -20,7 +20,7 @@ describe("getRouteAccess", () => {
       "STUDENT",
       "PARENT",
     ]);
-    expect(getRouteAccess("/students/abc")).toEqual(["ADMIN"]);
+    expect(getRouteAccess("/students/abc")).toEqual(["ADMIN", "TUTOR"]);
   });
 
   it("matches on segment boundaries, not raw string prefixes", () => {

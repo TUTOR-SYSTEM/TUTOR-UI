@@ -16,6 +16,10 @@ export type AppShellDictionary = {
     aiChat: string;
     practiceExams: string;
     settings: string;
+    curriculum: string;
+    grades: string;
+    sessions: string;
+    tutors: string;
   };
   nav: {
     overview: string;
@@ -83,6 +87,10 @@ const vi: AppShellDictionary = {
     aiChat: "AI Trợ lý",
     practiceExams: "Ôn tập & Thi thử",
     settings: "Cài đặt",
+    curriculum: "Chương trình học",
+    grades: "Điểm số",
+    sessions: "Buổi học",
+    tutors: "Gia sư",
   },
   nav: {
     overview: "Tổng quan",
@@ -150,6 +158,10 @@ const en: AppShellDictionary = {
     aiChat: "AI Assistant",
     practiceExams: "Practice & Exams",
     settings: "Settings",
+    curriculum: "Curriculum",
+    grades: "Grades",
+    sessions: "Sessions",
+    tutors: "Tutors",
   },
   nav: {
     overview: "Overview",

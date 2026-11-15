@@ -1,5 +1,6 @@
 "use client";
 
+import { currentPersonName } from "@/lib/format/person-name";
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -175,7 +176,7 @@ export const TuitionsBoard = ({
       const q = search.trim().toLowerCase();
       list = list.filter((t) => {
         const name =
-          `${t.student.firstName} ${t.student.lastName}`.toLowerCase();
+          currentPersonName(t.student.firstName, t.student.lastName).toLowerCase();
         return name.includes(q) || t.class.code.toLowerCase().includes(q);
       });
     }
@@ -439,7 +440,7 @@ export const TuitionsBoard = ({
                   const displayStatus = STATUS_TO_DISPLAY[fee.status];
                   const badge = STATUS_BADGE[displayStatus];
                   const name =
-                    `${fee.student.firstName} ${fee.student.lastName}`.trim();
+                    currentPersonName(fee.student.firstName, fee.student.lastName).trim();
                   const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
                   return (
                     <TableRow

@@ -14,6 +14,7 @@ import type {
   SessionFile,
   SessionStatus,
 } from "@/types/session.types";
+import { downloadStoredFile } from "@/lib/download-file";
 
 /* ─── Session status ─── */
 export const SESSION_STATUS_META: Record<
@@ -113,20 +114,7 @@ export const fmtDateTime = (iso?: string | null) => {
 };
 
 /** Downloads via the backend proxy (auth-gated R2 objects can't be linked to directly). */
-export const downloadFile = async (key: string, name: string) => {
-  const res = await axiosInstance.get("/upload/download", {
-    params: { key },
-    responseType: "blob",
-  });
-  const blobUrl = URL.createObjectURL(res.data as Blob);
-  const a = document.createElement("a");
-  a.href = blobUrl;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(blobUrl);
-};
+export const downloadFile = (key: string, name: string) => downloadStoredFile(key, name);
 
 /* ─── Downloadable file row (read-only) ─── */
 export const DownloadFileRow = ({ file }: { file: SessionFile }) => {

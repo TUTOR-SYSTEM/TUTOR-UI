@@ -23,6 +23,10 @@ function getPageTitle(
     "/ai-chat": pageTitles.aiChat,
     "/practice-exams": pageTitles.practiceExams,
     "/settings": pageTitles.settings,
+    "/curriculum": pageTitles.curriculum,
+    "/grades": pageTitles.grades,
+    "/sessions": pageTitles.sessions,
+    "/tutors": pageTitles.tutors,
   };
 
   if (routeTitles[pathname]) return routeTitles[pathname];

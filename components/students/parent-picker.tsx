@@ -2,19 +2,21 @@
 
 import { Button } from "@/components/ui/button.ui";
 import { Input } from "@/components/ui/input.ui";
-import { Label } from "@/components/ui/label.ui";
+import { FormField } from "@/components/ui/form-field.ui";
 import { useDebounce } from "@/hooks/useDebounce.hook";
 import { useStudentsCopy } from "@/hooks/useStudentsCopy.hook";
 import { longestWord, matchParentName, type ParentMatch } from "@/lib/parent-match";
 import { useUserActions } from "@/lib/services/user.service";
-import type { ApiManagedUser, ParentOption } from "@/types";
+import { useLocale } from "@/hooks/useLocale.hook";
+import { formatPersonName } from "@/lib/format/person-name";
+import type { ApiManagedUser, Language, ParentOption } from "@/types";
 
 const SUGGESTION_LIMIT = 5;
 
-export function toParentOption(user: ApiManagedUser): ParentOption {
+export function toParentOption(user: ApiManagedUser, language: Language): ParentOption {
   return {
     id: user.id,
-    name: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "",
+    name: formatPersonName(user.firstName, user.lastName, language) || user.email || "",
     phone: user.phone ?? null,
     email: user.email ?? null,
   };
@@ -35,6 +37,8 @@ type ParentPickerProps = {
   /** Called when the typed name no longer matches `linked` (the link is dropped). */
   onUnlink?: () => void;
   disabled?: boolean;
+  /** Validation error for the typed name (shown under the input). */
+  error?: string;
 };
 
 /**
@@ -51,8 +55,10 @@ export function ParentPicker({
   onLink,
   onUnlink,
   disabled,
+  error,
 }: ParentPickerProps) {
   const copy = useStudentsCopy();
+  const { language } = useLocale();
   const search = useDebounce(value.trim(), 300);
   const hasSearch = search.length > 0;
   const enabled = hasSearch && !disabled;
@@ -75,7 +81,7 @@ export function ParentPicker({
   }
   const ranked: Suggestion[] = [];
   pool.forEach((user) => {
-    const parent = toParentOption(user);
+    const parent = toParentOption(user, language);
     const match = matchParentName(parent.name, search);
     if (match) ranked.push({ parent, match });
   });
@@ -98,19 +104,17 @@ export function ParentPicker({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-sm font-medium text-foreground">
-          {label}
-          {required && <span className="ml-0.5 text-destructive">*</span>}
-        </Label>
+      <FormField label={label} htmlFor="parent-picker-name" required={required} error={error}>
         <Input
+          id="parent-picker-name"
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
+          invalid={!!error}
           autoComplete="off"
         />
-      </div>
+      </FormField>
 
       {showSuggestions && (
         <div className="flex flex-col gap-2">

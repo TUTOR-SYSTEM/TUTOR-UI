@@ -1,41 +1,42 @@
 "use client";
 
+import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
 
+import { ChipGroup } from "@/components/ui/chip-group.ui";
 import { Dialog } from "@/components/ui/dialog-form.ui";
-import { Button } from "@/components/ui/button.ui";
+import { FormField } from "@/components/ui/form-field.ui";
 import { Input } from "@/components/ui/input.ui";
-import { Label } from "@/components/ui/label.ui";
-import { cn } from "@/lib/utils";
-import { getErrorMessage } from "@/lib/axios";
+import { showFormApiError } from "@/lib/axios/form-error";
 import { SUBJECT_OPTIONS } from "@/lib/subjects";
 import { useUpdateTutorById } from "@/hooks/useAdminUsers.hook";
-import type { ApiManagedUser, UpdateAdminUserPayload } from "@/types";
+import { useTutorsCopy } from "@/hooks/useTutorsCopy.hook";
+import { buildTutorEditSchema } from "@/lib/validation/tutor-form.schema";
+import type {
+  ApiManagedUser,
+  TutorEditFormValues,
+  UpdateAdminUserPayload,
+} from "@/types";
 
-const tutorFormSchema = z.object({
-  firstName: z
-    .string()
-    .trim()
-    .min(2, "Tên phải có ít nhất 2 ký tự")
-    .max(100, "Tên tối đa 100 ký tự"),
-  lastName: z
-    .string()
-    .trim()
-    .min(2, "Họ phải có ít nhất 2 ký tự")
-    .max(100, "Họ tối đa 100 ký tự"),
-  email: z.email("Email không hợp lệ"),
-  phone: z.string().trim().max(20, "SĐT tối đa 20 ký tự"),
-  school: z.string().trim().max(255, "Trường tối đa 255 ký tự"),
-  subjects: z.array(z.string()),
-});
+/** Fields rendered by this form; a 422 on any other field falls back to a toast. */
+const FORM_FIELDS = [
+  "lastName",
+  "firstName",
+  "email",
+  "phone",
+  "school",
+  "subjects",
+] as const;
 
-type TutorFormValues = z.infer<typeof tutorFormSchema>;
+const SUBJECT_CHIPS = SUBJECT_OPTIONS.map((subject) => ({
+  label: subject,
+  value: subject,
+}));
 
-function toFormValues(tutor: ApiManagedUser): TutorFormValues {
+function toFormValues(tutor: ApiManagedUser): TutorEditFormValues {
   return {
     firstName: tutor.firstName ?? "",
     lastName: tutor.lastName ?? "",
@@ -49,7 +50,7 @@ function toFormValues(tutor: ApiManagedUser): TutorFormValues {
 /** Only the fields that actually changed — the BE validates by key presence. */
 function buildPatch(
   tutor: ApiManagedUser,
-  values: TutorFormValues,
+  values: TutorEditFormValues,
 ): UpdateAdminUserPayload {
   const original = toFormValues(tutor);
   const patch: UpdateAdminUserPayload = {};
@@ -92,19 +93,28 @@ function EditTutorForm({
   onClose: () => void;
   onSaved?: () => void;
 }) {
+  const copy = useTutorsCopy();
+  const schema = useMemo(
+    () => buildTutorEditSchema(copy.validation),
+    [copy.validation],
+  );
+
   const {
     register,
     control,
     handleSubmit,
+    setError,
     formState: { errors },
-  } = useForm<TutorFormValues>({
-    resolver: zodResolver(tutorFormSchema),
+  } = useForm<TutorEditFormValues>({
+    resolver: zodResolver(schema),
     defaultValues: toFormValues(tutor),
   });
 
   const updateTutor = useUpdateTutorById();
+  const isPending = updateTutor.isPending;
+  const f = copy.fields;
 
-  const onSubmit = (values: TutorFormValues) => {
+  const onSubmit = (values: TutorEditFormValues) => {
     const patch = buildPatch(tutor, values);
     if (Object.keys(patch).length === 0) {
       onClose();
@@ -115,29 +125,27 @@ function EditTutorForm({
       { id: tutor.id, ...patch },
       {
         onSuccess: () => {
-          toast.success("Cập nhật gia sư thành công!");
+          toast.success(copy.toast.updated);
           onSaved?.();
           onClose();
         },
-        onError: (error) => {
-          toast.error(getErrorMessage(error, "Cập nhật gia sư thất bại"));
-        },
+        // 422 → underline đúng ô; còn lại (400 trùng, lỗi server...) → toast.
+        onError: (error) =>
+          showFormApiError(error, setError, FORM_FIELDS, copy.toast.updateFailed),
       },
     );
   };
-
-  const isPending = updateTutor.isPending;
 
   return (
     <Dialog
       isOpen
       icon={Pencil}
-      title="Chỉnh sửa gia sư"
-      subtitle="Cập nhật thông tin tài khoản gia sư."
+      title={copy.editDialog.title}
+      subtitle={copy.editDialog.subtitle}
       className="max-w-2xl"
-      cancelText="Hủy"
+      cancelText={copy.editDialog.cancel}
       onCancel={onClose}
-      submitText="Lưu thay đổi"
+      submitText={copy.editDialog.submit}
       submitIcon={Save}
       onSubmit={handleSubmit(onSubmit)}
       loading={isPending}
@@ -147,112 +155,102 @@ function EditTutorForm({
         noValidate
         className="grid grid-cols-1 gap-4 sm:grid-cols-2"
       >
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tutor-lastName">Họ</Label>
+        <FormField
+          label={f.lastName}
+          htmlFor="tutor-edit-lastName"
+          required
+          error={errors.lastName?.message}
+        >
           <Input
-            id="tutor-lastName"
+            id="tutor-edit-lastName"
             {...register("lastName")}
             invalid={!!errors.lastName}
             disabled={isPending}
           />
-          {errors.lastName && (
-            <p className="text-xs text-destructive">{errors.lastName.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tutor-firstName">Tên</Label>
+        <FormField
+          label={f.firstName}
+          htmlFor="tutor-edit-firstName"
+          required
+          error={errors.firstName?.message}
+        >
           <Input
-            id="tutor-firstName"
+            id="tutor-edit-firstName"
             {...register("firstName")}
             invalid={!!errors.firstName}
             disabled={isPending}
           />
-          {errors.firstName && (
-            <p className="text-xs text-destructive">{errors.firstName.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tutor-email">Email</Label>
+        <FormField
+          label={f.email}
+          htmlFor="tutor-edit-email"
+          required
+          error={errors.email?.message}
+        >
           <Input
-            id="tutor-email"
+            id="tutor-edit-email"
             type="email"
             {...register("email")}
             invalid={!!errors.email}
             disabled={isPending}
           />
-          {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tutor-phone">Số điện thoại</Label>
+        <FormField
+          label={f.phone}
+          htmlFor="tutor-edit-phone"
+          error={errors.phone?.message}
+        >
           <Input
-            id="tutor-phone"
+            id="tutor-edit-phone"
             type="tel"
             {...register("phone")}
             invalid={!!errors.phone}
             disabled={isPending}
           />
-          {errors.phone && (
-            <p className="text-xs text-destructive">{errors.phone.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        <div className="flex flex-col gap-1.5 sm:col-span-2">
-          <Label htmlFor="tutor-school">Trường / Nơi công tác</Label>
+        <FormField
+          label={f.school}
+          htmlFor="tutor-edit-school"
+          error={errors.school?.message}
+          className="sm:col-span-2"
+        >
           <Input
-            id="tutor-school"
+            id="tutor-edit-school"
             {...register("school")}
             invalid={!!errors.school}
             disabled={isPending}
           />
-          {errors.school && (
-            <p className="text-xs text-destructive">{errors.school.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        <div className="flex flex-col gap-1.5 sm:col-span-2">
-          <Label>Môn dạy</Label>
+        <FormField
+          label={f.subjects}
+          error={errors.subjects?.message}
+          className="sm:col-span-2"
+        >
           <Controller
             name="subjects"
             control={control}
             render={({ field }) => (
-              <div className="flex flex-wrap gap-2">
-                {SUBJECT_OPTIONS.map((subject) => {
-                  const selected = field.value.includes(subject);
-                  return (
-                    <Button
-                      key={subject}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      aria-pressed={selected}
-                      disabled={isPending}
-                      onClick={() =>
-                        field.onChange(
-                          selected
-                            ? field.value.filter((s) => s !== subject)
-                            : [...field.value, subject],
-                        )
-                      }
-                      className={cn(
-                        "h-auto! w-auto! rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-                        selected
-                          ? "border-primary bg-primary/10 text-primary hover:bg-primary/10"
-                          : "border-input bg-surface-container-lowest text-foreground hover:border-primary/40",
-                      )}
-                    >
-                      {subject}
-                    </Button>
-                  );
-                })}
-              </div>
+              <ChipGroup
+                aria-label={f.subjects}
+                options={SUBJECT_CHIPS}
+                selected={field.value}
+                disabled={isPending}
+                onToggle={(value) =>
+                  field.onChange(
+                    field.value.includes(value)
+                      ? field.value.filter((s) => s !== value)
+                      : [...field.value, value],
+                  )
+                }
+              />
             )}
           />
-        </div>
+        </FormField>
       </form>
     </Dialog>
   );

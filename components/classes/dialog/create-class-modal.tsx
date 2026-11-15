@@ -1,5 +1,6 @@
 "use client";
 
+import { SUBJECT_OPTIONS as SUBJECT_NAMES } from "@/lib/subjects";
 import { useEffect, useMemo, useState, startTransition } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -56,7 +57,6 @@ type ScheduleSlot = {
 const BRAND = "#0E9F8E";
 const BRAND_LIGHT = "#E4F6EF";
 
-const SUBJECTS = ["Toán", "Văn", "Anh", "Lý", "Hóa", "Sinh"];
 const GRADES = [
   "Lớp 6",
   "Lớp 7",
@@ -69,7 +69,7 @@ const GRADES = [
 const DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 const DURATIONS = ["30 phút", "45 phút", "60 phút", "90 phút", "120 phút"];
 
-const SUBJECT_OPTIONS = SUBJECTS.map((s) => ({ label: s, value: s }));
+const SUBJECT_CHOICES = SUBJECT_NAMES.map((s) => ({ label: s, value: s }));
 const GRADE_OPTIONS = GRADES.map((g) => ({ label: g, value: g }));
 const DURATION_OPTIONS = DURATIONS.map((d) => ({ label: d, value: d }));
 
@@ -279,7 +279,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
     if (
       startDate &&
       endDate &&
-      new Date(endDate) <= new Date(startDate)
+      new Date(endDate) < new Date(startDate)
     )
       e.endDate = copy.common.endDateBeforeStartError;
     if (feePerSession <= 0) e.fee = copy.common.feeRequiredError;
@@ -494,7 +494,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                       setSubject(v);
                       setErrors((p) => ({ ...p, subject: "" }));
                     }}
-                    options={SUBJECT_OPTIONS}
+                    options={SUBJECT_CHOICES}
                     placeholder={copy.common.subjectPlaceholder}
                     invalid={!!errors.subject}
                   />

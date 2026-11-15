@@ -152,3 +152,25 @@ export type UpdateAdminUserPayload = {
   avatar?: string | null;
   isActive?: boolean;
 };
+
+/** Create-tutor form values (`components/tutors/add-tutor-dialog.tsx`). */
+export type TutorCreateFormValues = {
+  lastName: string;
+  firstName: string;
+  email: string;
+  password: string;
+  phone: string;
+  gender: AdminGender;
+  subjects: string[];
+  school: string;
+};
+
+/** Edit-tutor form values (`components/tutors/edit-tutor-dialog.tsx`). */
+export type TutorEditFormValues = {
+  lastName: string;
+  firstName: string;
+  email: string;
+  phone: string;
+  school: string;
+  subjects: string[];
+};

@@ -9,6 +9,7 @@ import type {
   CreateStudentPayload,
   UpdateStudentPayload,
   UploadResult,
+  SetStudentPasswordPayload,
 } from "@/types";
 import { axiosInstance } from "@/lib/axios";
 
@@ -103,6 +104,18 @@ export function useStudentActions(args?: {
   const del = useDelete<ApiResponse<DeleteResult>, string>(
     (id) => `/students/${id}`,
   );
+  // PUT /students/:id/password — id nằm trong URL; gateway schema không strict nên `id` trong body bị bỏ qua.
+  const setPassword = usePut<ApiResponse<unknown>, SetStudentPasswordPayload>(
+    (payload) => `/students/${payload.id}/password`,
+  );
 
-  return { list, detail, generateCode, create, update, delete: del };
+  return {
+    list,
+    detail,
+    generateCode,
+    create,
+    update,
+    delete: del,
+    setPassword,
+  };
 }

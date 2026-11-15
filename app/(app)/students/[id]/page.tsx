@@ -22,7 +22,9 @@ import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import { useExerciseActions } from "@/lib/services/exercise.service";
 import { getErrorMessage } from "@/lib/axios";
 import { useStudentsCopy } from "@/hooks/useStudentsCopy.hook";
-import type { ApiStudent, Student } from "@/types";
+import { useLocale } from "@/hooks/useLocale.hook";
+import { formatPersonName } from "@/lib/format/person-name";
+import type { ApiStudent, Language, Student } from "@/types";
 import type { ExerciseDetail } from "@/types/session.types";
 import {
   DownloadFileRow,
@@ -43,13 +45,11 @@ function initials(name?: string | null) {
   ).toUpperCase();
 }
 
-function mapApiToStudent(api: ApiStudent): Student {
-  const fullName =
-    [api.firstName, api.lastName].filter(Boolean).join(" ") ||
-    api.username ||
-    "";
+function mapApiToStudent(api: ApiStudent, language: Language): Student {
+  // Họ Tên order (VI) / First Last (EN) — same rule as the tutors page.
+  const fullName = formatPersonName(api.firstName, api.lastName, language) || api.username || "";
   const parentName = api.parent
-    ? [api.parent.firstName, api.parent.lastName].filter(Boolean).join(" ") ||
+    ? formatPersonName(api.parent.firstName, api.parent.lastName, language) ||
       api.parent.username ||
       ""
     : "";
@@ -141,9 +141,10 @@ export default function StudentDetailPage() {
     detailOptions: { enabled: !!studentId },
   }).detail;
 
+  const { language } = useLocale();
   const student = useMemo(
-    () => (apiStudent ? mapApiToStudent(apiStudent) : null),
-    [apiStudent],
+    () => (apiStudent ? mapApiToStudent(apiStudent, language) : null),
+    [apiStudent, language],
   );
 
   const { data: exercises, isLoading: exercisesLoading } = useExerciseActions(

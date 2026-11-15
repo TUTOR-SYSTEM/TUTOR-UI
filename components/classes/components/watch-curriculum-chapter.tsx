@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button.ui";
 import { axiosInstance } from "@/lib/axios";
 import type { SessionFile } from "@/types";
+import { downloadStoredFile } from "@/lib/download-file";
 
 export type WatchMaterialLesson = {
   id: string;
@@ -47,20 +48,7 @@ const DEFAULT_FILE_ICON = {
 };
 
 /** Downloads via the backend proxy (auth-gated R2 objects can't be linked to directly). */
-const downloadFile = async (key: string, name: string) => {
-  const res = await axiosInstance.get("/upload/download", {
-    params: { key },
-    responseType: "blob",
-  });
-  const blobUrl = URL.createObjectURL(res.data as Blob);
-  const a = document.createElement("a");
-  a.href = blobUrl;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(blobUrl);
-};
+const downloadFile = (key: string, name: string) => downloadStoredFile(key, name);
 
 /** One curriculum chapter (title + its lessons/files) on the class watch page's "Chương trình học" card. */
 export const WatchCurriculumChapter = ({

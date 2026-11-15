@@ -1,5 +1,6 @@
 "use client";
 
+import { currentPersonName } from "@/lib/format/person-name";
 import { useMemo } from "react";
 import Link from "next/link";
 import {
@@ -81,7 +82,7 @@ type ClassWatchResponse = {
 const fullName = (u?: {
   firstName?: string | null;
   lastName?: string | null;
-}) => [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
+}) => currentPersonName(u?.firstName, u?.lastName).trim();
 
 const getInitials = (name: string) =>
   name
@@ -783,7 +784,7 @@ export const ClassDetailWatchPage = ({
             ) : (
               <div className="divide-y">
                 {students.map((s, idx) => {
-                  const name = `${s.firstName} ${s.lastName}`.trim();
+                  const name = currentPersonName(s.firstName, s.lastName).trim();
                   const isMe = s.id === myStudentId;
                   return (
                     <div
