@@ -1,5 +1,6 @@
 "use client";
 
+import { currentPersonName } from "@/lib/format/person-name";
 import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -180,7 +181,7 @@ export const ExerciseGradePage = ({
     );
   }
 
-  const studentName = `${student.firstName} ${student.lastName}`.trim();
+  const studentName = currentPersonName(student.firstName, student.lastName).trim();
   const lessonLabel =
     session.lesson?.title || session.title || session.class.name;
 

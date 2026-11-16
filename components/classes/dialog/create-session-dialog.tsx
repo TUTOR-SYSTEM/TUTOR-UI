@@ -112,6 +112,9 @@ export function CreateSessionDialog({
     ) {
       e.endTime = "Giờ kết thúc phải sau giờ bắt đầu";
     }
+    if (!form.title.trim() && !form.lessonId) {
+      e.title = "Nhập tiêu đề buổi học hoặc chọn bài giảng";
+    }
     setErrors(e);
     return !Object.keys(e).length;
   };
@@ -121,7 +124,10 @@ export function CreateSessionDialog({
     mutate({
       classId,
       lessonId: form.lessonId || undefined,
-      title: form.title.trim() || undefined,
+      title:
+        form.title.trim() ||
+        lessons.find((l) => l.id === form.lessonId)?.title ||
+        undefined,
       sessionNumber: nextSessionNumber,
       startAt: new Date(`${form.date}T${form.startTime}`).toISOString(),
       endAt: new Date(`${form.date}T${form.endTime}`).toISOString(),
@@ -155,7 +161,9 @@ export function CreateSessionDialog({
           value={form.title}
           onChange={(e) => update("title", e.target.value)}
           placeholder="VD: Buổi 3 — Phương trình bậc hai"
+          invalid={!!errors.title}
         />
+        <FieldError msg={errors.title} />
       </div>
 
       {/* Lesson */}

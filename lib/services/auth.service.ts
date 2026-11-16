@@ -15,17 +15,15 @@ import type {
 } from "@/types/auth.types";
 
 /**
- * BE (`AuthController`) only exposes register / login / login-user-code /
- * refresh / forgot-password / reset-password / OAuth — there is no OTP step.
- * `forgot-password` emails a reset link carrying the token directly consumed
- * by `reset-password` as `jti`. `register` also emails a verification link whose
- * token is consumed by `verify-email` as `jti`; login is not blocked by it.
+ * BE (`AuthController`) exposes register / login / login-user-code / refresh /
+ * forgot-password / reset-password / OAuth. Password reset is a 6-digit code:
+ * `forgot-password` emails it, and `reset-password` takes `{ email, otp, password,
+ * confirmPassword }`. `register` still emails a verification link whose token is
+ * consumed by `verify-email` as `jti`; login is not blocked by it.
  */
 export function useAuthActions() {
   const login = usePost<LoginResponse, LoginPayload>(resolveLoginUrl);
-  const register = usePost<RegisterResponse, RegisterPayload>(
-    "/auth/register",
-  );
+  const register = usePost<RegisterResponse, RegisterPayload>("/auth/register");
   const forgotPassword = usePost<ForgotPasswordResponse, ForgotPasswordPayload>(
     "/auth/forgot-password",
   );

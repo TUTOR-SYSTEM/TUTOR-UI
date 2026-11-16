@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import { SUBJECT_OPTIONS as SUBJECT_NAMES } from "@/lib/subjects";
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
 import { Label } from "@/components/ui/label.ui";
@@ -42,8 +43,6 @@ import { CURRICULUM_QUERY_KEY } from "@/lib/services/curriculum.service";
 
 const BRAND = "#0E9F8E";
 
-const SUBJECTS = ["Toán", "Văn", "Anh", "Lý", "Hóa", "Sinh"];
-const SUBJECT_OPTIONS = SUBJECTS.map((s) => ({ label: s, value: s }));
 
 /* ─── Helpers ─── */
 
@@ -100,6 +99,14 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
   );
   const [curriculumSearch, setCurriculumSearch] = useState("");
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
+  // Môn đã lưu của lớp (có thể là tên cũ) vẫn phải hiện đúng, nên thêm vào danh sách nếu lạ.
+  const subjectOptions = useMemo(() => {
+    const base = SUBJECT_NAMES.map((s) => ({ label: s, value: s }));
+    const current = form.subject;
+    return current && !SUBJECT_NAMES.includes(current as (typeof SUBJECT_NAMES)[number])
+      ? [{ label: current, value: current }, ...base]
+      : base;
+  }, [form.subject]);
   const [studentIdsOverride, setStudentIdsOverride] = useState<string[] | null>(
     null,
   );
@@ -255,7 +262,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
     if (
       form.startDate &&
       form.endDate &&
-      new Date(form.endDate) <= new Date(form.startDate)
+      new Date(form.endDate) < new Date(form.startDate)
     )
       e.endDate = copy.common.endDateBeforeStartError;
     setErrors(e);
@@ -331,7 +338,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                 update("subject", v);
                 setErrors((p) => ({ ...p, subject: "" }));
               }}
-              options={SUBJECT_OPTIONS}
+              options={subjectOptions}
               placeholder={copy.common.subjectPlaceholder}
               invalid={!!errors.subject}
             />

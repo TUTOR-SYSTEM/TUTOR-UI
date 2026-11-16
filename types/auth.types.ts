@@ -44,8 +44,10 @@ export type LogoutResponse = { message: string };
 export type ForgotPasswordPayload = { email: string };
 export type ForgotPasswordResponse = { ok: boolean };
 
+/** `POST /auth/reset-password`: the 6-digit code from the reset email, bound to its address. */
 export type ResetPasswordPayload = {
-  jti: string;
+  email: string;
+  otp: string;
   password: string;
   confirmPassword: string;
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -31,6 +31,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
 import { cn } from "@/lib/utils";
 import { useGet } from "@/lib/axios/query";
 import { axiosInstance, getErrorMessage } from "@/lib/axios";
+import { apiUploadFile } from "@/lib/services/student.service";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import { SessionMaterialFileRow } from "../components/session-material-file-row";
@@ -208,6 +209,10 @@ export const SessionDetailPage = ({
   const [importing, setImporting] = useState(false);
   const [showList, setShowList] = useState(false);
   const [importingKey, setImportingKey] = useState<string | null>(null);
+  /* tutor uploads: which list is uploading right now + the hidden file inputs behind "Thêm ô nhập tệp" */
+  const [uploadingType, setUploadingType] = useState<"theory" | "exercise" | null>(null);
+  const theoryFileInputRef = useRef<HTMLInputElement>(null);
+  const exerciseFileInputRef = useRef<HTMLInputElement>(null);
 
   /* attendance edit buffers — seeded from persisted records, saved via handleConfirmAttendance */
   const [present, setPresent] = useState<Record<string, boolean>>({});
@@ -327,6 +332,28 @@ export const SessionDetailPage = ({
     }
   };
 
+  /** Tutor tải tệp lên học liệu (bài giảng) hoặc bài tập về nhà của buổi: upload rồi ghi lại danh sách. */
+  const handleUploadFiles = async (type: "theory" | "exercise", files: FileList | null) => {
+    if (!session || !files || files.length === 0) return;
+    setUploadingType(type);
+    try {
+      const field = type === "theory" ? "theoryUrls" : "exerciseUrls";
+      const uploaded: SessionFile[] = [];
+      for (const file of Array.from(files)) {
+        const result = await apiUploadFile(file);
+        uploaded.push({ name: file.name, url: result.url, key: result.key });
+      }
+      const next = [...session[field], ...uploaded];
+      await axiosInstance.put(`/sessions/${sessionId}`, { [field]: next });
+      toast.success(`Đã tải lên ${uploaded.length} tệp`);
+      invalidateSession();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Tải tệp lên thất bại"));
+    } finally {
+      setUploadingType(null);
+    }
+  };
+
   const handleDeleteFile = async (type: "theory" | "exercise", key: string) => {
     if (!session) return;
     setDeletingKey(key);
@@ -431,7 +458,16 @@ export const SessionDetailPage = ({
       setCommitted((c) => ({ ...c, [studentId]: false }));
       return;
     }
-    const isPresentNow = present[studentId] ?? false;
+    saveAttendance(studentId, present[studentId] ?? false);
+  };
+
+  /**
+   * Persist one student's attendance right away (BE upsert). Used by the checkbox so a tick is
+   * saved immediately instead of sitting in local state (that gap made the student see "Vắng mặt").
+   * On failure the checkbox is reverted to the last saved value.
+   */
+  const saveAttendance = (studentId: string, isPresentNow: boolean) => {
+    setPresent((p) => ({ ...p, [studentId]: isPresentNow }));
     setSavingAttendanceId(studentId);
     upsertAttendance.mutate(
       {
@@ -445,8 +481,10 @@ export const SessionDetailPage = ({
           setCommitted((c) => ({ ...c, [studentId]: true }));
           toast.success("Đã lưu điểm danh");
         },
-        onError: (err) =>
-          toast.error(getErrorMessage(err, "Điểm danh thất bại")),
+        onError: (err) => {
+          setPresent((p) => ({ ...p, [studentId]: !isPresentNow }));
+          toast.error(getErrorMessage(err, "Điểm danh thất bại"));
+        },
         onSettled: () => setSavingAttendanceId(null),
       },
     );
@@ -468,7 +506,6 @@ export const SessionDetailPage = ({
     );
   };
 
-  const notImplemented = () => toast.info("Tính năng đang được phát triển");
 
   if (isLoading) {
     return (
@@ -557,9 +594,9 @@ export const SessionDetailPage = ({
           <Checkbox
             aria-label={`Điểm danh ${name}`}
             checked={isPresent}
-            disabled={isCommitted}
-            onCheckedChange={() =>
-              setPresent((p) => ({ ...p, [student.studentId]: !isPresent }))
+            disabled={isCommitted || savingAttendanceId === student.studentId}
+            onCheckedChange={(checked) =>
+              saveAttendance(student.studentId, checked === true)
             }
             className="mx-auto"
           />
@@ -876,7 +913,7 @@ export const SessionDetailPage = ({
               size="md"
               onClick={handleSave}
               loading={saving}
-              disabled={saving}
+              disabled={saving || isCompleted}
             >
               <Save className="size-3.5" />
               Lưu nội dung
@@ -1021,10 +1058,21 @@ export const SessionDetailPage = ({
               )}
               {isTutor && (
                 <div className="border-t px-4 py-3">
+                  <input
+                    ref={theoryFileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      void handleUploadFiles("theory", e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
                   <Button
                     variant="outline"
-                    onClick={notImplemented}
-                    disabled={isCompleted}
+                    onClick={() => theoryFileInputRef.current?.click()}
+                    disabled={isCompleted || uploadingType !== null}
+                    loading={uploadingType === "theory"}
                     className="h-auto w-full gap-1.5 border-dashed py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary"
                   >
                     <Plus className="size-3.5" />
@@ -1075,15 +1123,28 @@ export const SessionDetailPage = ({
                 )}
 
                 {isTutor && (
-                  <Button
-                    variant="outline"
-                    onClick={notImplemented}
-                    disabled={isCompleted}
-                    className="h-auto w-full gap-1.5 border-dashed py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary"
-                  >
-                    <Plus className="size-3.5" />
-                    Thêm ô nhập tệp
-                  </Button>
+                  <>
+                    <input
+                      ref={exerciseFileInputRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        void handleUploadFiles("exercise", e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => exerciseFileInputRef.current?.click()}
+                      disabled={isCompleted || uploadingType !== null}
+                      loading={uploadingType === "exercise"}
+                      className="h-auto w-full gap-1.5 border-dashed py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary"
+                    >
+                      <Plus className="size-3.5" />
+                      Thêm ô nhập tệp
+                    </Button>
+                  </>
                 )}
               </div>
 

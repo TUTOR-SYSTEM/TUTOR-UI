@@ -1,5 +1,6 @@
 "use client";
 
+import { currentPersonName } from "@/lib/format/person-name";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -70,12 +71,13 @@ const NAV = {
  * Visibility follows the RBAC table (❌ = hidden, 👀 = view-only but still shown).
  */
 const roleNav: Record<UserRole, NavItem[]> = {
-  // Tutor — full access to every item.
+  // Tutor — full access to every item (Students = học sinh do gia sư quản lý).
   TUTOR: [
     NAV.overview,
     NAV.schedule,
     NAV.notifications,
     NAV.classes,
+    NAV.students,
     NAV.curriculum,
     NAV.grades,
     NAV.fees, // 👀 view-only for Tutor
@@ -132,7 +134,7 @@ function getDisplayName(
   lastName?: string | null,
   fallback?: string,
 ): string {
-  return [firstName, lastName].filter(Boolean).join(" ") || fallback || "";
+  return currentPersonName(firstName, lastName) || fallback || "";
 }
 
 const AVATAR_GRADIENTS = [

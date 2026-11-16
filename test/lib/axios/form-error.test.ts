@@ -87,3 +87,46 @@ describe("handleFormApiError", () => {
     expect(form.getFieldState("root.serverError" as never).error?.message).toBe("Dữ liệu không hợp lệ");
   });
 });
+
+describe("applyApiFieldErrors", () => {
+  it("maps 422 errors onto rendered fields and reports success", async () => {
+    const { applyApiFieldErrors } = await import("@/lib/axios/form-error");
+    const { ApiError } = await import("@/types");
+    const setError = vi.fn();
+    const error = new ApiError("Dữ liệu không hợp lệ", 422, {
+      errors: [
+        { field: "email", message: "Email đã tồn tại" },
+        { field: "username", message: "Tên đăng nhập đã tồn tại" },
+      ],
+    } as never);
+
+    expect(applyApiFieldErrors(error, setError, ["email"])).toBe(true);
+    expect(setError).toHaveBeenCalledTimes(1);
+    expect(setError).toHaveBeenCalledWith("email", { type: "server", message: "Email đã tồn tại" });
+  });
+
+  it("does not underline a 400 duplicate error (those are toasted instead)", async () => {
+    const { applyApiFieldErrors } = await import("@/lib/axios/form-error");
+    const { ApiError } = await import("@/types");
+    const setError = vi.fn();
+    const error = new ApiError("Dữ liệu không hợp lệ", 400, {
+      errors: [{ field: "email", message: "Email đã tồn tại" }],
+    } as never);
+
+    expect(applyApiFieldErrors(error, setError, ["email"])).toBe(false);
+    expect(setError).not.toHaveBeenCalled();
+  });
+
+  it("returns false when nothing maps to a rendered field, or the error is not 422", async () => {
+    const { applyApiFieldErrors } = await import("@/lib/axios/form-error");
+    const { ApiError } = await import("@/types");
+    const setError = vi.fn();
+    const onlyUsername = new ApiError("x", 422, {
+      errors: [{ field: "username", message: "taken" }],
+    } as never);
+
+    expect(applyApiFieldErrors(onlyUsername, setError, ["email"])).toBe(false);
+    expect(applyApiFieldErrors(new ApiError("boom", 500), setError, ["email"])).toBe(false);
+    expect(setError).not.toHaveBeenCalled();
+  });
+});

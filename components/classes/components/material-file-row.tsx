@@ -7,24 +7,12 @@ import { toast } from "sonner";
 import { axiosInstance, getErrorMessage } from "@/lib/axios";
 import { isImageFile } from "@/lib/file-utils";
 import { ImagePreview } from "@/components/common/image-preview";
+import { downloadStoredFile } from "@/lib/download-file";
 
 export type MaterialFile = { name: string; url: string; key: string };
 
 /** Downloads via the backend proxy (auth-gated R2 objects can't be linked to directly). */
-const downloadFile = async (key: string, name: string) => {
-  const res = await axiosInstance.get("/upload/download", {
-    params: { key },
-    responseType: "blob",
-  });
-  const blobUrl = URL.createObjectURL(res.data as Blob);
-  const a = document.createElement("a");
-  a.href = blobUrl;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(blobUrl);
-};
+const downloadFile = (key: string, name: string) => downloadStoredFile(key, name);
 
 /** Read-only file row for the class materials (theory/exercise) page. */
 export const MaterialFileRow = ({ file }: { file: MaterialFile }) => {

@@ -48,23 +48,36 @@ export type FormValuesStudent = {
   parentRelationship: string;
   parentPhone: string;
   parentEmail: string;
+  /** Mật khẩu đăng nhập cho học sinh (trống = BE sinh ngẫu nhiên). */
+  password?: string;
+  /** Mật khẩu cho phụ huynh MỚI (bỏ qua khi liên kết phụ huynh có sẵn). */
+  parentPassword?: string;
+  /** Gia sư quản lý (chỉ ADMIN chọn; TUTOR để trống, server gán chính tutor). */
+  tutorId?: string;
 };
 
 /** Matches POST /students (`createStudentSchema` on the backend). */
 export type CreateStudentPayload = {
+  tutorId?: string;
   studentName: string;
   userCode?: string;
   classCode?: string;
   gender: GENDER_ENUM;
   studentPhone?: string;
   school?: string;
+  /** Optional: BE generates a random password when omitted. */
+  password?: string;
   /** Link an existing PARENT user instead of creating one from `parentName`/`parentPhone`/... */
   parentId?: string;
   parentName?: string;
   parentRelationship?: string;
   parentPhone?: string;
   parentEmail?: string;
+  parentPassword?: string;
 };
+
+/** PUT /students/:id/password — id goes in the URL, body carries only the password. */
+export type SetStudentPasswordPayload = { id: string; password: string };
 
 /** Existing PARENT user picked from search and linked to a student (not created from the form). */
 export type ParentOption = {

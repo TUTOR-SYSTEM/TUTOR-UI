@@ -2,12 +2,11 @@
 
 /**
  * Parent view — child's homework portal ("Bài làm của con").
- * Học phí now lives at its own real-data page (`/fees`, see
- * `components/fees/family-fees-page.tsx`) rather than a tab here.
- * Static mock data (see practice-shared) for homework — not yet backed by API.
+ * Real data: the children linked to this PARENT (`GET /students/my-children`) and one child's
+ * homework (`GET /exercises?studentId=`, BE scopes parent → child). Học phí lives at `/fees`.
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -20,15 +19,39 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useParentPortalActions } from "@/lib/services/parent-portal.service";
+import type { ParentExerciseRow } from "@/types";
 import {
-  MOCK_ASSIGNMENTS,
-  MOCK_CHILD,
   PRACTICE_STATUS,
   PortalBanner,
   PortalFooter,
   StatTile,
   type Assignment,
 } from "./practice-shared";
+
+type AssignmentStatus = Assignment["status"];
+
+/** Map một dòng bài tập của BE sang trạng thái hiển thị cho phụ huynh. */
+function toAssignment(row: ParentExerciseRow): Assignment {
+  const hasFiles = (row.exerciseUrls?.length ?? 0) > 0;
+  const status: AssignmentStatus =
+    row.status === "GRADED"
+      ? "GRADED"
+      : hasFiles
+        ? "SUBMITTED"
+        : "NOT_SUBMITTED";
+  const sessionNumber = row.session?.sessionNumber ?? 0;
+  return {
+    id: row.id,
+    title: `Bài tập buổi ${sessionNumber || "—"}`,
+    sessionNumber,
+    sessionDate: "",
+    description: row.class?.name ?? "",
+    dueLabel: "",
+    status,
+    score: row.score == null ? null : Number(row.score),
+  };
+}
 
 /* ─── Homework row (read-only, parent perspective) ─────────── */
 
@@ -55,10 +78,12 @@ const WorkRow = ({ a }: { a: Assignment }) => {
               {meta.label}
             </span>
           </div>
-          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-[#9AAEA9]">
-            <Clock className="size-3.5" />
-            Hạn nộp: <span className="font-medium">{a.dueLabel}</span>
-          </p>
+          {a.description && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-[#9AAEA9]">
+              <Clock className="size-3.5" />
+              Lớp: <span className="font-medium">{a.description}</span>
+            </p>
+          )}
         </div>
 
         {/* Right result */}
@@ -95,36 +120,81 @@ const WorkRow = ({ a }: { a: Assignment }) => {
 /* ─── Main ─────────────────────────────────────────────────── */
 
 export const ParentPortalView = () => {
-  const stats = useMemo(() => {
-    const submitted = MOCK_ASSIGNMENTS.filter(
-      (a) => a.status !== "NOT_SUBMITTED",
-    ).length;
-    const graded = MOCK_ASSIGNMENTS.filter((a) => a.status === "GRADED").length;
-    const notSubmitted = MOCK_ASSIGNMENTS.filter(
-      (a) => a.status === "NOT_SUBMITTED",
-    ).length;
-    return {
-      total: MOCK_ASSIGNMENTS.length,
-      submitted,
-      graded,
-      notSubmitted,
-    };
-  }, []);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { children, exercises } = useParentPortalActions({
+    childId: selectedId ?? undefined,
+  });
+  const childList = children.data ?? [];
+  const activeChild =
+    childList.find((c) => c.id === (selectedId ?? childList[0]?.id)) ?? null;
 
-  const missing = useMemo(
-    () => MOCK_ASSIGNMENTS.find((a) => a.status === "NOT_SUBMITTED") ?? null,
-    [],
+  const assignments = useMemo(
+    () => (exercises.data ?? []).map(toAssignment),
+    [exercises.data],
   );
+
+  const stats = useMemo(() => {
+    const submitted = assignments.filter((a) => a.status !== "NOT_SUBMITTED").length;
+    const graded = assignments.filter((a) => a.status === "GRADED");
+    const notSubmitted = assignments.filter((a) => a.status === "NOT_SUBMITTED").length;
+    const avg =
+      graded.length > 0
+        ? graded.reduce((sum, a) => sum + (a.score ?? 0), 0) / graded.length
+        : null;
+    return {
+      total: assignments.length,
+      submitted,
+      graded: graded.length,
+      notSubmitted,
+      avg,
+    };
+  }, [assignments]);
+
+  const missing = assignments.find((a) => a.status === "NOT_SUBMITTED") ?? null;
+
+  if (children.isLoading) {
+    return <p className="py-10 text-center text-sm text-[#9AAEA9]">Đang tải…</p>;
+  }
+
+  if (childList.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-[#D5E2DE] bg-white px-6 py-12 text-center text-sm text-[#5c726d]">
+        Tài khoản này chưa được liên kết với học sinh nào.
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 pb-8">
-      <PortalBanner
-        initial={MOCK_CHILD.initial}
-        title={MOCK_CHILD.name}
-        subtitle={`${MOCK_CHILD.className} · Gia sư: ${MOCK_CHILD.tutorName}`}
-        statLabel="Điểm TB môn"
-        statValue={MOCK_CHILD.avgScore.toFixed(1)}
-      />
+      {childList.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {childList.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setSelectedId(c.id)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-sm font-semibold transition-colors",
+                activeChild?.id === c.id
+                  ? "border-[#0E9F8E] bg-[#E4F6EF] text-[#0B7A6D]"
+                  : "border-[#E7EEEC] bg-white text-[#5c726d] hover:border-[#0E9F8E]/40",
+              )}
+            >
+              {`${c.lastName} ${c.firstName}`.trim()}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {activeChild && (
+        <PortalBanner
+          initial={(activeChild.firstName || "?").charAt(0).toUpperCase()}
+          title={`${activeChild.lastName} ${activeChild.firstName}`.trim()}
+          subtitle={`Mã HS: ${activeChild.userCode ?? "—"}`}
+          statLabel="Điểm TB môn"
+          statValue={stats.avg == null ? "—" : stats.avg.toFixed(1)}
+        />
+      )}
 
       <Link
         href="/fees"
@@ -165,16 +235,17 @@ export const ParentPortalView = () => {
             <span className="font-semibold text-[#E85D24]">Nhắc nhở:</span>{" "}
             Con còn{" "}
             <span className="font-semibold">{stats.notSubmitted} bài</span>{" "}
-            chưa nộp — “{missing.title.split(" — ")[0]}” hạn{" "}
-            {missing.dueLabel.split(" · ")[0]}. Bạn có thể nhắc con hoàn thành
-            đúng hạn.
+            chưa nộp — “{missing.title}”. Bạn có thể nhắc con hoàn thành đúng hạn.
           </p>
         </div>
       )}
 
       <h2 className="mt-1 font-bold text-[#16302b]">Bài tập gần đây</h2>
       <div className="flex flex-col gap-3">
-        {MOCK_ASSIGNMENTS.map((a) => (
+        {assignments.length === 0 && !exercises.isLoading && (
+          <p className="py-6 text-center text-sm text-[#9AAEA9]">Chưa có bài tập nào.</p>
+        )}
+        {assignments.map((a) => (
           <WorkRow key={a.id} a={a} />
         ))}
       </div>

@@ -46,31 +46,35 @@ Kèm specific error cases cho từng bước.
 ### Forgot Password
 | Case | Điều kiện | Hành vi |
 |------|-----------|---------|
-| ✅ Thành công | email hợp lệ, tồn tại trong hệ thống | Redirect `/verify-otp?email=...` |
-| ❌ Email không tồn tại | email chưa đăng ký | Toast "Email chưa được đăng ký" |
+| ✅ Thành công | email hợp lệ (luôn trả 200, kể cả email chưa đăng ký) | Hiện màn "Đã gửi mã" + nút "Nhập mã xác nhận" → `/reset-password?email=...`; mã 6 số được gửi qua email (hiệu lực 5 phút) |
 | ❌ Email rỗng | email trống | Inline "Email không được để trống" |
 | ❌ Email sai định dạng | email không hợp lệ | Inline "Email không hợp lệ" |
+| ❌ Gửi lại | bấm "Gửi lại email" | Gửi mã mới, mã cũ bị vô hiệu; nút chờ 60 giây |
 | ❌ Server 500 | BE lỗi | Toast |
 | ❌ Network error | Mất kết nối | Toast |
 
-### Verify OTP
+Kiến trúc: **1 bước** — không có trang verify riêng và không có token trung gian. Mã OTP là khóa duy nhất để đặt lại mật khẩu.
+
+### Reset Password (nhập mã OTP)
+Trang `/reset-password?email=...` gồm: email (điền sẵn), 6 ô nhập mã (dán được cả 6 số, tự chuyển ô), mật khẩu mới, xác nhận mật khẩu.
+
 | Case | Điều kiện | Hành vi |
 |------|-----------|---------|
-| ✅ Thành công | OTP đúng 6 số, chưa hết hạn | Redirect `/reset-password?token=...` |
-| ❌ OTP sai | mã OTP không đúng | Inline "Mã OTP không đúng" |
-| ❌ OTP hết hạn | OTP quá 5 phút | Inline "Mã OTP đã hết hạn, vui lòng yêu cầu mã mới" |
-| ❌ Quá số lần thử | nhập sai OTP > 5 lần | Redirect `/forgot-password` + toast "Bạn đã nhập sai quá nhiều lần" |
-| ❌ Thiếu OTP | OTP chưa nhập đủ 6 số | Inline "Vui lòng nhập mã OTP" |
+| ✅ Thành công | mã đúng, còn hạn, mật khẩu mới hợp lệ | Màn "Đổi mật khẩu thành công" + nút "Đăng nhập ngay" → `/login` |
+| ❌ Thiếu OTP | chưa đủ 6 số | Inline "Vui lòng nhập đủ 6 chữ số" |
+| ❌ OTP sai | mã không khớp | Xóa 6 ô, báo "Mã xác nhận không đúng hoặc đã hết hạn" |
+| ❌ OTP hết hạn | quá 5 phút hoặc đã dùng | Cùng thông báo như "OTP sai" (không tiết lộ lý do) |
+| ❌ Quá số lần thử | nhập sai > 5 lần cho một mã | Báo "Nhập sai mã quá nhiều lần. Vui lòng yêu cầu mã mới" (HTTP 429) |
+| ❌ Password yếu | < 8 ký tự, hoặc thiếu chữ thường/hoa/số/ký tự đặc biệt | Inline (cùng policy với đăng ký) |
+| ❌ Confirm không khớp | confirmPassword ≠ password | Inline "Mật khẩu xác nhận không khớp" |
 | ❌ Server 500 | BE lỗi | Toast |
 | ❌ Network error | Mất kết nối | Toast |
 
-### Reset Password
-| Case | Điều kiện | Hành vi |
-|------|-----------|---------|
-| ✅ Thành công | token hợp lệ + password mới OK | Toast "Đặt lại mật khẩu thành công!" + redirect `/login` |
-| ❌ Token hết hạn | token đã hết hiệu lực | Redirect `/forgot-password` + toast |
-| ❌ Token không hợp lệ | token sai | Redirect `/forgot-password` + toast |
-| ❌ Password yếu | < 6 ký tự | Inline "Mật khẩu phải có ít nhất 6 ký tự" |
+Quy tắc BE (`user` lưu, `third` gửi mail, `gateway` xác thực đầu vào):
+- Mã: 6 chữ số ngẫu nhiên (`crypto.randomInt`), chỉ lưu **hash SHA-256 có salt** trong Redis key `reset-password-otp:<userId>`, TTL 300 giây.
+- Đếm lần thử bằng `redis.incr` theo `reset-password-otp-attempts:<userId>:<codeId>`, tối đa 5 lần; đếm cả lần đúng để chặn brute force.
+- Dùng một lần: `redis.getdel` khi reset thành công. Gửi lại mã sẽ ghi đè mã cũ.
+- Redis không đọc được qua HTTP: prefix `reset-password-otp` nằm trong danh sách chặn của gateway và third.
 | ❌ Confirm không khớp | confirmPassword ≠ password | Inline "Mật khẩu xác nhận không khớp" |
 | ❌ Thiếu password | password rỗng | Inline "Mật khẩu không được để trống" |
 | ❌ Server 500 | BE lỗi | Toast |

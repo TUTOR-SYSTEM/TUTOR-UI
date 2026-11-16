@@ -53,6 +53,7 @@ export function RegisterForm() {
     const passwordError = newPasswordError(values.password, {
       tooShort: shared.passwordTooShort,
       tooLong: shared.passwordTooLong,
+      complexity: shared.passwordComplexity,
     });
     if (passwordError) {
       form.setError("password", { message: passwordError });

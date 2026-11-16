@@ -1,20 +1,30 @@
 import { describe, expect, it } from "vitest";
 
-import { loginPasswordError, newPasswordError } from "@/lib/auth/password-policy";
+import {
+  loginPasswordError,
+  newPasswordError,
+} from "@/lib/auth/password-policy";
 
-const newMsgs = { tooShort: "short", tooLong: "long" };
+const newMsgs = { tooShort: "short", tooLong: "long", complexity: "complex" };
 const loginMsgs = { required: "required", tooLong: "long" };
 
-describe("newPasswordError (create / reset: 8-100)", () => {
-  it("accepts 8 to 100 characters", () => {
-    expect(newPasswordError("12345678", newMsgs)).toBeNull();
-    expect(newPasswordError("x".repeat(100), newMsgs)).toBeNull();
+describe("newPasswordError (create / reset: 8-100 + complexity)", () => {
+  it("accepts a valid password of 8 to 100 characters", () => {
+    expect(newPasswordError("Abcdef1!", newMsgs)).toBeNull();
+    expect(newPasswordError(`Aa1!${"x".repeat(96)}`, newMsgs)).toBeNull();
   });
 
   it("rejects under 8 and over 100 characters", () => {
-    expect(newPasswordError("1234567", newMsgs)).toBe("short");
+    expect(newPasswordError("Abc1!ef", newMsgs)).toBe("short");
     expect(newPasswordError("", newMsgs)).toBe("short");
-    expect(newPasswordError("x".repeat(101), newMsgs)).toBe("long");
+    expect(newPasswordError(`Aa1!${"x".repeat(97)}`, newMsgs)).toBe("long");
+  });
+
+  it("rejects passwords missing lowercase, uppercase, digit or special character", () => {
+    expect(newPasswordError("abcdef1!", newMsgs)).toBe("complex");
+    expect(newPasswordError("ABCDEF1!", newMsgs)).toBe("complex");
+    expect(newPasswordError("Abcdefg!", newMsgs)).toBe("complex");
+    expect(newPasswordError("Abcdefg1", newMsgs)).toBe("complex");
   });
 });
 

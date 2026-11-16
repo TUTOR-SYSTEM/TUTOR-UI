@@ -1,0 +1,373 @@
+"use client";
+
+import { Button } from "@/components/ui/button.ui";
+import { Input } from "@/components/ui/input.ui";
+import type * as React from "react";
+import { useRef, useState } from "react";
+import { Camera, Check, Loader2 } from "lucide-react";
+import { axiosInstance } from "@/lib/axios";
+import { unwrapApiData } from "@/lib/axios/api-unwrap";
+import { useAuthStore } from "@/zustand/auth.store";
+import type { ApiUser, UpdateUserPayload } from "@/types";
+import Image from "next/image";
+import { apiUploadFile } from "@/lib/services/student.service";
+import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
+import { Textarea } from "@/components/ui/textarea.ui";
+import { FormRow } from "@/components/ui/form-row.ui";
+import { SectionHeading } from "@/components/ui/section-heading.ui";
+import { Separator } from "@/components/ui/separator.ui";
+import { TutorProfilePanel } from "@/components/settings/tutor-profile-panel";
+
+/* ─── Tab panels ─── */
+export function getInitials(
+  firstName?: string | null,
+  lastName?: string | null,
+): string {
+  const f = firstName?.charAt(0) ?? "";
+  const l = lastName?.charAt(0) ?? "";
+  return (f + l).toUpperCase() || "U";
+}
+
+
+export type ProfileFormState = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  subjects: string;
+  description: string;
+  address: string;
+  district: string;
+  province: string;
+};
+
+
+export function ProfilePanel() {
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+  const role = useCurrentUserRole();
+  // Backend (`user.service.ts::updateOwnProfileService`) rejects the whole request if a STUDENT
+  // sends firstName/lastName at all, even unchanged — so these fields must both be locked in the
+  // UI and stripped from the payload, not just disabled.
+  const isNameLocked = role === "STUDENT";
+
+  // PARENT profile would list linked students, but gateway `GET /students` is
+  // ADMIN-only and there is no PARENT "my children" endpoint yet, so the list
+  // is not fetched for PARENT (see the empty-state message below).
+  const isParent = role === "PARENT";
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarRemoving, setAvatarRemoving] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  const [form, setForm] = useState<ProfileFormState>({
+    firstName: user?.firstName ?? "",
+    lastName: user?.lastName ?? "",
+    email: user?.email ?? "",
+    phone: user?.phone ?? "",
+    subjects: user?.subjects ?? "",
+    description: user?.description ?? "",
+    address: user?.address ?? "",
+    district: user?.district ?? "",
+    province: user?.province ?? "",
+  });
+
+  // Re-initialize the form when a different user loads, without an effect.
+  // Adjusting state during render (the "previous value" pattern) avoids the
+  // cascading render that setState-in-effect causes, and only resets on a real
+  // user change so in-progress edits aren't clobbered on every store update.
+  const [syncedUserId, setSyncedUserId] = useState(user?.id);
+  if (user && user.id !== syncedUserId) {
+    setSyncedUserId(user.id);
+    setForm({
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
+      email: user.email ?? "",
+      phone: user.phone ?? "",
+      subjects: user.subjects ?? "",
+      description: user.description ?? "",
+      address: user.address ?? "",
+      district: user.district ?? "",
+      province: user.province ?? "",
+    });
+  }
+
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+
+  const updateField = (key: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Ảnh tối đa 2MB");
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+
+    setAvatarUploading(true);
+    try {
+      const uploaded = await apiUploadFile(file);
+      const raw = await axiosInstance.put("/users", { avatar: uploaded.url });
+      const updatedUser = unwrapApiData<Partial<ApiUser>>(raw.data);
+      if (user) {
+        setUser({ ...user, avatar: uploaded.url, ...updatedUser });
+      }
+      setAvatarPreview(null);
+    } catch {
+      alert("Tải ảnh thất bại");
+      setAvatarPreview(null);
+    } finally {
+      setAvatarUploading(false);
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // "Xoá ảnh" reuses PUT /users (there is no separate delete-avatar endpoint)
+  // — sending `avatar: null` clears it server-side per `updateUserSchema`.
+  const handleAvatarRemove = async () => {
+    setAvatarRemoving(true);
+    try {
+      const raw = await axiosInstance.put("/users", { avatar: null });
+      const updatedUser = unwrapApiData<Partial<ApiUser>>(raw.data);
+      if (user) {
+        setUser({ ...user, avatar: null, ...updatedUser });
+      }
+      setAvatarPreview(null);
+    } catch {
+      alert("Xoá ảnh thất bại");
+    } finally {
+      setAvatarRemoving(false);
+    }
+  };
+
+  const handleProfileSave = async () => {
+    setProfileSaving(true);
+    try {
+      const { firstName, lastName, ...rest } = form;
+      const payload: UpdateUserPayload = isNameLocked
+        ? rest
+        : { firstName, lastName, ...rest };
+      const raw = await axiosInstance.put("/users", payload);
+      const updatedUser = unwrapApiData<Partial<ApiUser>>(raw.data);
+      // Merge instead of replace: the update endpoint may return a partial
+      // user (without id/avatar/role), and replacing would wipe those fields
+      // from the store — blanking the UI until a full refetch on reload.
+      // Overlay the submitted form values, then any authoritative fields the
+      // server echoes back.
+      if (user) {
+        setUser({ ...user, ...form, ...updatedUser });
+      }
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2000);
+    } catch {
+      alert("Cập nhật thất bại");
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const avatarSrc = avatarPreview ?? user?.avatar ?? null;
+  const initials = getInitials(user?.firstName, user?.lastName);
+
+  if (role === "TUTOR") {
+    return (
+      <TutorProfilePanel
+        avatarSrc={avatarSrc}
+        initials={initials}
+        avatarUploading={avatarUploading}
+        avatarRemoving={avatarRemoving}
+        fileInputRef={fileInputRef}
+        handleAvatarSelect={handleAvatarSelect}
+        handleAvatarRemove={handleAvatarRemove}
+        form={form}
+        updateField={updateField}
+        profileSaving={profileSaving}
+        profileSaved={profileSaved}
+        handleProfileSave={handleProfileSave}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Avatar */}
+      <div className="flex items-center gap-5">
+        <div className="relative">
+          {avatarSrc ? (
+            <Image
+              width={80}
+              height={80}
+              src={avatarSrc}
+              alt="Avatar"
+              className="size-20 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex size-20 items-center justify-center rounded-full bg-primary text-2xl font-bold text-white">
+              {initials}
+            </div>
+          )}
+          <Button variant="ghost"
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={avatarUploading}
+            className="absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border-2 border-card bg-primary text-white shadow-sm hover:bg-primary-hover transition-colors disabled:opacity-60"
+          >
+            {avatarUploading ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Camera className="size-3.5" />
+            )}
+          </Button>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">Ảnh đại diện</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">JPG, PNG tối đa 2MB</p>
+          <Button variant="ghost"
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={avatarUploading}
+            className="mt-2 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+          >
+            {avatarUploading ? "Đang tải..." : "Tải ảnh lên"}
+          </Button>
+          <Input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png"
+            className="hidden"
+            onChange={handleAvatarSelect}
+          />
+        </div>
+      </div>
+
+      <Separator className="my-6" />
+      <SectionHeading>Thông tin cơ bản</SectionHeading>
+
+      <div className="rounded-lg border border-border-light px-4">
+        <FormRow label="Họ">
+          <Input
+            value={form.lastName}
+            onChange={
+              isNameLocked
+                ? undefined
+                : (e) => updateField("lastName", e.target.value)
+            }
+          />
+          {isNameLocked && (
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Học sinh không thể tự đổi họ tên — liên hệ gia sư hoặc quản trị
+              viên nếu cần chỉnh sửa.
+            </p>
+          )}
+        </FormRow>
+        <FormRow label="Tên">
+          <Input
+            value={form.firstName}
+            onChange={
+              isNameLocked
+                ? undefined
+                : (e) => updateField("firstName", e.target.value)
+            }
+          />
+        </FormRow>
+        <FormRow label="Email">
+          <Input
+            value={form.email}
+            type="email"
+            onChange={(e) => updateField("email", e.target.value)}
+          />
+        </FormRow>
+        <FormRow label="Số điện thoại">
+          <Input
+            value={form.phone}
+            type="tel"
+            onChange={(e) => updateField("phone", e.target.value)}
+          />
+        </FormRow>
+        <FormRow label={role === "STUDENT" ? "Môn đang học" : "Môn dạy"}>
+          <Input
+            value={form.subjects}
+            placeholder="Ví dụ: Toán, Vật lý..."
+            onChange={(e) => updateField("subjects", e.target.value)}
+          />
+        </FormRow>
+        <FormRow label="Giới thiệu">
+          <Textarea
+            value={form.description}
+            rows={2}
+            onChange={(e) => updateField("description", e.target.value)}
+          />
+        </FormRow>
+      </div>
+
+      {isParent && (
+        <>
+          <Separator className="my-6" />
+          <SectionHeading>Học sinh liên kết</SectionHeading>
+
+          <p className="text-sm text-muted-foreground">
+            Chức năng xem học sinh liên kết hiện chưa khả dụng.
+          </p>
+        </>
+      )}
+
+      <Separator className="my-6" />
+      <SectionHeading>Địa chỉ</SectionHeading>
+
+      <div className="rounded-lg border border-border-light px-4">
+        <FormRow label="Địa chỉ">
+          <Input
+            value={form.address}
+            onChange={(e) => updateField("address", e.target.value)}
+          />
+        </FormRow>
+        <FormRow label="Quận / Huyện">
+          <Input
+            value={form.district}
+            onChange={(e) => updateField("district", e.target.value)}
+          />
+        </FormRow>
+        <FormRow label="Tỉnh / Thành phố">
+          <Input
+            value={form.province}
+            onChange={(e) => updateField("province", e.target.value)}
+          />
+        </FormRow>
+      </div>
+
+      <div className="flex justify-end pt-2">
+        <Button variant="ghost"
+          type="button"
+          onClick={handleProfileSave}
+          disabled={profileSaving}
+          className={`flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-all ${
+            profileSaved ? "bg-primary-hover" : "bg-primary hover:bg-primary-hover"
+          } disabled:opacity-60`}
+        >
+          {profileSaving ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : profileSaved ? (
+            <Check className="size-4" />
+          ) : null}
+          {profileSaving
+            ? "Đang lưu..."
+            : profileSaved
+              ? "Đã lưu!"
+              : "Lưu thay đổi"}
+        </Button>
+      </div>
+    </div>
+  );
+}

@@ -1,5 +1,19 @@
 import type { Language } from "@/types";
 
+export type StudentValidationMessages = {
+  required: string;
+  nameMin: string;
+  nameMax: string;
+  emailInvalid: string;
+  phoneMax: string;
+  schoolMax: string;
+  codeMax: string;
+  tutorRequired: string;
+  passwordTooShort: string;
+  passwordTooLong: string;
+  passwordComplexity: string;
+};
+
 export type StudentsDictionary = {
   list: {
     heading: string;
@@ -121,11 +135,16 @@ export type StudentsDictionary = {
     matchedGroup: string;
     similarGroup: string;
   };
+  validation: StudentValidationMessages;
   addDialog: {
     title: string;
     subtitle: string;
     submitText: string;
     sectionStudentInfo: string;
+    studentPasswordLabel: string;
+    studentPasswordHint: string;
+    parentPasswordLabel: string;
+    passwordPlaceholder: string;
     sectionParentInfo: string;
     fullNameLabel: string;
     fullNamePlaceholder: string;
@@ -205,6 +224,17 @@ export type StudentsDictionary = {
     errMax255: string;
     errMax20: string;
     errInvalidPhone: string;
+  };
+  setPasswordDialog: {
+    actionTitle: string;
+    title: string;
+    subtitle: string;
+    submitText: string;
+    passwordLabel: string;
+    confirmLabel: string;
+    mismatch: string;
+    toastSuccess: string;
+    toastError: string;
   };
   deleteDialog: {
     descriptionPrefix: string;
@@ -337,6 +367,19 @@ const vi: StudentsDictionary = {
     matchedGroup: "Phụ huynh trùng tên",
     similarGroup: "Phụ huynh gần giống",
   },
+  validation: {
+    required: "Vui lòng nhập thông tin này",
+    nameMin: "Phải có ít nhất 2 ký tự",
+    nameMax: "Tối đa 255 ký tự",
+    emailInvalid: "Email không hợp lệ",
+    phoneMax: "SĐT tối đa 20 ký tự",
+    schoolMax: "Trường tối đa 255 ký tự",
+    codeMax: "Mã học sinh tối đa 50 ký tự",
+    tutorRequired: "Vui lòng chọn gia sư quản lý",
+    passwordTooShort: "Mật khẩu tối thiểu 8 ký tự",
+    passwordTooLong: "Mật khẩu tối đa 100 ký tự",
+    passwordComplexity: "Mật khẩu cần có chữ thường, chữ hoa, số và ký tự đặc biệt",
+  },
   addDialog: {
     title: "Thêm học sinh mới",
     subtitle: "Điền thông tin học sinh và phụ huynh để tạo hồ sơ.",
@@ -366,6 +409,10 @@ const vi: StudentsDictionary = {
     parentPhonePlaceholder: "VD: 0912 345 678",
     parentEmailLabel: "Email phụ huynh",
     parentEmailPlaceholder: "VD: phuhuynh@gmail.com",
+    studentPasswordLabel: "Mật khẩu đăng nhập",
+    studentPasswordHint: "Để trống để hệ thống tự tạo mật khẩu ngẫu nhiên",
+    parentPasswordLabel: "Mật khẩu phụ huynh (tài khoản mới)",
+    passwordPlaceholder: "Nhập mật khẩu",
     toastSuccess: "Thêm học sinh thành công!",
     toastError: "Thêm học sinh thất bại",
   },
@@ -422,6 +469,17 @@ const vi: StudentsDictionary = {
     errMax255: "Tối đa 255 ký tự",
     errMax20: "Tối đa 20 ký tự",
     errInvalidPhone: "Số điện thoại không hợp lệ",
+  },
+  setPasswordDialog: {
+    actionTitle: "Đặt mật khẩu",
+    title: "Đặt mật khẩu cho học sinh",
+    subtitle: "Học sinh dùng mã học sinh và mật khẩu này để đăng nhập.",
+    submitText: "Lưu mật khẩu",
+    passwordLabel: "Mật khẩu mới",
+    confirmLabel: "Nhập lại mật khẩu",
+    mismatch: "Mật khẩu nhập lại không khớp",
+    toastSuccess: "Đã đặt mật khẩu cho học sinh",
+    toastError: "Đặt mật khẩu thất bại",
   },
   deleteDialog: {
     descriptionPrefix: "Bạn có chắc muốn xóa học sinh",
@@ -556,6 +614,19 @@ const en: StudentsDictionary = {
     matchedGroup: "Name matches",
     similarGroup: "Similar names",
   },
+  validation: {
+    required: "This field is required",
+    nameMin: "Must be at least 2 characters",
+    nameMax: "At most 255 characters",
+    emailInvalid: "Invalid email address",
+    phoneMax: "Phone must be at most 20 characters",
+    schoolMax: "School must be at most 255 characters",
+    codeMax: "Student code must be at most 50 characters",
+    tutorRequired: "Please select a managing tutor",
+    passwordTooShort: "Password must be at least 8 characters",
+    passwordTooLong: "Password must be at most 100 characters",
+    passwordComplexity: "Password needs lowercase, uppercase, a number and a special character",
+  },
   addDialog: {
     title: "Add new student",
     subtitle: "Fill in the student and parent information to create a profile.",
@@ -585,6 +656,10 @@ const en: StudentsDictionary = {
     parentPhonePlaceholder: "e.g. 0912 345 678",
     parentEmailLabel: "Parent email",
     parentEmailPlaceholder: "e.g. parent@gmail.com",
+    studentPasswordLabel: "Login password",
+    studentPasswordHint: "Leave empty to let the system generate a random password",
+    parentPasswordLabel: "Parent password (new account)",
+    passwordPlaceholder: "Enter password",
     toastSuccess: "Student added successfully!",
     toastError: "Failed to add student",
   },
@@ -641,6 +716,17 @@ const en: StudentsDictionary = {
     errMax255: "Maximum 255 characters",
     errMax20: "Maximum 20 characters",
     errInvalidPhone: "Invalid phone number",
+  },
+  setPasswordDialog: {
+    actionTitle: "Set password",
+    title: "Set student password",
+    subtitle: "The student signs in with their student code and this password.",
+    submitText: "Save password",
+    passwordLabel: "New password",
+    confirmLabel: "Confirm password",
+    mismatch: "The passwords do not match",
+    toastSuccess: "Student password updated",
+    toastError: "Failed to set password",
   },
   deleteDialog: {
     descriptionPrefix: "Are you sure you want to delete student",

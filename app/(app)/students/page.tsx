@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
+  KeyRound,
   Loader2,
   Pencil,
   Plus,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { AddStudentDialog } from "@/components/students/add-student-dialog";
+import { SetStudentPasswordDialog } from "@/components/students/set-student-password-dialog";
 import { EditStudentDialog } from "@/components/students/edit-student-dialog";
 import { DeleteStudentDialog } from "@/components/students/delete-student-dialog";
 import {
@@ -38,7 +40,9 @@ import {
 } from "@/components/ui/table.ui";
 import { useStudentsCopy } from "@/hooks/useStudentsCopy.hook";
 import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
-import type { Student, ApiStudent } from "@/types";
+import { useLocale } from "@/hooks/useLocale.hook";
+import { formatPersonName } from "@/lib/format/person-name";
+import type { Student, ApiStudent, Language } from "@/types";
 import UsageGuides, {
   type UsageGuideStep,
 } from "@/components/ui/usage-guide.ui";
@@ -62,13 +66,11 @@ function initials(name?: string | null) {
   ).toUpperCase();
 }
 
-function mapApiToStudent(api: ApiStudent): Student {
-  const fullName =
-    [api.firstName, api.lastName].filter(Boolean).join(" ") ||
-    api.username ||
-    "";
+function mapApiToStudent(api: ApiStudent, language: Language): Student {
+  // Họ Tên order (VI) / First Last (EN) — same rule as the tutors page.
+  const fullName = formatPersonName(api.firstName, api.lastName, language) || api.username || "";
   const parentName = api.parent
-    ? [api.parent.firstName, api.parent.lastName].filter(Boolean).join(" ") ||
+    ? formatPersonName(api.parent.firstName, api.parent.lastName, language) ||
       api.parent.username ||
       ""
     : "";
@@ -115,8 +117,12 @@ export default function StudentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
-  // PUT/DELETE /students/:id are ADMIN-only on the gateway; TUTOR gets a read-only list.
-  const isAdmin = useCurrentUserRole() === "ADMIN";
+  // PUT/DELETE /students/:id are ADMIN-only on the gateway. TUTOR manages their own list: it can
+  // create students and set their passwords (PUT /students/:id/password), but not edit/delete.
+  const role = useCurrentUserRole();
+  const isAdmin = role === "ADMIN";
+  const canManage = isAdmin || role === "TUTOR";
+  const [passwordStudent, setPasswordStudent] = useState<Student | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterClassId, setFilterClassId] = useState("");
   const [filterGender, setFilterGender] = useState("");
@@ -208,9 +214,10 @@ export default function StudentsPage() {
     error,
   } = studentActions.list;
 
+  const { language } = useLocale();
   const students = useMemo(
-    () => (apiPayload?.students ?? []).map(mapApiToStudent),
-    [apiPayload],
+    () => (apiPayload?.students ?? []).map((s) => mapApiToStudent(s, language)),
+    [apiPayload, language],
   );
 
   const pagination = apiPayload?.pagination;
@@ -369,7 +376,7 @@ export default function StudentsPage() {
                   copy.list.tableHeaders.studentPhone,
                   copy.list.tableHeaders.parentName,
                   copy.list.tableHeaders.parentPhone,
-                  ...(isAdmin ? [copy.list.tableHeaders.actions] : []),
+                  ...(canManage ? [copy.list.tableHeaders.actions] : []),
                 ].map((col, i) => (
                   <TableHead
                     key={col}
@@ -441,28 +448,42 @@ export default function StudentsPage() {
                     {s.parentPhone}
                   </TableCell>
 
-                  {/* Actions (ADMIN only) */}
-                  {isAdmin && (
+                  {/* Actions: password (ADMIN + TUTOR owner); edit/delete (ADMIN only) */}
+                  {canManage && (
                     <TableCell>
                       <div className="flex items-center justify-end gap-1.5">
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon-sm"
-                          title={common.actions.edit}
-                          onClick={() => setEditingStudent(s)}
+                          title={copy.setPasswordDialog.actionTitle}
+                          aria-label={copy.setPasswordDialog.actionTitle}
+                          onClick={() => setPasswordStudent(s)}
                         >
-                          <Pencil className="size-3.5" />
+                          <KeyRound className="size-3.5" />
                         </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon-sm"
-                          title={common.actions.delete}
-                          onClick={() => setDeletingStudent(s)}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
+                        {isAdmin && (
+                          <>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              title={common.actions.edit}
+                              onClick={() => setEditingStudent(s)}
+                            >
+                              <Pencil className="size-3.5" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon-sm"
+                              title={common.actions.delete}
+                              onClick={() => setDeletingStudent(s)}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   )}
@@ -507,6 +528,13 @@ export default function StudentsPage() {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onAdd={handleAdd}
+      />
+
+      {/* ── Set password dialog (ADMIN + TUTOR owner) ── */}
+      <SetStudentPasswordDialog
+        open={passwordStudent !== null}
+        student={passwordStudent}
+        onClose={() => setPasswordStudent(null)}
       />
 
       {/* ── Edit student dialog ── */}

@@ -1,5 +1,6 @@
 "use client";
 
+import { currentPersonName } from "@/lib/format/person-name";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
@@ -29,6 +30,10 @@ import {
   sessionStatusCopyKey,
 } from "../components/session-table";
 import { ClassStatusMenu } from "../components/class-status-menu";
+import { EnrollStudentsDialog } from "../dialog/enroll-students-dialog";
+import { AddStudentDialog } from "@/components/students/add-student-dialog";
+import { UserPlus } from "lucide-react";
+import type { CurriculumDetail } from "@/types";
 import { useClassActions } from "@/lib/services/class.service";
 import { useClassesCopy } from "@/hooks/useClassesCopy.hook";
 import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
@@ -134,11 +139,19 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
     enabled: !!classId,
   });
 
-  const { data: studentsRaw, isLoading: studentsLoading } = useGet(
+  const {
+    data: studentsRaw,
+    isLoading: studentsLoading,
+    refetch: refetchStudents,
+  } = useGet(
     ["class-students", classId],
     `/classes/${classId}/students`,
     { enabled: !!classId },
   );
+
+  const [enrollOpen, setEnrollOpen] = useState(false);
+  const [createStudentOpen, setCreateStudentOpen] = useState(false);
+
 
   const cls = useMemo(() => {
     if (!classRaw) return null;
@@ -156,6 +169,13 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
       curriculumId: d.curriculumId,
     };
   }, [classRaw]);
+
+  // Chương của từng bài giảng trong chương trình đang gắn với lớp (để hiển thị dưới mỗi buổi).
+  const { data: curriculumRaw } = useGet<unknown>(
+    ["class-curriculum", cls?.curriculumId],
+    `/curriculum/${cls?.curriculumId ?? ""}`,
+    { enabled: !!cls?.curriculumId },
+  );
 
   const { data: lessonsRaw, error: lessonsError } = useGet(
     ["class-lessons", cls?.curriculumId],
@@ -220,9 +240,9 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
     const q = studentSearch.trim().toLowerCase();
     if (!q) return students;
     return students.filter((s) => {
-      const name = `${s.firstName} ${s.lastName}`.toLowerCase();
+      const name = currentPersonName(s.firstName, s.lastName).toLowerCase();
       const parentName = s.parent
-        ? `${s.parent.firstName} ${s.parent.lastName}`.toLowerCase()
+        ? currentPersonName(s.parent.firstName, s.parent.lastName).toLowerCase()
         : "";
       return (
         name.includes(q) ||
@@ -234,11 +254,16 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
     });
   }, [students, studentSearch]);
 
-  const lessonTitleById = useMemo(() => {
+  const lessonChapterById = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const l of lessons) map[l.id] = l.title;
+    const framework = curriculumRaw
+      ? unwrapApiData<CurriculumDetail>(curriculumRaw)
+      : null;
+    for (const chapter of framework?.chapters ?? []) {
+      for (const lesson of chapter.lessons ?? []) map[lesson.id] = chapter.title;
+    }
     return map;
-  }, [lessons]);
+  }, [curriculumRaw]);
 
   const studentColumns: DataTableColumn<ClassStudentDto>[] = useMemo(
     () => [
@@ -257,7 +282,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
           "px-3 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
         cellClassName: "px-3",
         render: (student: ClassStudentDto, idx: number) => {
-          const name = `${student.firstName} ${student.lastName}`;
+          const name = currentPersonName(student.firstName, student.lastName);
           const initials = getInitials(name);
           const colorClass = AVATAR_COLORS[idx % AVATAR_COLORS.length];
           return (
@@ -309,7 +334,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
         cellClassName: "px-3 text-muted-foreground",
         render: (student) =>
           student.parent
-            ? `${student.parent.firstName} ${student.parent.lastName}`
+            ? currentPersonName(student.parent.firstName, student.parent.lastName)
             : "—",
       },
       {
@@ -529,7 +554,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
       {/* Student list */}
       <div className="rounded-xl border bg-card">
         <div className="flex flex-col gap-3 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 font-semibold">
+          <div className="flex shrink-0 items-center gap-2 whitespace-nowrap font-semibold">
             <ChevronDown className="size-4 text-muted-foreground" />
             {detail.students.heading}
           </div>
@@ -543,6 +568,24 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
                 className="h-9 w-full pl-8 text-sm sm:w-52"
               />
             </div>
+            <Button
+              variant="outline"
+              size="lg"
+              className="px-5 w-max"
+              onClick={() => setCreateStudentOpen(true)}
+            >
+              <Plus className="size-3.5" />
+              Tạo học sinh mới
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="px-5 w-max"
+              onClick={() => setEnrollOpen(true)}
+            >
+              <UserPlus className="size-3.5" />
+              Thêm học sinh
+            </Button>
             <Button variant="outline" size="lg" className="px-5 w-max">
               <Download className="size-3.5" />
               {detail.students.export}
@@ -571,7 +614,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
               className="h-auto w-auto px-0 text-sm font-medium"
             >
               <Link href={`/classes/${cls.id}/students`}>
-                {detail.students.viewAll(cls.totalStudents)}
+                {detail.students.viewAll(students.length)}
               </Link>
             </Button>
           </div>
@@ -581,7 +624,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
       <SessionTable
         title={detail.sessions.upcomingTitle}
         sessions={upcomingSessions}
-        lessonTitleById={lessonTitleById}
+        lessonChapterById={lessonChapterById}
         classId={cls.id}
         selectedIds={selectedUpcoming}
         onToggle={(id) => toggleIn(setSelectedUpcoming, id)}
@@ -603,7 +646,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
       <SessionTable
         title={detail.sessions.pastTitle}
         sessions={pastSessions}
-        lessonTitleById={lessonTitleById}
+        lessonChapterById={lessonChapterById}
         classId={cls.id}
         selectedIds={selectedPast}
         onToggle={(id) => toggleIn(setSelectedPast, id)}
@@ -614,6 +657,30 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
         }
         loading={sessionsLoading}
         emptyText={detail.sessions.pastEmpty}
+      />
+
+      <AddStudentDialog
+
+        open={createStudentOpen}
+
+        onClose={() => setCreateStudentOpen(false)}
+
+        onAdd={() => void queryClient.invalidateQueries({ queryKey: ["students"] })}
+
+      />
+
+      <EnrollStudentsDialog
+
+        open={enrollOpen}
+
+        classId={classId}
+
+        enrolledIds={students.map((s) => s.id)}
+
+        onClose={() => setEnrollOpen(false)}
+
+        onEnrolled={() => void refetchStudents()}
+
       />
 
       <CreateSessionDialog

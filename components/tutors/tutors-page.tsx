@@ -3,24 +3,19 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  Loader2,
-  Pencil,
-  Plus,
-  Search,
-  ShieldOff,
-  Trash2,
-} from "lucide-react";
+import { Loader2, Pencil, Plus, Search, ShieldOff, Trash2 } from "lucide-react";
 
 import { getErrorMessage } from "@/lib/axios";
 import { cn } from "@/lib/utils";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
-import {
-  useAdminTutors,
-  useDeleteTutor,
-} from "@/hooks/useAdminUsers.hook";
+import { useAdminTutors, useDeleteTutor } from "@/hooks/useAdminUsers.hook";
+import { useLocale } from "@/hooks/useLocale.hook";
+import { useTutorsCopy } from "@/hooks/useTutorsCopy.hook";
 import { useUserActions } from "@/lib/services/user.service";
+import { formatPersonName } from "@/lib/format/person-name";
 import { Button } from "@/components/ui/button.ui";
+import { Input } from "@/components/ui/input.ui";
+import { Pagination } from "@/components/ui/pagination.ui";
 import {
   Table,
   TableBody,
@@ -32,47 +27,11 @@ import {
 import { AddTutorDialog } from "@/components/tutors/add-tutor-dialog";
 import { EditTutorDialog } from "@/components/tutors/edit-tutor-dialog";
 import { DeleteTutorDialog } from "@/components/tutors/delete-tutor-dialog";
-import UsageGuides, {
-  type UsageGuideStep,
-} from "@/components/ui/usage-guide.ui";
+import UsageGuides from "@/components/ui/usage-guide.ui";
 import type { ApiManagedUser } from "@/types";
 
 const PAGE_SIZE = 10;
 const TUTORS_QUERY_KEY = ["admin", "tutors"] as const;
-
-const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
-  {
-    n: 1,
-    title: "Tìm gia sư",
-    body: "Gõ tên hoặc email vào ô tìm kiếm ở góc trên bên phải để lọc danh sách.",
-  },
-  {
-    n: 2,
-    title: "Thêm gia sư",
-    body: (
-      <>
-        Nhấn <span className="font-semibold text-[#0E9F8E]">Thêm gia sư</span>{" "}
-        để tạo tài khoản gia sư mới.
-      </>
-    ),
-  },
-  {
-    n: 3,
-    title: "Thông tin nhanh",
-    body: "Cột Môn dạy, SĐT, Sĩ số lớp và Học sinh cho biết khối lượng công việc của từng gia sư.",
-  },
-  {
-    n: 4,
-    title: "Trạng thái và thao tác",
-    body: (
-      <>
-        Nhấn nhãn <span className="font-semibold text-[#0B7A6D]">Hoạt động</span>{" "}
-        / <span className="font-semibold text-[#DC2626]">Đã khoá</span> để đổi
-        trạng thái. Biểu tượng bút chì để sửa, thùng rác để xoá gia sư.
-      </>
-    ),
-  },
-];
 
 function initials(firstName?: string | null, lastName?: string | null): string {
   const f = firstName?.trim().charAt(0) ?? "";
@@ -80,24 +39,11 @@ function initials(firstName?: string | null, lastName?: string | null): string {
   return (f + l).toUpperCase() || "G";
 }
 
-function fullName(t: ApiManagedUser): string {
-  return [t.firstName, t.lastName].filter(Boolean).join(" ") || "Chưa đặt tên";
-}
-
-const COLUMNS = [
-  "STT",
-  "GIA SƯ",
-  "MÔN DẠY",
-  "SĐT",
-  "SĨ SỐ LỚP",
-  "HỌC SINH",
-  "TRẠNG THÁI",
-  "THAO TÁC",
-];
-
 export function TutorsPage() {
   const role = useCurrentUserRole();
   const queryClient = useQueryClient();
+  const copy = useTutorsCopy();
+  const { language } = useLocale();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingTutor, setEditingTutor] = useState<ApiManagedUser | null>(null);
   const [deletingTutor, setDeletingTutor] = useState<ApiManagedUser | null>(
@@ -105,6 +51,9 @@ export function TutorsPage() {
   );
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+
+  const fullName = (t: ApiManagedUser) =>
+    formatPersonName(t.firstName, t.lastName, language) || copy.unnamed;
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: TUTORS_QUERY_KEY });
@@ -124,12 +73,7 @@ export function TutorsPage() {
   const deleteTutor = useDeleteTutor();
 
   const handleToggleStatus = (tutor: ApiManagedUser) => {
-    if (
-      tutor.isActive &&
-      !window.confirm(
-        `Khóa tài khoản của ${fullName(tutor)}? Gia sư này sẽ không thể đăng nhập.`,
-      )
-    ) {
+    if (tutor.isActive && !window.confirm(copy.status.lockConfirm(fullName(tutor)))) {
       return;
     }
     toggleStatus.mutate(
@@ -137,10 +81,10 @@ export function TutorsPage() {
       {
         onSuccess: () => {
           invalidate();
-          toast.success("Cập nhật trạng thái thành công!");
+          toast.success(copy.toast.statusUpdated);
         },
         onError: (err) =>
-          toast.error(getErrorMessage(err, "Cập nhật trạng thái thất bại")),
+          toast.error(getErrorMessage(err, copy.toast.statusFailed)),
       },
     );
   };
@@ -150,12 +94,22 @@ export function TutorsPage() {
       onSuccess: () => {
         invalidate();
         setDeletingTutor(null);
-        toast.success("Xóa gia sư thành công!");
+        toast.success(copy.toast.deleted);
       },
-      onError: (err) =>
-        toast.error(getErrorMessage(err, "Xóa gia sư thất bại")),
+      onError: (err) => toast.error(getErrorMessage(err, copy.toast.deleteFailed)),
     });
   };
+
+  const columns = [
+    copy.columns.index,
+    copy.columns.tutor,
+    copy.columns.subjects,
+    copy.columns.phone,
+    copy.columns.classCount,
+    copy.columns.studentCount,
+    copy.columns.status,
+    copy.columns.actions,
+  ];
 
   if (role !== "ADMIN") {
     return (
@@ -164,10 +118,10 @@ export function TutorsPage() {
           <ShieldOff className="size-6 text-[#E85D24]" />
         </span>
         <h2 className="text-lg font-bold text-[#16302b]">
-          Không có quyền truy cập
+          {copy.page.noAccessTitle}
         </h2>
         <p className="max-w-sm text-sm text-[#8AA09B]">
-          Chỉ quản trị viên mới có thể xem và quản lý danh sách gia sư.
+          {copy.page.noAccessDescription}
         </p>
       </div>
     );
@@ -182,25 +136,26 @@ export function TutorsPage() {
       {/* ── Page header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-[#16302b]">Gia sư</h1>
+          <h1 className="text-2xl font-bold text-[#16302b]">{copy.page.title}</h1>
           {!isPending && !isError ? (
             <span className="rounded-full bg-[#E4F6EF] px-3 py-0.5 text-sm font-semibold text-[#0E9F8E]">
-              {total} gia sư
+              {copy.page.countSuffix(total)}
             </span>
           ) : null}
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#9AAEA9]" />
-            <input
+            <Search className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 size-3.5 text-[#9AAEA9]" />
+            <Input
               type="search"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder="Tìm theo tên, email..."
-              className="h-9 w-56 rounded-lg border border-[#E7EEEC] bg-white pl-9 pr-3 text-sm text-[#16302b] placeholder:text-[#9AAEA9] focus:outline-none focus:ring-2 focus:ring-[#0E9F8E]/30 focus:border-[#0E9F8E] transition-colors"
+              placeholder={copy.page.searchPlaceholder}
+              aria-label={copy.page.searchPlaceholder}
+              className="h-9! w-56 pl-9"
             />
           </div>
           <Button
@@ -210,7 +165,7 @@ export function TutorsPage() {
             className="w-auto! gap-1.5 px-4"
           >
             <Plus className="size-4" />
-            Thêm gia sư
+            {copy.page.add}
           </Button>
         </div>
       </div>
@@ -242,13 +197,13 @@ export function TutorsPage() {
         <Table>
           <TableHeader>
             <TableRow className="border-b border-[#E7EEEC] bg-[#F3F7F5]">
-              {COLUMNS.map((col, i) => (
+              {columns.map((col, i) => (
                 <TableHead
                   key={col}
                   className={cn(
                     "h-auto px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
                     i === 0 ? "w-14" : "",
-                    col === "THAO TÁC" ? "text-right" : "text-left",
+                    i === columns.length - 1 ? "text-right" : "text-left",
                   )}
                 >
                   {col}
@@ -330,7 +285,7 @@ export function TutorsPage() {
                     size="sm"
                     onClick={() => handleToggleStatus(t)}
                     disabled={toggleStatus.isPending}
-                    title="Bấm để đổi trạng thái"
+                    title={copy.status.toggleTitle}
                     className={cn(
                       "h-auto! w-auto! rounded-md px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60",
                       t.isActive
@@ -338,7 +293,7 @@ export function TutorsPage() {
                         : "bg-[#FEE2E2]! text-[#DC2626] hover:bg-[#FEE2E2]!",
                     )}
                   >
-                    {t.isActive ? "Hoạt động" : "Đã khoá"}
+                    {t.isActive ? copy.status.active : copy.status.locked}
                   </Button>
                 </TableCell>
 
@@ -348,7 +303,8 @@ export function TutorsPage() {
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      title="Chỉnh sửa"
+                      title={copy.rowActions.edit}
+                      aria-label={copy.rowActions.edit}
                       onClick={() => setEditingTutor(t)}
                       className="rounded-md text-[#8AA09B] hover:bg-[#E4F6EF] hover:text-[#0E9F8E]"
                     >
@@ -358,7 +314,8 @@ export function TutorsPage() {
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      title="Xóa"
+                      title={copy.rowActions.delete}
+                      aria-label={copy.rowActions.delete}
                       onClick={() => setDeletingTutor(t)}
                       className="rounded-md text-[#8AA09B] hover:bg-red-50 hover:text-red-500"
                     >
@@ -372,17 +329,17 @@ export function TutorsPage() {
             {!isPending && !isError && tutors.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={COLUMNS.length}
+                  colSpan={columns.length}
                   className="py-14 text-center text-[#9AAEA9]"
                 >
-                  Chưa có gia sư phù hợp.
+                  {copy.page.empty}
                 </TableCell>
               </TableRow>
             )}
             {isPending && (
               <TableRow>
                 <TableCell
-                  colSpan={COLUMNS.length}
+                  colSpan={columns.length}
                   className="py-14 text-center text-[#9AAEA9]"
                 >
                   <Loader2 className="mx-auto size-5 animate-spin" />
@@ -392,55 +349,31 @@ export function TutorsPage() {
             {isError && (
               <TableRow>
                 <TableCell
-                  colSpan={COLUMNS.length}
+                  colSpan={columns.length}
                   className="py-14 text-center text-red-500"
                 >
-                  {getErrorMessage(error, "Không thể tải danh sách gia sư.")}
+                  {getErrorMessage(error, copy.page.loadError)}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
 
-        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-end gap-1 border-t border-[#EEF3F1] px-4 py-3">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="rounded-lg px-3 py-1.5 text-sm text-[#16302b] hover:bg-[#F3F7F5] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
-            >
-              Trước
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPage(p)}
-                className="size-8 rounded-lg text-sm font-medium transition-colors"
-                style={
-                  p === page
-                    ? { background: "#0E9F8E", color: "#fff" }
-                    : { color: "#16302b" }
-                }
-              >
-                {p}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="rounded-lg px-3 py-1.5 text-sm text-[#16302b] hover:bg-[#F3F7F5] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
-            >
-              Sau
-            </button>
+          <div className="border-t border-[#EEF3F1] px-4 py-3">
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
           </div>
         )}
       </div>
 
-      <UsageGuides steps={USAGE_GUIDE_STEPS} />
+      <UsageGuides
+        title={copy.guide.title}
+        steps={copy.guide.steps}
+      />
     </div>
   );
 }

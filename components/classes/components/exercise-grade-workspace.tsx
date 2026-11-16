@@ -1,5 +1,6 @@
 "use client";
 
+import { currentPersonName } from "@/lib/format/person-name";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -149,14 +150,17 @@ export const GradeWorkspace = ({
   const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(
     null,
   );
-  const [answerKeyFiles, setAnswerKeyFiles] = useState<SessionFile[]>([]);
+  // Đáp án: lấy từ bài nộp đã lưu; state override chỉ giữ thay đổi chưa lưu (tải thêm / bỏ tệp).
+  const [answerKeyOverride, setAnswerKeyOverride] = useState<SessionFile[] | null>(null);
+  const answerKeyFiles = answerKeyOverride ?? exercise.answerKeyUrls ?? [];
+  const setAnswerKeyFiles = setAnswerKeyOverride;
   const [answerKeySizes, setAnswerKeySizes] = useState<Record<string, number>>(
     {},
   );
   const [uploadingAnswerKey, setUploadingAnswerKey] = useState(false);
   const answerKeyInputRef = useRef<HTMLInputElement>(null);
 
-  const studentName = `${student.firstName} ${student.lastName}`.trim();
+  const studentName = currentPersonName(student.firstName, student.lastName).trim();
   const gradeBadge = GRADE_BADGE[exercise.status];
   const currentPageAnnotations = annotationsByPage[activePage] ?? [];
   const currentFile = exercise.exerciseUrls[activePage] ?? null;
@@ -221,7 +225,7 @@ export const GradeWorkspace = ({
         uploaded.push({ name: file.name, url: result.url, key: result.key });
         sizes[result.key] = result.size;
       }
-      setAnswerKeyFiles((prev) => [...prev, ...uploaded]);
+      setAnswerKeyFiles([...answerKeyFiles, ...uploaded]);
       setAnswerKeySizes((prev) => ({ ...prev, ...sizes }));
     } catch (err) {
       toast.error(getErrorMessage(err, "Tải lời giải thất bại"));
@@ -244,17 +248,19 @@ export const GradeWorkspace = ({
       toast.error("Điểm phải là số từ 0 đến 10");
       return;
     }
-    await gradeMutation.mutateAsync(
-      {
+    try {
+      await gradeMutation.mutateAsync({
         id: exercise.id,
         score: parsed,
         comment: comment.trim() || undefined,
-      },
-      {
-        onError: (err) =>
-          toast.error(getErrorMessage(err, "Chấm điểm thất bại")),
-      },
-    );
+        // Gửi toàn bộ đáp án hiện có (kể cả tệp vừa bỏ/thêm) để BE lưu đúng trạng thái trên màn hình.
+        answerKeyUrls: answerKeyFiles.map(({ name, url, key }) => ({ name, url, key })),
+      });
+    } catch (err) {
+      // Lỗi đã được báo tại đây; không hiện "Đã lưu điểm" và dừng luồng chuyển bài.
+      toast.error(getErrorMessage(err, "Chấm điểm thất bại"));
+      return;
+    }
     toast.success("Đã lưu điểm");
     queryClient.invalidateQueries({ queryKey: exercisesKey });
     if (after === "next") {
@@ -591,8 +597,8 @@ export const GradeWorkspace = ({
                         type="button"
                         aria-label="Bỏ tệp"
                         onClick={() => {
-                          setAnswerKeyFiles((prev) =>
-                            prev.filter((x) => x.key !== f.key),
+                          setAnswerKeyFiles(
+                            answerKeyFiles.filter((x) => x.key !== f.key),
                           );
                           setAnswerKeySizes((prev) => {
                             const next = { ...prev };

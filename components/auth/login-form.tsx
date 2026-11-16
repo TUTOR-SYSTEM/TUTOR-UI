@@ -20,8 +20,10 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/providers/auth.provider";
 import { useAuthCopy } from "@/hooks/useAuthCopy.hook";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
+import { getErrorMessage } from "@/lib/axios/api-error";
 import { handleFormApiError } from "@/lib/axios/form-error";
 import { useAuthActions } from "@/lib/services/auth.service";
+import { ApiError } from "@/types";
 import { loginPasswordError } from "@/lib/auth/password-policy";
 import { startFacebookOAuth, startGoogleOAuth } from "@/lib/oauth";
 import {
@@ -80,8 +82,13 @@ export const LoginForm = ({ className, ...props }: ComponentProps<"div">) => {
     router.replace("/");
   };
 
-  const handleLoginError = (error: Error) => {
-    handleFormApiError<LoginFormValues>(error, form.setError, t.errorFallback);
+  const handleLoginError = (error: unknown) => {
+    // 422 có thể trỏ tới field không render (vd BE trả `userCode` cho đăng nhập học sinh/phụ huynh),
+    // nên luôn toast để người dùng thấy lỗi; `handleFormApiError` chỉ map field, không toast 422.
+    if (error instanceof ApiError && error.statusCode === 422) {
+      handleFormApiError<LoginFormValues>(error, form.setError, t.errorFallback);
+    }
+    toast.error(getErrorMessage(error, t.errorFallback));
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {

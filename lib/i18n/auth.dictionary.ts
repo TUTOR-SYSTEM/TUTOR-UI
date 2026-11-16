@@ -12,6 +12,7 @@ export type AuthDictionary = {
     requiredField: string;
     passwordTooShort: string;
     passwordTooLong: string;
+    passwordComplexity: string;
     backToLogin: string;
     back: string;
     footer: string;
@@ -78,12 +79,21 @@ export type AuthDictionary = {
     sentSubtitle: string;
     sentMessagePrefix: string;
     sentMessageSuffix: string;
+    enterCode: string;
     resend: string;
   };
   resetPassword: {
     heading: string;
     subtitle: string;
-    missingToken: string;
+    emailLabel: string;
+    emailPlaceholder: string;
+    otpLabel: string;
+    otpHint: string;
+    otpIncomplete: string;
+    otpAriaLabel: string;
+    resendCode: string;
+    resendIn: string;
+    codeResent: string;
     passwordLabel: string;
     passwordPlaceholder: string;
     confirmLabel: string;
@@ -128,6 +138,8 @@ const vi: AuthDictionary = {
     requiredField: "Vui lòng nhập thông tin này",
     passwordTooShort: "Mật khẩu phải có ít nhất 8 ký tự",
     passwordTooLong: "Mật khẩu tối đa 100 ký tự",
+    passwordComplexity:
+      "Mật khẩu cần có chữ thường, chữ hoa, chữ số và ký tự đặc biệt",
     backToLogin: "Quay lại đăng nhập",
     back: "Quay lại",
     footer: "© 2026 Gia Sư Pro · Hỗ trợ · Điều khoản",
@@ -186,22 +198,31 @@ const vi: AuthDictionary = {
   },
   forgotPassword: {
     heading: "Quên mật khẩu?",
-    subtitle: "Nhập email để nhận liên kết đặt lại mật khẩu.",
+    subtitle: "Nhập email để nhận mã xác nhận 6 số.",
     emailLabel: "Email",
     emailPlaceholder: "name@example.com",
-    submit: "Gửi liên kết đặt lại",
+    submit: "Gửi mã xác nhận",
     pendingLabel: "Đang gửi…",
     errorFallback: "Gửi yêu cầu thất bại",
     sentTitle: "Đã gửi email",
-    sentSubtitle: "Kiểm tra hộp thư để lấy liên kết đặt lại mật khẩu",
-    sentMessagePrefix: "Liên kết đặt lại đã được gửi tới",
-    sentMessageSuffix: "Liên kết có hiệu lực trong thời gian giới hạn.",
+    sentSubtitle: "Kiểm tra hộp thư để lấy mã xác nhận 6 số",
+    sentMessagePrefix: "Mã xác nhận đã được gửi tới",
+    sentMessageSuffix: "Mã có hiệu lực trong 5 phút.",
+    enterCode: "Nhập mã xác nhận",
     resend: "Gửi lại email",
   },
   resetPassword: {
     heading: "Đặt mật khẩu mới",
-    subtitle: "Chọn mật khẩu mạnh cho tài khoản của bạn.",
-    missingToken: "Liên kết thiếu mã token. Hãy yêu cầu email đặt lại mới.",
+    subtitle: "Nhập mã 6 số trong email và chọn mật khẩu mạnh.",
+    emailLabel: "Email",
+    emailPlaceholder: "name@example.com",
+    otpLabel: "Mã xác nhận",
+    otpHint: "Nhập 6 chữ số trong email (hiệu lực 5 phút)",
+    otpIncomplete: "Vui lòng nhập đủ 6 chữ số",
+    otpAriaLabel: "Chữ số",
+    resendCode: "Gửi lại mã",
+    resendIn: "Gửi lại sau {s}s",
+    codeResent: "Đã gửi mã mới tới email của bạn",
     passwordLabel: "Mật khẩu mới",
     passwordPlaceholder: "Tối thiểu 8 ký tự",
     confirmLabel: "Xác nhận mật khẩu",
@@ -218,12 +239,15 @@ const vi: AuthDictionary = {
     heading: "Xác minh email",
     verifyingTitle: "Đang xác minh email…",
     verifyingSubtitle: "Vui lòng đợi trong giây lát.",
-    missingToken: "Liên kết thiếu mã xác minh. Hãy mở lại liên kết trong email.",
+    missingToken:
+      "Liên kết thiếu mã xác minh. Hãy mở lại liên kết trong email.",
     successTitle: "Xác minh email thành công",
-    successSubtitle: "Tài khoản của bạn đã được xác minh. Hãy đăng nhập để tiếp tục.",
+    successSubtitle:
+      "Tài khoản của bạn đã được xác minh. Hãy đăng nhập để tiếp tục.",
     loginNow: "Đăng nhập ngay",
     errorTitle: "Không thể xác minh email",
-    errorSubtitle: "Liên kết không hợp lệ hoặc đã hết hạn. Hãy đăng ký lại hoặc yêu cầu gửi lại email xác minh.",
+    errorSubtitle:
+      "Liên kết không hợp lệ hoặc đã hết hạn. Hãy đăng ký lại hoặc yêu cầu gửi lại email xác minh.",
     errorFallback: "Xác minh email thất bại",
   },
   oauthCallback: {
@@ -246,6 +270,8 @@ const en: AuthDictionary = {
     requiredField: "This field is required",
     passwordTooShort: "Password must be at least 8 characters",
     passwordTooLong: "Password must be at most 100 characters",
+    passwordComplexity:
+      "Password must include a lowercase letter, an uppercase letter, a digit and a special character",
     backToLogin: "Back to sign in",
     back: "Back",
     footer: "© 2026 Gia Sư Pro · Support · Terms",
@@ -304,22 +330,32 @@ const en: AuthDictionary = {
   },
   forgotPassword: {
     heading: "Forgot password?",
-    subtitle: "Enter your email to receive a reset link.",
+    subtitle: "Enter your email to receive a 6-digit verification code.",
     emailLabel: "Email",
     emailPlaceholder: "name@example.com",
-    submit: "Send reset link",
+    submit: "Send verification code",
     pendingLabel: "Sending…",
     errorFallback: "Failed to send request",
     sentTitle: "Email sent",
-    sentSubtitle: "Check your inbox for the password reset link",
-    sentMessagePrefix: "A reset link has been sent to",
-    sentMessageSuffix: "The link is valid for a limited time.",
+    sentSubtitle: "Check your inbox for your 6-digit verification code",
+    sentMessagePrefix: "A verification code has been sent to",
+    sentMessageSuffix: "The code is valid for 5 minutes.",
+    enterCode: "Enter verification code",
     resend: "Resend email",
   },
   resetPassword: {
     heading: "Set a new password",
-    subtitle: "Choose a strong password for your account.",
-    missingToken: "The link is missing a token. Please request a new reset email.",
+    subtitle:
+      "Enter the 6-digit code from your email and choose a strong password.",
+    emailLabel: "Email",
+    emailPlaceholder: "name@example.com",
+    otpLabel: "Verification code",
+    otpHint: "Enter the 6 digits from your email (valid for 5 minutes)",
+    otpIncomplete: "Please enter all 6 digits",
+    otpAriaLabel: "Digit",
+    resendCode: "Resend code",
+    resendIn: "Resend in {s}s",
+    codeResent: "A new code has been sent to your email",
     passwordLabel: "New password",
     passwordPlaceholder: "At least 8 characters",
     confirmLabel: "Confirm password",
@@ -336,12 +372,14 @@ const en: AuthDictionary = {
     heading: "Verify email",
     verifyingTitle: "Verifying your email…",
     verifyingSubtitle: "Please wait a moment.",
-    missingToken: "The link is missing a verification token. Please open the link from your email again.",
+    missingToken:
+      "The link is missing a verification token. Please open the link from your email again.",
     successTitle: "Email verified successfully",
     successSubtitle: "Your account has been verified. Sign in to continue.",
     loginNow: "Sign in now",
     errorTitle: "Could not verify your email",
-    errorSubtitle: "The link is invalid or has expired. Please register again or request a new verification email.",
+    errorSubtitle:
+      "The link is invalid or has expired. Please register again or request a new verification email.",
     errorFallback: "Email verification failed",
   },
   oauthCallback: {

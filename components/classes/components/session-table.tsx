@@ -71,7 +71,7 @@ const SESSION_HEADER_CLASS =
 export const SessionTable = ({
   title,
   sessions,
-  lessonTitleById,
+  lessonChapterById,
   classId,
   selectedIds,
   onToggle,
@@ -85,7 +85,7 @@ export const SessionTable = ({
 }: {
   title: string;
   sessions: SessionDto[];
-  lessonTitleById: Record<string, string>;
+  lessonChapterById: Record<string, string>;
   classId: string;
   selectedIds: Set<string>;
   onToggle: (id: string) => void;
@@ -151,7 +151,7 @@ export const SessionTable = ({
       cellClassName: "px-3",
       render: (session) => {
         const chapter = session.lessonId
-          ? lessonTitleById[session.lessonId]
+          ? lessonChapterById[session.lessonId]
           : undefined;
         return (
           <>
@@ -159,7 +159,7 @@ export const SessionTable = ({
               {session.title || detail.sessions.defaultLessonTitle}
             </p>
             <p className="mt-0.5 text-xs italic text-muted-foreground">
-              {detail.sessions.chapterPrefix} {chapter ?? "_ _ _ _"}
+              {chapter ?? "_ _ _ _"}
             </p>
           </>
         );

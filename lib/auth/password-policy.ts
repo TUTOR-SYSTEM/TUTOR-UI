@@ -14,21 +14,33 @@ export const newPasswordSchema = z
  * Đăng nhập: không ép tối thiểu — tài khoản cũ có thể đặt mật khẩu ngắn hơn 8 ký tự và vẫn phải
  * đăng nhập được. Chỉ chặn rỗng và quá dài.
  */
-export const loginPasswordSchema = z
-  .string()
-  .min(1)
-  .max(PASSWORD_MAX_LENGTH);
+export const loginPasswordSchema = z.string().min(1).max(PASSWORD_MAX_LENGTH);
+
+/**
+ * Độ phức tạp BE yêu cầu (`user` / `gateway` `passwordFieldSchema`): có chữ thường, chữ hoa,
+ * chữ số và ký tự đặc biệt.
+ */
+export function hasPasswordComplexity(value: string): boolean {
+  return (
+    /[a-z]/.test(value) &&
+    /[A-Z]/.test(value) &&
+    /\d/.test(value) &&
+    /[^A-Za-z0-9]/.test(value)
+  );
+}
 
 /** Trả thông báo lỗi cho mật khẩu mới, hoặc `null` nếu hợp lệ. */
 export function newPasswordError(
   value: string,
-  messages: { tooShort: string; tooLong: string },
+  messages: { tooShort: string; tooLong: string; complexity: string },
 ): string | null {
   const result = newPasswordSchema.safeParse(value);
-  if (result.success) return null;
-  return result.error.issues[0]?.code === "too_big"
-    ? messages.tooLong
-    : messages.tooShort;
+  if (!result.success) {
+    return result.error.issues[0]?.code === "too_big"
+      ? messages.tooLong
+      : messages.tooShort;
+  }
+  return hasPasswordComplexity(value) ? null : messages.complexity;
 }
 
 /** Trả thông báo lỗi cho mật khẩu đăng nhập, hoặc `null` nếu hợp lệ. */

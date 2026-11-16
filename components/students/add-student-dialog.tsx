@@ -2,20 +2,26 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
+import { ChipGroup } from "@/components/ui/chip-group.ui";
 import { Dialog } from "@/components/ui/dialog-form.ui";
+import { FormField } from "@/components/ui/form-field.ui";
 import { Input } from "@/components/ui/input.ui";
 import { Select } from "@/components/ui/select.ui";
-import { cn } from "@/lib/utils";
 import { useGet, usePost } from "@/lib/axios/query";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
-import { getErrorMessage } from "@/lib/axios";
+import { showFormApiError } from "@/lib/axios/form-error";
 import { useClassActions } from "@/lib/services/class.service";
 import { useStudentsCopy } from "@/hooks/useStudentsCopy.hook";
+import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
+import { useAdminTutors } from "@/hooks/useAdminUsers.hook";
+import { currentPersonName } from "@/lib/format/person-name";
 import { ParentPicker } from "@/components/students/parent-picker";
 import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
+import { buildStudentCreateSchema } from "@/lib/validation/student-form.schema";
 import {
   CreateStudentPayload,
   FormValuesStudent,
@@ -28,6 +34,7 @@ import {
 type ClassOption = { id: string; name: string; code: string };
 
 const DEFAULT_VALUES: FormValuesStudent = {
+  tutorId: "",
   studentName: "",
   userCode: "",
   classCode: "",
@@ -38,9 +45,27 @@ const DEFAULT_VALUES: FormValuesStudent = {
   parentRelationship: "",
   parentPhone: "",
   parentEmail: "",
+  password: "",
+  parentPassword: "",
 };
 
-/* ─── Field wrappers ─── */
+/** Fields rendered by this form; a 422 on any other field falls back to a toast. */
+const FORM_FIELDS = [
+  "tutorId",
+  "studentName",
+  "userCode",
+  "classCode",
+  "gender",
+  "studentPhone",
+  "school",
+  "password",
+  "parentName",
+  "parentRelationship",
+  "parentPhone",
+  "parentEmail",
+  "parentPassword",
+] as const;
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-xs font-semibold uppercase tracking-wide text-primary">
@@ -49,34 +74,37 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-foreground">
-        {label}
-        {required && <span className="ml-0.5 text-destructive">*</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
-
 /* ─── component ─── */
 export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
   const copy = useStudentsCopy();
   const common = useCommonCopy();
-  const { register, control, handleSubmit, reset, setValue } =
-    useForm<FormValuesStudent>({
-      defaultValues: DEFAULT_VALUES,
-    });
+  const isAdmin = useCurrentUserRole() === "ADMIN";
+  const schema = useMemo(
+    () => buildStudentCreateSchema(copy.validation, { requireTutor: isAdmin }),
+    [copy.validation, isAdmin],
+  );
+  /* admin picks which tutor manages the new student */
+  const { data: tutorsRaw } = useAdminTutors({ page: 1, limit: 100 }, open && isAdmin);
+  const tutorOptions = useMemo(
+    () =>
+      (tutorsRaw?.tutors ?? []).map((t) => ({
+        label: currentPersonName(t.firstName, t.lastName) || t.email || "",
+        value: t.id,
+      })),
+    [tutorsRaw],
+  );
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    setError,
+    formState: { errors },
+  } = useForm<FormValuesStudent>({
+    resolver: zodResolver(schema),
+    defaultValues: DEFAULT_VALUES,
+  });
   /* existing parent picked from search; null = create a new parent from the fields below */
   const [linkedParent, setLinkedParent] = useState<ParentOption | null>(null);
 
@@ -86,6 +114,7 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
     setValue("parentRelationship", "");
     setValue("parentPhone", parent.phone ?? "");
     setValue("parentEmail", parent.email ?? "");
+    setValue("parentPassword", "");
   };
 
   /* name typed away from the picked parent: unlock the fields for a new parent */
@@ -146,14 +175,17 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
           parentRelationship: values.parentRelationship || undefined,
           parentPhone: values.parentPhone?.trim() || undefined,
           parentEmail: values.parentEmail?.trim() || undefined,
+          parentPassword: values.parentPassword || undefined,
         };
     const payload: CreateStudentPayload = {
+      tutorId: isAdmin ? values.tutorId : undefined,
       studentName: values.studentName.trim(),
       userCode: values.userCode?.trim() || undefined,
       classCode: values.classCode?.trim() || undefined,
       gender: values.gender,
       studentPhone: values.studentPhone?.trim() || undefined,
       school: values.school?.trim() || undefined,
+      password: values.password || undefined,
       ...parentPayload,
     };
 
@@ -176,22 +208,24 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
         });
         handleClose();
       },
-      onError: (error) => {
-        toast.error(getErrorMessage(error, copy.addDialog.toastError));
-      },
+      // 422 → underline đúng ô; còn lại (trùng mã HS, lỗi server...) → toast với nội dung BE.
+      onError: (error) =>
+        showFormApiError(error, setError, FORM_FIELDS, copy.addDialog.toastError),
     });
   };
+
+  const a = copy.addDialog;
 
   return (
     <Dialog
       isOpen={open}
       icon={UserPlus}
-      title={copy.addDialog.title}
-      subtitle={copy.addDialog.subtitle}
+      title={a.title}
+      subtitle={a.subtitle}
       className="max-w-2xl"
       cancelText={common.actions.cancel}
       onCancel={handleClose}
-      submitText={copy.addDialog.submitText}
+      submitText={a.submitText}
       submitIcon={Check}
       onSubmit={handleSubmit(onSubmit)}
       loading={createStudent.isPending}
@@ -203,73 +237,80 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
       >
         {/* ── Student info ── */}
         <div className="flex flex-col gap-4">
-          <SectionTitle>{copy.addDialog.sectionStudentInfo}</SectionTitle>
+          <SectionTitle>{a.sectionStudentInfo}</SectionTitle>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Họ và tên */}
-            <Field label={copy.addDialog.fullNameLabel} required>
+            {isAdmin && (
+              <FormField label="Gia sư quản lý" required error={errors.tutorId?.message}>
+                <Controller
+                  name="tutorId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      options={tutorOptions}
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      placeholder="Chọn gia sư..."
+                      invalid={!!errors.tutorId}
+                    />
+                  )}
+                />
+              </FormField>
+            )}
+            <FormField
+              label={a.fullNameLabel}
+              htmlFor="student-create-name"
+              required
+              error={errors.studentName?.message}
+            >
               <Input
+                id="student-create-name"
                 {...register("studentName")}
-                placeholder={copy.addDialog.fullNamePlaceholder}
+                placeholder={a.fullNamePlaceholder}
+                invalid={!!errors.studentName}
                 autoFocus
               />
-            </Field>
+            </FormField>
 
-            {/* Mã học sinh */}
-            <Field label={copy.addDialog.studentCodeLabel}>
+            <FormField
+              label={a.studentCodeLabel}
+              htmlFor="student-create-code"
+              error={errors.userCode?.message}
+            >
               <Input
+                id="student-create-code"
                 {...register("userCode")}
                 readOnly
                 disabled
+                invalid={!!errors.userCode}
                 placeholder={
-                  isGeneratingCode
-                    ? copy.addDialog.studentCodeGenerating
-                    : copy.addDialog.studentCodePlaceholder
+                  isGeneratingCode ? a.studentCodeGenerating : a.studentCodePlaceholder
                 }
               />
-            </Field>
+            </FormField>
 
-            {/* Giới tính */}
-            <Field label={copy.addDialog.genderLabel}>
+            <FormField label={a.genderLabel} error={errors.gender?.message}>
               <Controller
                 name="gender"
                 control={control}
                 render={({ field }) => (
-                  <div className="grid grid-cols-3 gap-3">
-                    {(
-                      [
-                        { value: "MALE", label: copy.addDialog.genderMale },
-                        {
-                          value: "FEMALE",
-                          label: copy.addDialog.genderFemale,
-                        },
-                        { value: "OTHER", label: copy.addDialog.genderOther },
-                      ] as const
-                    ).map((opt) => {
-                      const selected = field.value === opt.value;
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => field.onChange(opt.value)}
-                          className={cn(
-                            "h-11 rounded-md border text-sm font-medium transition-colors",
-                            selected
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-input bg-surface-container-lowest text-foreground hover:border-primary/40",
-                          )}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <ChipGroup
+                    variant="block"
+                    aria-label={a.genderLabel}
+                    className="grid grid-cols-3 gap-3"
+                    options={[
+                      { value: GENDER_ENUM.MALE, label: a.genderMale },
+                      { value: GENDER_ENUM.FEMALE, label: a.genderFemale },
+                      { value: GENDER_ENUM.OTHER, label: a.genderOther },
+                    ]}
+                    selected={[field.value]}
+                    onToggle={(value) => field.onChange(value as GENDER_ENUM)}
+                  />
                 )}
               />
-            </Field>
+            </FormField>
 
-            {/* Lớp học */}
-            <Field label={copy.addDialog.classLabel}>
+            <FormField label={a.classLabel} error={errors.classCode?.message}>
               <Controller
                 name="classCode"
                 control={control}
@@ -278,34 +319,61 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
                     options={classOptions}
                     value={field.value ?? ""}
                     onValueChange={field.onChange}
-                    placeholder={copy.addDialog.classPlaceholder}
+                    placeholder={a.classPlaceholder}
+                    invalid={!!errors.classCode}
                   />
                 )}
               />
-            </Field>
+            </FormField>
 
-            {/* SĐT học sinh */}
-            <Field label={copy.addDialog.studentPhoneLabel}>
+            <FormField
+              label={a.studentPhoneLabel}
+              htmlFor="student-create-phone"
+              error={errors.studentPhone?.message}
+            >
               <Input
+                id="student-create-phone"
                 {...register("studentPhone")}
                 type="tel"
-                placeholder={copy.addDialog.studentPhonePlaceholder}
+                placeholder={a.studentPhonePlaceholder}
+                invalid={!!errors.studentPhone}
               />
-            </Field>
+            </FormField>
 
-            {/* Trường */}
-            <Field label={copy.addDialog.schoolLabel}>
+            <FormField
+              label={a.schoolLabel}
+              htmlFor="student-create-school"
+              error={errors.school?.message}
+            >
               <Input
+                id="student-create-school"
                 {...register("school")}
-                placeholder={copy.addDialog.schoolPlaceholder}
+                placeholder={a.schoolPlaceholder}
+                invalid={!!errors.school}
               />
-            </Field>
+            </FormField>
+
+            <FormField
+              label={a.studentPasswordLabel}
+              htmlFor="student-create-password"
+              hint={a.studentPasswordHint}
+              error={errors.password?.message}
+            >
+              <Input
+                id="student-create-password"
+                {...register("password")}
+                type="password"
+                autoComplete="new-password"
+                placeholder={a.passwordPlaceholder}
+                invalid={!!errors.password}
+              />
+            </FormField>
           </div>
         </div>
 
         {/* ── Parent info ── */}
         <div className="flex flex-col gap-4">
-          <SectionTitle>{copy.addDialog.sectionParentInfo}</SectionTitle>
+          <SectionTitle>{a.sectionParentInfo}</SectionTitle>
 
           {/* Họ và tên phụ huynh — gõ để tìm phụ huynh có sẵn */}
           <Controller
@@ -313,21 +381,21 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
             control={control}
             render={({ field }) => (
               <ParentPicker
-                label={copy.addDialog.parentNameLabel}
-                placeholder={copy.addDialog.parentNamePlaceholder}
+                label={a.parentNameLabel}
+                placeholder={a.parentNamePlaceholder}
                 required
                 value={field.value ?? ""}
                 onValueChange={field.onChange}
                 linked={linkedParent}
                 onLink={linkParent}
                 onUnlink={unlinkParent}
+                error={errors.parentName?.message}
               />
             )}
           />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Quan hệ */}
-            <Field label={copy.addDialog.relationshipLabel}>
+            <FormField label={a.relationshipLabel} error={errors.parentRelationship?.message}>
               <Controller
                 name="parentRelationship"
                 control={control}
@@ -336,32 +404,58 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
                     options={RELATIONSHIP_OPTIONS}
                     value={field.value ?? ""}
                     onValueChange={field.onChange}
-                    placeholder={copy.addDialog.relationshipPlaceholder}
+                    placeholder={a.relationshipPlaceholder}
                     disabled={!!linkedParent}
                   />
                 )}
               />
-            </Field>
+            </FormField>
 
-            {/* SĐT phụ huynh */}
-            <Field label={copy.addDialog.parentPhoneLabel}>
+            <FormField
+              label={a.parentPhoneLabel}
+              htmlFor="student-create-parent-phone"
+              error={errors.parentPhone?.message}
+            >
               <Input
+                id="student-create-parent-phone"
                 {...register("parentPhone")}
                 type="tel"
-                placeholder={copy.addDialog.parentPhonePlaceholder}
+                placeholder={a.parentPhonePlaceholder}
                 disabled={!!linkedParent}
+                invalid={!!errors.parentPhone}
               />
-            </Field>
+            </FormField>
 
-            {/* Email phụ huynh */}
-            <Field label={copy.addDialog.parentEmailLabel}>
+            <FormField
+              label={a.parentEmailLabel}
+              htmlFor="student-create-parent-email"
+              error={errors.parentEmail?.message}
+            >
               <Input
+                id="student-create-parent-email"
                 {...register("parentEmail")}
                 type="email"
-                placeholder={copy.addDialog.parentEmailPlaceholder}
+                placeholder={a.parentEmailPlaceholder}
                 disabled={!!linkedParent}
+                invalid={!!errors.parentEmail}
               />
-            </Field>
+            </FormField>
+
+            <FormField
+              label={a.parentPasswordLabel}
+              htmlFor="student-create-parent-password"
+              error={errors.parentPassword?.message}
+            >
+              <Input
+                id="student-create-parent-password"
+                {...register("parentPassword")}
+                type="password"
+                autoComplete="new-password"
+                placeholder={a.passwordPlaceholder}
+                disabled={!!linkedParent}
+                invalid={!!errors.parentPassword}
+              />
+            </FormField>
           </div>
         </div>
       </form>

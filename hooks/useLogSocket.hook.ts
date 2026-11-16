@@ -8,10 +8,10 @@ import type { ApiRequestLog } from "@/types";
 /**
  * THIRD_SERVICE owns `request_logs` (and the `/logs` socket namespace that broadcasts new rows)
  * on its own port — unlike REST calls, sockets aren't proxied through the gateway. Defaults to
- * THIRD_SERVICE's local dev port (`4000`, see `THIRD_SERVICE/.env`).
+ * THIRD_SERVICE's local dev port (`4002`, see `THIRD_SERVICE/.env`).
  */
 const LOG_SOCKET_URL =
-  process.env.NEXT_PUBLIC_THIRD_SERVICE_URL?.trim() || "http://localhost:4000";
+  process.env.NEXT_PUBLIC_THIRD_SERVICE_URL?.trim() || "http://localhost:4002";
 
 type UseLogSocketOptions = {
   /** Only connect while the "Giám sát Request" page is mounted — this is an admin-only, on-demand

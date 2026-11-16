@@ -172,7 +172,17 @@ export function ChapterSection({
                   </Button>
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setAddingLesson(true)}
+                className="text-xs font-semibold text-primary"
+              >
+                {t.chapter.addLessonButton}
+              </Button>
+            )}
           </div>
         </>
       )}

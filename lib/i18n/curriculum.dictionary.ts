@@ -118,6 +118,7 @@ export type CurriculumDictionary = {
       deleteAriaLabel: string;
       addLessonSuccess: string;
       addLessonErrorFallback: string;
+      addLessonButton: string;
       deleteLessonSuccess: string;
       deleteLessonErrorFallback: string;
     };
@@ -125,6 +126,7 @@ export type CurriculumDictionary = {
       title: string;
       nameLabel: string;
       namePlaceholder: string;
+      nameRequired: string;
       descriptionLabel: string;
       descriptionOptionalHint: string;
       descriptionPlaceholder: string;
@@ -253,18 +255,22 @@ const vi: CurriculumDictionary = {
       removeFileSuccess: "Đã xóa tệp",
     },
     chapter: {
-      label: (index, title) => `Chương ${index} · ${title}`,
+      // Tên đã có sẵn "Chương N" thì không thêm tiền tố nữa (tránh "Chương 1 · Chương 1 ...").
+      label: (index, title) =>
+        /^chương\s*\d/i.test(title.trim()) ? title : `Chương ${index} · ${title}`,
       lessonCountSuffix: (count) => `${count} bài`,
       deleteAriaLabel: "Xóa chương",
       addLessonSuccess: "Đã thêm bài học",
       addLessonErrorFallback: "Thêm bài thất bại",
+      addLessonButton: "+ Thêm bài học",
       deleteLessonSuccess: "Đã xóa bài học",
       deleteLessonErrorFallback: "Xóa bài thất bại",
     },
     createChapterModal: {
       title: "Tạo chương mới",
       nameLabel: "Tên chương",
-      namePlaceholder: "Ví dụ: Chương 1 — Đại số tuyến tính...",
+      namePlaceholder: "Ví dụ: Đại số tuyến tính...",
+      nameRequired: "Vui lòng nhập tên chương",
       descriptionLabel: "Mô tả",
       descriptionOptionalHint: "(tuỳ chọn)",
       descriptionPlaceholder: "Mô tả nội dung chương...",
@@ -393,18 +399,21 @@ const en: CurriculumDictionary = {
       removeFileSuccess: "File removed",
     },
     chapter: {
-      label: (index, title) => `Chapter ${index} · ${title}`,
+      label: (index, title) =>
+        /^chapter\s*\d/i.test(title.trim()) ? title : `Chapter ${index} · ${title}`,
       lessonCountSuffix: (count) => `${count} lessons`,
       deleteAriaLabel: "Delete chapter",
       addLessonSuccess: "Lesson added",
       addLessonErrorFallback: "Failed to add lesson",
+      addLessonButton: "+ Add lesson",
       deleteLessonSuccess: "Lesson deleted",
       deleteLessonErrorFallback: "Failed to delete lesson",
     },
     createChapterModal: {
       title: "New chapter",
       nameLabel: "Chapter name",
-      namePlaceholder: "e.g. Chapter 1 — Linear algebra...",
+      namePlaceholder: "e.g. Linear algebra...",
+      nameRequired: "Please enter a chapter name",
       descriptionLabel: "Description",
       descriptionOptionalHint: "(optional)",
       descriptionPlaceholder: "Describe the chapter content...",

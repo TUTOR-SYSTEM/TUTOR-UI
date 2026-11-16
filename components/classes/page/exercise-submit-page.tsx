@@ -1,5 +1,6 @@
 "use client";
 
+import { currentPersonName } from "@/lib/format/person-name";
 import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
@@ -51,7 +52,7 @@ import {
   fmtDateTime,
   fmtTime,
 } from "@/components/sessions/session-shared";
-import { canUploadFiles, pickUploadFiles } from "@/lib/upload-policy";
+import { pickUploadFiles } from "@/lib/upload-policy";
 
 /* ─── Upload form helpers ─────────────────────────────────────────────────── */
 
@@ -67,7 +68,7 @@ const ACCEPTED_FORMAT_PILLS = [
 const fullName = (u?: {
   firstName?: string | null;
   lastName?: string | null;
-}) => [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
+}) => currentPersonName(u?.firstName, u?.lastName).trim();
 
 const initialsOf = (name: string) =>
   name
@@ -535,6 +536,18 @@ export const ExerciseSubmitPage = ({
             </Panel>
           )}
 
+          {/* Tutor's detailed solution — shown only after grading, when the tutor attached one */}
+          {submission?.status === "GRADED" &&
+            (submission.answerKeyUrls ?? []).length > 0 && (
+              <Panel title="Bài giải chi tiết" icon={FileText}>
+                <div className="space-y-2">
+                  {submission.answerKeyUrls.map((f) => (
+                    <DownloadFileRow key={f.key} file={f} />
+                  ))}
+                </div>
+              </Panel>
+            )}
+
           {/* Submission */}
           <Panel
             title={isParent ? "Bài làm của học sinh" : "Bài làm của tôi"}
@@ -621,7 +634,7 @@ export const ExerciseSubmitPage = ({
                             multiple
                             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar"
                             className="hidden"
-                            disabled={uploading || !canUploadFiles(role)}
+                            disabled={uploading || isParent}
                             onChange={(e) => onPickFiles(e.target.files)}
                           />
                           {uploading ? (

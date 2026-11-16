@@ -1,5 +1,6 @@
 "use client";
 
+import { currentPersonName } from "@/lib/format/person-name";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
@@ -64,7 +65,7 @@ export const CreateTuitionDialog = ({ classes, onClose }: Props) => {
   const studentOptions = useMemo(
     () =>
       students.map((s) => ({
-        label: `${s.firstName} ${s.lastName}`,
+        label: currentPersonName(s.firstName, s.lastName),
         value: s.id,
       })),
     [students],
