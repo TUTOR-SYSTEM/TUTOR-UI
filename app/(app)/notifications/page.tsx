@@ -16,6 +16,7 @@ import type { NotificationType, ApiNotification } from "@/types";
 import UsageGuides, {
   type UsageGuideStep,
 } from "@/components/ui/usage-guide.ui";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.ui";
 
 /* ─── Config ─── */
 const TYPE_LABELS: Record<NotificationType, string> = {
@@ -315,39 +316,37 @@ export default function NotificationsPage() {
         {/* Table */}
         <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#E7EEEC] bg-[#F3F7F5]">
-                  {["STT", "LOẠI", "NỘI DUNG", "CHI TIẾT"].map((col, i) => (
-                    <th
+            <Table className="w-full text-sm">
+              <TableHeader>
+                <TableRow>
+                  {["Thứ tự", "Loại", "Nội dung", "Chi tiết"].map((col, i) => (
+                    <TableHead
                       key={col}
-                      className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9] ${
-                        i === 3 ? "text-right w-24" : "text-left"
-                      } ${i === 0 ? "w-14" : ""} ${i === 1 ? "w-28" : ""}`}
+                      className={`${i === 3 ? "w-24 text-center" : ""} ${i === 0 ? "w-14" : ""} ${i === 1 ? "w-28" : ""}`}
                     >
                       {col}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {isPending && (
-                  <tr>
-                    <td
+                  <TableRow>
+                    <TableCell
                       colSpan={4}
                       className="py-14 text-center text-[#9AAEA9]"
                     >
                       <Loader2 className="mx-auto size-5 animate-spin" />
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
 
                 {isError && (
-                  <tr>
-                    <td colSpan={4} className="py-14 text-center text-red-500">
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-14 text-center text-red-500">
                       {getErrorMessage(error, "Không thể tải thông báo.")}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
 
                 {!isPending &&
@@ -356,7 +355,7 @@ export default function NotificationsPage() {
                     const badge = TYPE_BADGE[n.type] ?? FALLBACK_BADGE;
                     const isSelected = n.id === selectedId;
                     return (
-                      <tr
+                      <TableRow
                         key={n.id}
                         onClick={() => openDetail(n)}
                         className={`cursor-pointer border-b border-[#EEF3F1] last:border-0 transition-colors ${
@@ -364,15 +363,15 @@ export default function NotificationsPage() {
                         }`}
                       >
                         {/* STT */}
-                        <td className="px-4 py-4 text-[#9AAEA9] font-medium">
+                        <TableCell className="px-4 py-4 text-[#9AAEA9] font-medium">
                           {String((page - 1) * PAGE_SIZE + i + 1).padStart(
                             2,
                             "0",
                           )}
-                        </td>
+                        </TableCell>
 
                         {/* Type badge */}
-                        <td className="px-4 py-4">
+                        <TableCell className="px-4 py-4">
                           <span
                             className="rounded-md px-2.5 py-0.5 text-xs font-semibold"
                             style={{
@@ -382,10 +381,10 @@ export default function NotificationsPage() {
                           >
                             {TYPE_LABELS[n.type]}
                           </span>
-                        </td>
+                        </TableCell>
 
                         {/* Content */}
-                        <td className="px-4 py-4">
+                        <TableCell className="px-4 py-4">
                           <div className="flex items-start gap-2">
                             <span
                               className="mt-1 size-2 shrink-0 rounded-full"
@@ -412,10 +411,10 @@ export default function NotificationsPage() {
                               )}
                             </div>
                           </div>
-                        </td>
+                        </TableCell>
 
                         {/* Detail link */}
-                        <td className="px-4 py-4 text-right">
+                        <TableCell className="px-4 py-4 text-center">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -426,23 +425,23 @@ export default function NotificationsPage() {
                           >
                             Xem →
                           </button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
 
                 {!isPending && !isError && notificationList.length === 0 && (
-                  <tr>
-                    <td
+                  <TableRow>
+                    <TableCell
                       colSpan={4}
                       className="py-14 text-center text-[#9AAEA9]"
                     >
                       Không có thông báo nào.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
           {/* Pagination */}

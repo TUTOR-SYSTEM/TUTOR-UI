@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
+import { DatePicker } from "@/components/ui/date-picker.ui";
 import { Select, type SelectOption } from "@/components/ui/select.ui";
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/axios";
@@ -232,10 +233,17 @@ export function ScheduleFormDialog({ open, onClose, session }: ScheduleFormDialo
 
         {/* Date */}
         <Field label="Ngày học" required error={errors.date?.message}>
-          <Input
-            type="date"
-            {...register("date", { required: "Vui lòng chọn ngày học" })}
-            invalid={!!errors.date}
+          <Controller
+            name="date"
+            control={control}
+            rules={{ required: "Vui lòng chọn ngày học" }}
+            render={({ field }) => (
+              <DatePicker
+                value={field.value ?? ""}
+                onValueChange={field.onChange}
+                invalid={!!errors.date}
+              />
+            )}
           />
         </Field>
 

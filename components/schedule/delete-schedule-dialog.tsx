@@ -1,9 +1,8 @@
 "use client";
 
-import { AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Dialog } from "@/components/ui/dialog-form.ui";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
 import { getErrorMessage } from "@/lib/axios";
 import { useSessionActions, SESSIONS_QUERY_KEY } from "@/lib/services/session.service";
 import { useScheduleCopy } from "@/hooks/useScheduleCopy.hook";
@@ -43,26 +42,25 @@ export function DeleteScheduleDialog({ session, onClose }: DeleteScheduleDialogP
   const timeStr = session ? `${session.startAt ? new Date(session.startAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : ""}` : "";
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      icon={AlertTriangle}
-      title={copy.deleteDialog.title}
-      subtitle={session ? `${session.class?.name ?? ""} — ${dateStr} ${timeStr}` : ""}
-      className="max-w-md"
-      cancelText={common.actions.cancel}
-      onCancel={onClose}
-      submitText={common.actions.delete}
-      submitIcon={Trash2}
-      submitVariant="destructive"
-      onSubmit={handleConfirm}
+    <ConfirmDialog
+      open={isOpen}
+      onClose={onClose}
+      onConfirm={handleConfirm}
       loading={del.isPending}
-    >
-      <div className="flex flex-col gap-3 py-2">
-        <p className="text-sm text-foreground">{copy.deleteDialog.description}</p>
-        <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
-          <p className="text-sm text-destructive">{copy.deleteDialog.warning}</p>
-        </div>
-      </div>
-    </Dialog>
+      title={copy.deleteDialog.title}
+      confirmLabel={common.actions.delete}
+      cancelLabel={common.actions.cancel}
+      description={
+        <>
+          {session && (
+            <p className="font-semibold text-foreground">
+              {session.class?.name ?? ""} — {dateStr} {timeStr}
+            </p>
+          )}
+          <p>{copy.deleteDialog.description}</p>
+          <p className="mt-1 text-destructive">{copy.deleteDialog.warning}</p>
+        </>
+      }
+    />
   );
 }

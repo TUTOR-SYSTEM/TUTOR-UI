@@ -149,7 +149,7 @@ const vi: CurriculumDictionary = {
     create: "Tạo chương trình",
   },
   table: {
-    stt: "STT",
+    stt: "Thứ tự",
     program: "Chương trình",
     codePrefix: "Mã",
     gradePrefix: (grade) => ` – Khối ${grade}`,
@@ -220,7 +220,7 @@ const vi: CurriculumDictionary = {
       createChapterButton: "Tạo chương mới",
     },
     table: {
-      stt: "STT",
+      stt: "Thứ tự",
       lessonName: "Tên bài",
       lessonCode: "Mã bài",
       actions: "Thao tác",

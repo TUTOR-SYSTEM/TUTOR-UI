@@ -1,20 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import {
   CalendarClock,
   CheckCircle2,
-  MoreVertical,
   PauseCircle,
   PlayCircle,
   XCircle,
+  type LucideIcon,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button.ui";
-import MenuPopover from "@/components/ui/menu-popover.ui";
+import { StatusMenu } from "@/components/ui/status-menu.ui";
 import type { SessionDto, SessionStatus } from "@/types";
 
-const sessionStatusIcon: Record<SessionStatus, React.ElementType> = {
+const sessionStatusIcon: Record<SessionStatus, LucideIcon> = {
   SCHEDULED: CalendarClock,
   ONGOING: PlayCircle,
   POSTPONED: PauseCircle,
@@ -35,48 +33,17 @@ export const SessionStatusMenu = ({
   onChangeStatus: (id: string, status: SessionStatus) => void;
   disabled?: boolean;
   ariaLabel: string;
-}) => {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <MenuPopover
-      align="end"
-      open={open}
-      onOpenChange={setOpen}
-      trigger={
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          aria-label={ariaLabel}
-          disabled={disabled}
-        >
-          <MoreVertical className="size-4" />
-        </Button>
-      }
-    >
-      <div className="flex flex-col gap-0.5">
-        {statusOptions.map((opt) => {
-          const Icon = sessionStatusIcon[opt.value as SessionStatus];
-          const isCurrent = opt.value === session.status;
-          return (
-            <Button
-              key={opt.value}
-              type="button"
-              variant="ghost"
-              disabled={isCurrent || disabled}
-              onClick={() => {
-                onChangeStatus(session.id, opt.value as SessionStatus);
-                setOpen(false);
-              }}
-              className="h-auto! w-full! justify-start! gap-2! px-2! py-1.5! text-sm! font-normal"
-            >
-              <Icon className="size-3.5" />
-              {opt.label}
-            </Button>
-          );
-        })}
-      </div>
-    </MenuPopover>
-  );
-};
+}) => (
+  <StatusMenu<SessionStatus>
+    current={session.status}
+    options={statusOptions.map((opt) => ({
+      value: opt.value as SessionStatus,
+      label: opt.label,
+      icon: sessionStatusIcon[opt.value as SessionStatus],
+    }))}
+    onSelect={(value) => onChangeStatus(session.id, value)}
+    ariaLabel={ariaLabel}
+    disabled={disabled}
+    align="end"
+  />
+);

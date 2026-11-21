@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
+import { DatePicker } from "@/components/ui/date-picker.ui";
 import { Label } from "@/components/ui/label.ui";
 import { Select } from "@/components/ui/select.ui";
 import { usePost } from "@/lib/axios/query";
@@ -181,11 +182,10 @@ export function CreateSessionDialog({
         <Label>
           Ngày học <span className="text-red-400">*</span>
         </Label>
-        <Input
-          type="date"
+        <DatePicker
           value={form.date}
-          onChange={(e) => {
-            update("date", e.target.value);
+          onValueChange={(v) => {
+            update("date", v);
             setErrors((p) => ({ ...p, date: "" }));
           }}
           invalid={!!errors.date}

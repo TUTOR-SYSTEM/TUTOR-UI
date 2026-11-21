@@ -34,7 +34,7 @@ export function FormField({
 }: FormFieldProps) {
   return (
     <div data-slot="form-field" className={cn("flex flex-col gap-1.5", className)}>
-      <Label htmlFor={htmlFor} className={cn(error && "text-destructive")}>
+      <Label htmlFor={htmlFor}>
         {label}
         {required ? (
           <span aria-hidden="true" className="ml-0.5 text-destructive">

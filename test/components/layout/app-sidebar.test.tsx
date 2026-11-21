@@ -110,19 +110,17 @@ describe("AppSidebar", () => {
         ]),
       );
       expect(labels).not.toContain(copy.nav.tutors);
-      expect(labels).not.toContain(copy.nav.logger);
     });
 
-    it("shows the trimmed admin menu with tutors, logger and test monitor", () => {
+    it("shows the trimmed admin menu with tutors and notifications", () => {
       signIn("ADMIN");
       render(<AppSidebar />);
       expect(navLabels()).toEqual([
         copy.nav.overview,
         copy.nav.tutors,
         copy.nav.students,
-        copy.nav.flowRequests,
-        copy.nav.logger,
-        copy.nav.testMonitor,
+        copy.nav.allClasses,
+        copy.nav.notifications,
         copy.nav.settings,
       ]);
     });

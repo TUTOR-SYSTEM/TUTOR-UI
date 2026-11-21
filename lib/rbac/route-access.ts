@@ -22,8 +22,6 @@ type RouteAccessRule = {
 export const ROUTE_ACCESS: readonly RouteAccessRule[] = [
   { prefix: "/tutors", allow: ["ADMIN"] },
   { prefix: "/users", allow: ["ADMIN"] },
-  { prefix: "/logger", allow: ["ADMIN"] },
-  { prefix: "/test-monitor", allow: ["ADMIN"] },
   // Internal/dev pages (API map, API gap report, admin reports) — ADMIN only.
   { prefix: "/flow-request", allow: ["ADMIN"] },
   { prefix: "/api-gaps", allow: ["ADMIN"] },
@@ -33,11 +31,11 @@ export const ROUTE_ACCESS: readonly RouteAccessRule[] = [
   { prefix: "/sessions", allow: ["TUTOR", "STUDENT"] },
   { prefix: "/curriculum", allow: ["TUTOR", "PARENT"] },
   { prefix: "/schedule", allow: ["TUTOR", "STUDENT", "PARENT"] },
-  { prefix: "/classes", allow: ["TUTOR", "STUDENT", "PARENT"] },
+  { prefix: "/classes", allow: ["ADMIN", "TUTOR", "STUDENT", "PARENT"] },
   { prefix: "/grades", allow: ["TUTOR", "STUDENT", "PARENT"] },
   { prefix: "/fees", allow: ["TUTOR", "STUDENT", "PARENT"] },
   { prefix: "/discussions", allow: ["TUTOR", "STUDENT", "PARENT"] },
-  { prefix: "/notifications", allow: ["TUTOR", "STUDENT", "PARENT"] },
+  { prefix: "/notifications", allow: ["ADMIN", "TUTOR", "STUDENT", "PARENT"] },
   { prefix: "/ai-chat", allow: ["TUTOR", "STUDENT", "PARENT"] },
   // Trang legacy (quản lý tài chính cá nhân từ bản mẫu cũ): không có menu và không có API tương
   // ứng ở gateway. Khóa cho mọi role thay vì để mặc định "mọi role đã đăng nhập".

@@ -127,7 +127,8 @@ export function TutorsPage() {
     );
   }
 
-  const tutors = data?.tutors ?? [];
+  // Chỉ hiển thị bản ghi có role gia sư (TUTOR), loại các role khác nếu BE trả lẫn.
+  const tutors = (data?.tutors ?? []).filter((t) => t.role === "TUTOR");
   const total = data?.pagination.total ?? 0;
   const totalPages = data?.pagination.totalPages ?? 1;
 
@@ -201,9 +202,8 @@ export function TutorsPage() {
                 <TableHead
                   key={col}
                   className={cn(
-                    "h-auto px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
                     i === 0 ? "w-14" : "",
-                    i === columns.length - 1 ? "text-right" : "text-left",
+                    i === 6 || i === columns.length - 1 ? "text-center" : "",
                   )}
                 >
                   {col}
@@ -270,15 +270,15 @@ export function TutorsPage() {
                   {t.phone || "—"}
                 </TableCell>
 
-                <TableCell className="px-4 py-3.5 text-center text-[#16302b]">
+                <TableCell className="px-4 py-3.5 text-[#16302b]">
                   {t.classCount ?? "—"}
                 </TableCell>
 
-                <TableCell className="px-4 py-3.5 text-center text-[#16302b]">
+                <TableCell className="px-4 py-3.5 text-[#16302b]">
                   {t.studentCount ?? "—"}
                 </TableCell>
 
-                <TableCell className="px-4 py-3.5">
+                <TableCell className="px-4 py-3.5 text-center">
                   <Button
                     type="button"
                     variant="ghost"
@@ -297,8 +297,8 @@ export function TutorsPage() {
                   </Button>
                 </TableCell>
 
-                <TableCell className="px-4 py-3.5">
-                  <div className="flex items-center justify-end gap-1.5">
+                <TableCell className="px-4 py-3.5 text-center">
+                  <div className="flex items-center justify-center gap-1.5">
                     <Button
                       type="button"
                       variant="ghost"

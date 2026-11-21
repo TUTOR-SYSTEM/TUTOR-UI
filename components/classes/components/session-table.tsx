@@ -64,9 +64,6 @@ const fmtSessionRange = (start?: string, end?: string) => {
   return s || "—";
 };
 
-const SESSION_HEADER_CLASS =
-  "py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground";
-
 /** Session table (Buổi học sắp tới / đã qua) on the tutor's class detail page. */
 export const SessionTable = ({
   title,
@@ -110,7 +107,7 @@ export const SessionTable = ({
         onCheckedChange={(checked) => onToggleAll(checked === true)}
       />
     ),
-    headerClassName: cn(SESSION_HEADER_CLASS, "w-12 px-4"),
+    headerClassName: "w-12 px-4",
     cellClassName: "px-4",
     render: (session, idx) => (
       <Checkbox
@@ -125,7 +122,7 @@ export const SessionTable = ({
     {
       key: "stt",
       header: detail.sessions.columns.stt,
-      headerClassName: cn(SESSION_HEADER_CLASS, "w-14 px-2"),
+      headerClassName: "w-14 px-2",
       cellClassName: "px-2 text-muted-foreground",
       render: (session, idx) =>
         String(session.sessionNumber ?? idx + 1).padStart(2, "0"),
@@ -133,21 +130,21 @@ export const SessionTable = ({
     {
       key: "date",
       header: detail.sessions.columns.date,
-      headerClassName: cn(SESSION_HEADER_CLASS, "px-3"),
+      headerClassName: "px-3",
       cellClassName: "px-3 font-medium",
       render: (session) => fmtSessionDate(session.startAt),
     },
     {
       key: "time",
       header: detail.sessions.columns.time,
-      headerClassName: cn(SESSION_HEADER_CLASS, "px-3"),
+      headerClassName: "px-3",
       cellClassName: "px-3 text-muted-foreground",
       render: (session) => fmtSessionRange(session.startAt, session.endAt),
     },
     {
       key: "lesson",
       header: detail.sessions.columns.lessonContent,
-      headerClassName: cn(SESSION_HEADER_CLASS, "px-3"),
+      headerClassName: "px-3",
       cellClassName: "px-3",
       render: (session) => {
         const chapter = session.lessonId
@@ -167,8 +164,9 @@ export const SessionTable = ({
     },
     {
       key: "status",
+      align: "center" as const,
       header: detail.sessions.columns.status,
-      headerClassName: cn(SESSION_HEADER_CLASS, "px-3"),
+      headerClassName: "px-3",
       cellClassName: "px-3",
       render: (session) => {
         const badge = sessionBadgeConfig[session.status];
@@ -189,8 +187,9 @@ export const SessionTable = ({
   const actionsColumn: DataTableColumn<SessionDto> | null = onChangeStatus
     ? {
         key: "actions",
+        align: "center" as const,
         header: detail.sessions.columns.actions,
-        headerClassName: cn(SESSION_HEADER_CLASS, "w-44 px-3"),
+        headerClassName: "w-44 px-3",
         cellClassName: "px-3",
         render: (session) => (
           <SessionStatusMenu
@@ -206,9 +205,10 @@ export const SessionTable = ({
 
   const linkColumn: DataTableColumn<SessionDto> = {
     key: "link",
+    align: "center" as const,
     header: "",
     headerClassName: "w-10 px-3",
-    cellClassName: "px-3 text-right",
+    cellClassName: "px-3",
     render: (session) => (
       <Link
         href={`/classes/${classId}/sessions/${session.id}`}

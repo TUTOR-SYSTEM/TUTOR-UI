@@ -158,15 +158,11 @@ export const CurriculumPage = ({ classId }: CurriculumPageProps) => {
           </div>
         ) : (
           <Table className="min-w-[560px] text-sm">
-            <TableHeader className="bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
+            <TableHeader>
               <TableRow>
-                <TableHead className="w-10 py-3 pl-4" />
-                <TableHead className="px-4 py-3" colSpan={2}>
-                  Tên bài / Chương
-                </TableHead>
-                <TableHead className="w-20 px-4 py-3 text-center">
-                  Thao tác
-                </TableHead>
+                <TableHead className="w-10 pl-4" />
+                <TableHead colSpan={2}>Tên bài / Chương</TableHead>
+                <TableHead className="w-20 text-center">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

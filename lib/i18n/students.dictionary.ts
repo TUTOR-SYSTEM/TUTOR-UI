@@ -27,6 +27,7 @@ export type StudentsDictionary = {
       stt: string;
       name: string;
       classCode: string;
+      tutor: string;
       studentCode: string;
       studentPhone: string;
       parentName: string;
@@ -161,8 +162,10 @@ export type StudentsDictionary = {
     studentPhonePlaceholder: string;
     schoolLabel: string;
     schoolPlaceholder: string;
-    parentNameLabel: string;
-    parentNamePlaceholder: string;
+    parentLastNameLabel: string;
+    parentLastNamePlaceholder: string;
+    parentFirstNameLabel: string;
+    parentFirstNamePlaceholder: string;
     relationshipLabel: string;
     relationshipPlaceholder: string;
     parentPhoneLabel: string;
@@ -178,9 +181,16 @@ export type StudentsDictionary = {
     submitText: string;
     sectionStudentInfo: string;
     sectionParentInfo: string;
+    tutorLabel: string;
+    tutorPlaceholder: string;
+    managedClassesLabel: string;
+    managedClassesEmpty: string;
+    managedClassesSelectTutor: string;
     tutorLockedNote: string;
-    fullNameLabel: string;
-    fullNamePlaceholder: string;
+    lastNameLabel: string;
+    lastNamePlaceholder: string;
+    firstNameLabel: string;
+    firstNamePlaceholder: string;
     classNameLabel: string;
     classNamePlaceholder: string;
     classNoneOption: string;
@@ -199,8 +209,10 @@ export type StudentsDictionary = {
     districtPlaceholder: string;
     provinceLabel: string;
     provincePlaceholder: string;
-    parentNameLabel: string;
-    parentNamePlaceholder: string;
+    parentLastNameLabel: string;
+    parentLastNamePlaceholder: string;
+    parentFirstNameLabel: string;
+    parentFirstNamePlaceholder: string;
     relationshipLabel: string;
     relationshipPlaceholder: string;
     relationshipFather: string;
@@ -210,16 +222,10 @@ export type StudentsDictionary = {
     parentPhonePlaceholder: string;
     parentEmailLabel: string;
     parentEmailPlaceholder: string;
-    parentAddressLabel: string;
-    parentAddressPlaceholder: string;
-    parentDistrictLabel: string;
-    parentDistrictPlaceholder: string;
-    parentProvinceLabel: string;
-    parentProvincePlaceholder: string;
     toastSuccess: string;
     toastErrorFallback: string;
-    errStudentNameType: string;
-    errStudentNameRequired: string;
+    errLastNameRequired: string;
+    errFirstNameRequired: string;
     errNameMax255: string;
     errMax255: string;
     errMax20: string;
@@ -252,14 +258,15 @@ const vi: StudentsDictionary = {
       all: "Tất cả lớp",
     },
     tableHeaders: {
-      stt: "STT",
-      name: "HỌ TÊN",
-      classCode: "MÃ LỚP",
-      studentCode: "MÃ HS",
-      studentPhone: "SĐT HS",
-      parentName: "TÊN PHỤ HUYNH",
-      parentPhone: "SĐT PH",
-      actions: "THAO TÁC",
+      stt: "Thứ tự",
+      name: "Họ tên",
+      classCode: "Mã lớp",
+      tutor: "Gia sư",
+      studentCode: "Mã học sinh",
+      studentPhone: "SĐT học sinh",
+      parentName: "Tên phụ huynh",
+      parentPhone: "SĐT phụ huynh",
+      actions: "Thao tác",
     },
     emptyState: "Không tìm thấy học sinh phù hợp.",
     loadError: "Không thể tải danh sách học sinh.",
@@ -401,8 +408,10 @@ const vi: StudentsDictionary = {
     studentPhonePlaceholder: "VD: 0901 234 567",
     schoolLabel: "Trường",
     schoolPlaceholder: "VD: THPT Quang Trung",
-    parentNameLabel: "Họ và tên phụ huynh",
-    parentNamePlaceholder: "VD: Trần Văn Hùng",
+    parentLastNameLabel: "Họ phụ huynh",
+    parentLastNamePlaceholder: "VD: Trần",
+    parentFirstNameLabel: "Tên phụ huynh",
+    parentFirstNamePlaceholder: "VD: Văn Hùng",
     relationshipLabel: "Quan hệ",
     relationshipPlaceholder: "Bố / Mẹ...",
     parentPhoneLabel: "SĐT phụ huynh",
@@ -422,10 +431,17 @@ const vi: StudentsDictionary = {
     submitText: "Lưu thay đổi",
     sectionStudentInfo: "Thông tin học sinh",
     sectionParentInfo: "Thông tin phụ huynh",
+    tutorLabel: "Gia sư quản lý",
+    tutorPlaceholder: "Chọn gia sư...",
+    managedClassesLabel: "Các lớp gia sư đang quản lý",
+    managedClassesEmpty: "Gia sư này chưa quản lý lớp nào",
+    managedClassesSelectTutor: "Vui lòng chọn gia sư",
     tutorLockedNote:
       "Gia sư không thể chỉnh sửa mục này — liên hệ quản trị viên nếu cần cập nhật.",
-    fullNameLabel: "Họ và tên",
-    fullNamePlaceholder: "VD: Trần Văn Khoa",
+    lastNameLabel: "Họ",
+    lastNamePlaceholder: "VD: Trần",
+    firstNameLabel: "Tên",
+    firstNamePlaceholder: "VD: Văn Khoa",
     classNameLabel: "Lớp học",
     classNamePlaceholder: "Chọn lớp học...",
     classNoneOption: "— Không có lớp —",
@@ -444,8 +460,10 @@ const vi: StudentsDictionary = {
     districtPlaceholder: "VD: Thanh Xuân",
     provinceLabel: "Tỉnh/Thành phố",
     provincePlaceholder: "VD: Hà Nội",
-    parentNameLabel: "Họ và tên phụ huynh",
-    parentNamePlaceholder: "VD: Trần Văn Hùng",
+    parentLastNameLabel: "Họ phụ huynh",
+    parentLastNamePlaceholder: "VD: Trần",
+    parentFirstNameLabel: "Tên phụ huynh",
+    parentFirstNamePlaceholder: "VD: Văn Hùng",
     relationshipLabel: "Quan hệ",
     relationshipPlaceholder: "Bố / Mẹ...",
     relationshipFather: "Bố",
@@ -455,16 +473,10 @@ const vi: StudentsDictionary = {
     parentPhonePlaceholder: "VD: 0912 345 678",
     parentEmailLabel: "Email phụ huynh",
     parentEmailPlaceholder: "VD: phuhuynh@gmail.com",
-    parentAddressLabel: "Địa chỉ phụ huynh",
-    parentAddressPlaceholder: "VD: 123 Nguyễn Trãi",
-    parentDistrictLabel: "Quận/Huyện phụ huynh",
-    parentDistrictPlaceholder: "VD: Thanh Xuân",
-    parentProvinceLabel: "Tỉnh/Thành phố phụ huynh",
-    parentProvincePlaceholder: "VD: Hà Nội",
     toastSuccess: "Cập nhật học sinh thành công!",
     toastErrorFallback: "Cập nhật thất bại",
-    errStudentNameType: "Họ tên phải là chuỗi ký tự",
-    errStudentNameRequired: "Vui lòng nhập họ tên",
+    errLastNameRequired: "Vui lòng nhập họ",
+    errFirstNameRequired: "Vui lòng nhập tên",
     errNameMax255: "Tên không quá 255 ký tự",
     errMax255: "Tối đa 255 ký tự",
     errMax20: "Tối đa 20 ký tự",
@@ -498,14 +510,15 @@ const en: StudentsDictionary = {
       all: "All classes",
     },
     tableHeaders: {
-      stt: "NO.",
-      name: "FULL NAME",
-      classCode: "CLASS CODE",
-      studentCode: "STUDENT CODE",
-      studentPhone: "STUDENT PHONE",
-      parentName: "PARENT NAME",
-      parentPhone: "PARENT PHONE",
-      actions: "ACTIONS",
+      stt: "No.",
+      name: "Full name",
+      classCode: "Class code",
+      tutor: "Tutor",
+      studentCode: "Student code",
+      studentPhone: "Student phone",
+      parentName: "Parent name",
+      parentPhone: "Parent phone",
+      actions: "Actions",
     },
     emptyState: "No matching students found.",
     loadError: "Unable to load the student list.",
@@ -648,8 +661,10 @@ const en: StudentsDictionary = {
     studentPhonePlaceholder: "e.g. 0901 234 567",
     schoolLabel: "School",
     schoolPlaceholder: "e.g. Quang Trung High School",
-    parentNameLabel: "Parent full name",
-    parentNamePlaceholder: "e.g. Robert Smith",
+    parentLastNameLabel: "Parent last name",
+    parentLastNamePlaceholder: "e.g. Smith",
+    parentFirstNameLabel: "Parent first name",
+    parentFirstNamePlaceholder: "e.g. Robert",
     relationshipLabel: "Relationship",
     relationshipPlaceholder: "Father / Mother...",
     parentPhoneLabel: "Parent phone",
@@ -669,10 +684,17 @@ const en: StudentsDictionary = {
     submitText: "Save changes",
     sectionStudentInfo: "Student information",
     sectionParentInfo: "Parent information",
+    tutorLabel: "Managing tutor",
+    tutorPlaceholder: "Select a tutor...",
+    managedClassesLabel: "Classes this tutor manages",
+    managedClassesEmpty: "This tutor has no classes yet",
+    managedClassesSelectTutor: "Please select a tutor",
     tutorLockedNote:
       "Tutors cannot edit this section — contact an admin if it needs to change.",
-    fullNameLabel: "Full name",
-    fullNamePlaceholder: "e.g. John Smith",
+    lastNameLabel: "Last name",
+    lastNamePlaceholder: "e.g. Smith",
+    firstNameLabel: "First name",
+    firstNamePlaceholder: "e.g. John",
     classNameLabel: "Class",
     classNamePlaceholder: "Select a class...",
     classNoneOption: "— No class —",
@@ -691,8 +713,10 @@ const en: StudentsDictionary = {
     districtPlaceholder: "e.g. Thanh Xuan",
     provinceLabel: "Province/City",
     provincePlaceholder: "e.g. Hanoi",
-    parentNameLabel: "Parent full name",
-    parentNamePlaceholder: "e.g. Robert Smith",
+    parentLastNameLabel: "Parent last name",
+    parentLastNamePlaceholder: "e.g. Smith",
+    parentFirstNameLabel: "Parent first name",
+    parentFirstNamePlaceholder: "e.g. Robert",
     relationshipLabel: "Relationship",
     relationshipPlaceholder: "Father / Mother...",
     relationshipFather: "Father",
@@ -702,16 +726,10 @@ const en: StudentsDictionary = {
     parentPhonePlaceholder: "e.g. 0912 345 678",
     parentEmailLabel: "Parent email",
     parentEmailPlaceholder: "e.g. parent@gmail.com",
-    parentAddressLabel: "Parent address",
-    parentAddressPlaceholder: "e.g. 123 Nguyen Trai",
-    parentDistrictLabel: "Parent district",
-    parentDistrictPlaceholder: "e.g. Thanh Xuan",
-    parentProvinceLabel: "Parent province/city",
-    parentProvincePlaceholder: "e.g. Hanoi",
     toastSuccess: "Student updated successfully!",
     toastErrorFallback: "Update failed",
-    errStudentNameType: "Full name must be a string",
-    errStudentNameRequired: "Please enter the full name",
+    errLastNameRequired: "Please enter the last name",
+    errFirstNameRequired: "Please enter the first name",
     errNameMax255: "Name must not exceed 255 characters",
     errMax255: "Maximum 255 characters",
     errMax20: "Maximum 20 characters",

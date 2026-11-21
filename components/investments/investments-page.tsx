@@ -6,6 +6,7 @@ import { DashboardSection } from "@/components/dashboard/dashboard-section";
 import UsageGuides, {
   type UsageGuideStep,
 } from "@/components/ui/usage-guide.ui";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.ui";
 
 type Category = "Technology" | "ETF" | "Other";
 
@@ -493,45 +494,45 @@ export const InvestmentsPage = () => {
         }
       >
         <div className="overflow-x-auto rounded-xl border border-border/70">
-          <table className="w-full min-w-[760px] text-sm">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-              <tr className="h-10 border-b border-border/70">
-                <th className="px-3 text-left font-medium">
+          <Table className="w-full min-w-[760px] text-sm">
+            <TableHeader>
+              <TableRow className="h-10 border-b border-border/70">
+                <TableHead className="px-3">
                   <span className="inline-flex items-center gap-1">
                     Asset <ChevronsUpDown className="size-3" />
                   </span>
-                </th>
-                <th className="px-3 text-right font-medium">Shares</th>
-                <th className="px-3 text-right font-medium">
+                </TableHead>
+                <TableHead className="px-3">Shares</TableHead>
+                <TableHead className="px-3">
                   <span className="inline-flex items-center gap-1">
                     Price <ChevronsUpDown className="size-3" />
                   </span>
-                </th>
-                <th className="px-3 text-right font-medium">
+                </TableHead>
+                <TableHead className="px-3">
                   <span className="inline-flex items-center gap-1">
                     Value <ChevronsUpDown className="size-3" />
                   </span>
-                </th>
-                <th className="px-3 text-right font-medium">
+                </TableHead>
+                <TableHead className="px-3">
                   <span className="inline-flex items-center gap-1">
                     Gain/Loss <ChevronsUpDown className="size-3" />
                   </span>
-                </th>
-                <th className="px-3 text-right font-medium">Allocation</th>
-              </tr>
-            </thead>
-            <tbody>
+                </TableHead>
+                <TableHead className="px-3">Allocation</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {HOLDINGS.map((holding) => {
                 const cost = holding.value - holding.gain;
                 const gainPct = (holding.gain / cost) * 100;
                 const positive = holding.gain >= 0;
                 const allocation = (holding.value / PORTFOLIO_VALUE) * 100;
                 return (
-                  <tr
+                  <TableRow
                     key={holding.id}
                     className="h-16 border-b border-border/60 transition-colors last:border-b-0 hover:bg-muted/40"
                   >
-                    <td className="px-3">
+                    <TableCell className="px-3">
                       <div className="flex items-center gap-2.5">
                         <span
                           className="grid size-9 place-items-center rounded-lg text-[11px] font-semibold text-white/90"
@@ -548,17 +549,17 @@ export const InvestmentsPage = () => {
                           </p>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-3 text-right tabular-nums text-muted-foreground">
+                    </TableCell>
+                    <TableCell className="px-3 tabular-nums text-muted-foreground">
                       {holding.shares}
-                    </td>
-                    <td className="px-3 text-right tabular-nums">
+                    </TableCell>
+                    <TableCell className="px-3 tabular-nums">
                       {currency(holding.price, 2)}
-                    </td>
-                    <td className="px-3 text-right font-medium tabular-nums">
+                    </TableCell>
+                    <TableCell className="px-3 font-medium tabular-nums">
                       {currency(holding.value)}
-                    </td>
-                    <td className="px-3 text-right">
+                    </TableCell>
+                    <TableCell className="px-3">
                       <div className="inline-flex items-center justify-end gap-2">
                         <span
                           className={`flex size-6 items-center justify-center rounded-full ${
@@ -586,8 +587,8 @@ export const InvestmentsPage = () => {
                           </p>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-3 text-right">
+                    </TableCell>
+                    <TableCell className="px-3">
                       <div className="inline-flex w-32 items-center justify-end gap-2">
                         <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                           <span
@@ -599,12 +600,12 @@ export const InvestmentsPage = () => {
                           {allocation.toFixed(1)}%
                         </span>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </DashboardSection>
 

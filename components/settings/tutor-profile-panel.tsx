@@ -1,5 +1,6 @@
 "use client";
 
+import { useSettingsCopy } from "@/hooks/useSettingsCopy.hook";
 import { Button } from "@/components/ui/button.ui";
 import { Input } from "@/components/ui/input.ui";
 import type { ProfileFormState } from "@/components/settings/profile-panel";
@@ -39,12 +40,13 @@ export function TutorProfilePanel({
   profileSaved: boolean;
   handleProfileSave: () => void;
 }) {
+  const { profile: copy, common } = useSettingsCopy();
   return (
     <div className="flex flex-col gap-6">
       {/* Avatar card */}
       <div className="rounded-lg border border-border-light p-4 shadow-sm">
         <p className="mb-3 text-sm font-semibold text-foreground">
-          Ảnh đại diện
+          {copy.avatarTitle}
         </p>
         <div className="flex items-center gap-4">
           {avatarSrc ? (
@@ -62,7 +64,7 @@ export function TutorProfilePanel({
           )}
           <div>
             <p className="text-xs text-muted-foreground">
-              PNG hoặc JPG, tối thiểu 400×400px. Tối đa 2MB.
+              {copy.tutorAvatarHint}
             </p>
             <div className="mt-2 flex items-center gap-2">
               <Button variant="ghost"
@@ -74,7 +76,7 @@ export function TutorProfilePanel({
                 {avatarUploading && (
                   <Loader2 className="size-3.5 animate-spin" />
                 )}
-                {avatarUploading ? "Đang tải..." : "Tải ảnh lên"}
+                {avatarUploading ? copy.uploading : copy.uploadPhoto}
               </Button>
               <Button variant="ghost"
                 type="button"
@@ -85,7 +87,7 @@ export function TutorProfilePanel({
                 {avatarRemoving && (
                   <Loader2 className="size-3.5 animate-spin" />
                 )}
-                {avatarRemoving ? "Đang xoá..." : "Xoá ảnh"}
+                {avatarRemoving ? copy.removing : copy.removePhoto}
               </Button>
             </div>
             <Input
@@ -102,29 +104,29 @@ export function TutorProfilePanel({
       {/* Personal info card */}
       <div className="rounded-lg border border-border-light p-4 shadow-sm">
         <p className="mb-4 text-sm font-semibold text-foreground">
-          Thông tin cá nhân
+          {copy.personalInfoTitle}
         </p>
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="Họ">
+          <FormField label={copy.lastName}>
             <Input
               value={form.lastName}
               onChange={(e) => updateField("lastName", e.target.value)}
             />
           </FormField>
-          <FormField label="Tên">
+          <FormField label={copy.firstName}>
             <Input
               value={form.firstName}
               onChange={(e) => updateField("firstName", e.target.value)}
             />
           </FormField>
-          <FormField label="Email">
+          <FormField label={copy.email}>
             <Input
               value={form.email}
               type="email"
               onChange={(e) => updateField("email", e.target.value)}
             />
           </FormField>
-          <FormField label="Số điện thoại">
+          <FormField label={copy.phone}>
             <Input
               value={form.phone}
               type="tel"
@@ -132,7 +134,7 @@ export function TutorProfilePanel({
             />
           </FormField>
           <div className="col-span-2">
-            <FormField label="Môn giảng dạy">
+            <FormField label={copy.teachingSubjects}>
               <SubjectsInput
                 value={form.subjects}
                 onChange={(next) => updateField("subjects", next)}
@@ -140,7 +142,7 @@ export function TutorProfilePanel({
             </FormField>
           </div>
           <div className="col-span-2">
-            <FormField label="Giới thiệu bản thân">
+            <FormField label={copy.tutorBio}>
               <Textarea
                 value={form.description}
                 rows={3}
@@ -153,23 +155,23 @@ export function TutorProfilePanel({
 
       {/* Address card */}
       <div className="rounded-lg border border-border-light p-4 shadow-sm">
-        <p className="mb-4 text-sm font-semibold text-foreground">Địa chỉ</p>
+        <p className="mb-4 text-sm font-semibold text-foreground">{copy.addressTitle}</p>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <FormField label="Địa chỉ">
+            <FormField label={copy.address}>
               <Input
                 value={form.address}
                 onChange={(e) => updateField("address", e.target.value)}
               />
             </FormField>
           </div>
-          <FormField label="Quận / Huyện">
+          <FormField label={copy.district}>
             <Input
               value={form.district}
               onChange={(e) => updateField("district", e.target.value)}
             />
           </FormField>
-          <FormField label="Tỉnh / Thành phố">
+          <FormField label={copy.province}>
             <Input
               value={form.province}
               onChange={(e) => updateField("province", e.target.value)}
@@ -193,10 +195,10 @@ export function TutorProfilePanel({
             <Check className="size-4" />
           ) : null}
           {profileSaving
-            ? "Đang lưu..."
+            ? common.saving
             : profileSaved
-              ? "Đã lưu!"
-              : "Lưu thay đổi"}
+              ? common.saved
+              : common.save}
         </Button>
       </div>
     </div>

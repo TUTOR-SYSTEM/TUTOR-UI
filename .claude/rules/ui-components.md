@@ -181,23 +181,3 @@
     tạo barrel根 `@/components` (xem [[structure-naming]]).
   - Xem `components/students/` (add/edit/delete dialog tách riêng) và `components/users/`
     (users-page.tsx + create/edit/delete dialog + role-options.ts) làm mẫu.
-- **`RequestDetailDialog` (`components/logger/request-detail-dialog.tsx`) dùng chung logger và
-  test-monitor**: prop `variant?: "full" | "services"` — mặc định `"full"` (trang logger: span chọn
-  + waterfall + summary + Processing + mũi tên prev/next); `"services"` (trang `/test-monitor`:
-  panel Request/Response cho **từng** service, ẩn Processing/prev-next, nút luôn là "Chạy realtime").
-  Sửa dialog này phải giữ nguyên hành vi `"full"` cho logger. Bản `"services"` hiện thêm host cạnh
-  tên service, nhãn giao thức (HTTP → HTTPS, RPC → RMQ/RPC) và bảng Request/Response header (parse
-  `requestHeaders`/`responseHeaders` JSON-string bằng `parseHeaders`, ẩn khi `null`/parse lỗi); trang
-  `/test-monitor` lấy môi trường từ `GET /test-scenarios/meta` (ẩn khi lỗi) và chuỗi service từ
-  `flow` của `GET /test-scenarios` (cột "Luồng service", chip lọc, tóm tắt từng case). Chỉ hiển thị
-  field mà BE thật sự trả — hop PostgreSQL/Redis **chưa được log** nên không có trong flow/trace;
-  đừng bịa field khi UI mẫu có mà BE chưa có nguồn.
-  **Chế độ dữ liệu demo của `/test-monitor`**: mở `/test-monitor?mock=1` (hoặc đặt env
-  `NEXT_PUBLIC_TEST_MONITOR_MOCK=true`) để xem UI bằng dữ liệu giả khi catalog BE chưa sẵn sàng.
-  `hooks/useTestMonitorMock.hook.ts` trả cờ; khi bật, trang vẫn gọi các hook service (không điều
-  kiện) nhưng truyền `enabled: false`, đọc `MOCK_SCENARIOS` (có `flow`)/`MOCK_LOG_STATS`/`MOCK_TRACES` (có host + header)/`MOCK_META` trong
-  `components/test-monitor/test-monitor-mock-data.ts` (giữ scenarios trong `useState` để nút Test
-  đổi `lastRun`), "Chạy" dùng `mockRunScenario`, "Chạy realtime" phát lại trace đã lưu qua
-  `useLiveTrace` — không gọi API thật, không mở socket `/logs`; header hiện badge "Dữ liệu demo".
-  Đổi shape type scenario/log thì cập nhật file mock cho khớp (test `test-monitor-mock-data.test.ts`
-  sẽ báo lệch).

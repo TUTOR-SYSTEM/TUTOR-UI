@@ -22,6 +22,8 @@ type MenuPopoverProps = {
    * không bị tràn xuống dưới màn hình. */
   side?: "top" | "bottom";
   contentClassName?: string;
+  /** Trigger chiếm đủ chiều ngang container (vd ô chọn ngày khớp width với Input). */
+  fullWidth?: boolean;
   /** Chế độ controlled: đóng menu sau khi chọn (gọi `onOpenChange(false)`). */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -41,6 +43,7 @@ const MenuPopover = ({
   align = "end",
   side = "bottom",
   contentClassName,
+  fullWidth = false,
   open: controlledOpen,
   onOpenChange,
   defaultOpen = false,
@@ -126,9 +129,11 @@ const MenuPopover = ({
     <div
       ref={triggerRef}
       data-testid="menu-popover"
-      className="relative inline-flex"
+      className={cn("relative inline-flex", fullWidth && "flex w-full")}
     >
-      <div onClick={() => setOpen(!open)}>{trigger}</div>
+      <div onClick={() => setOpen(!open)} className={cn(fullWidth && "w-full")}>
+        {trigger}
+      </div>
       {open && position && typeof document !== "undefined"
         ? createPortal(
             <div

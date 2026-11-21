@@ -570,8 +570,7 @@ export const SessionDetailPage = ({
     {
       key: "present",
       header: "Có mặt",
-      headerClassName: "w-24 text-center",
-      cellClassName: "text-center",
+      headerClassName: "w-24",
       render: (student) => {
         const isPresent = present[student.studentId] ?? student.present;
         if (!isTutor) {
@@ -632,9 +631,9 @@ export const SessionDetailPage = ({
           } satisfies DataTableColumn<AttendanceRecord>,
           {
             key: "commit",
+            align: "center" as const,
             header: "Xác nhận",
-            headerClassName: "w-20 text-center",
-            cellClassName: "text-center",
+            headerClassName: "w-20",
             render: (student) => {
               const name = `${student.firstName} ${student.lastName}`.trim();
               const isCommitted = committed[student.studentId] ?? false;

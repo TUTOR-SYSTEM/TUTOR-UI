@@ -19,9 +19,6 @@ import {
   MessageSquare,
   Settings,
   Sparkles,
-  GitBranch,
-  ScrollText,
-  FlaskConical,
 } from "lucide-react";
 
 import { SidebarProvider } from "@/components/ui/sidebar.ui";
@@ -55,15 +52,13 @@ const NAV = {
   curriculum: { key: "curriculum", url: "/curriculum", icon: BookText },
   grades: { key: "grades", url: "/grades", icon: Award },
   tutors: { key: "tutors", url: "/tutors", icon: GraduationCap },
+  allClasses: { key: "allClasses", url: "/classes", icon: BookOpen },
   students: { key: "students", url: "/students", icon: Users },
   fees: { key: "fees", url: "/fees", icon: CreditCard },
   discussions: { key: "discussions", url: "/discussions", icon: MessageSquare },
   aiChat: { key: "aiChat", url: "/ai-chat", icon: Sparkles },
   users: { key: "users", url: "/users", icon: UserCog },
   reports: { key: "reports", url: "/reports", icon: BarChart3 },
-  flowRequests: { key: "flowRequests", url: "/flow-requests", icon: GitBranch },
-  logger: { key: "logger", url: "/logger", icon: ScrollText },
-  testMonitor: { key: "testMonitor", url: "/test-monitor", icon: FlaskConical },
 } satisfies Record<string, NavItem>;
 
 /**
@@ -86,7 +81,7 @@ const roleNav: Record<UserRole, NavItem[]> = {
   ],
   // Admin — trimmed menu: Overview, Tutors, Students.
   // (Settings is appended for every role via `navSettings`.)
-  ADMIN: [NAV.overview, NAV.tutors, NAV.students, NAV.flowRequests, NAV.logger, NAV.testMonitor],
+  ADMIN: [NAV.overview, NAV.tutors, NAV.students, NAV.allClasses, NAV.notifications],
   // Student — no "Students"; "Tuition" is view-only.
   STUDENT: [
     NAV.overview,

@@ -12,7 +12,8 @@ type ButtonVariant =
 
 type DialogProps = {
   isOpen: boolean;
-  icon: LucideIcon;
+  /** Icon ở header. Bỏ trống khi nội dung đã có icon riêng (vd ConfirmDialog). */
+  icon?: LucideIcon;
   title: string;
   subtitle?: string;
   children: React.ReactNode;
@@ -117,14 +118,16 @@ export const Header = ({
 }: {
   title: string;
   subtitle?: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   onCancel: () => void;
   loading?: boolean;
 }) => (
   <header className="flex h-max shrink-0 items-center gap-3 border-b border-border/70 px-6 py-4">
-    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-      <Icon className="size-4" />
-    </div>
+    {Icon && (
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+        <Icon className="size-4" />
+      </div>
+    )}
     <div className="min-w-0 flex-1">
       <h2 className="truncate text-base font-semibold text-foreground">
         {title}

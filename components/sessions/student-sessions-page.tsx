@@ -164,8 +164,7 @@ export const StudentSessionsPage = () => {
       {
         key: "session",
         header: copy.table.session,
-        headerClassName:
-          "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        headerClassName: "px-4",
         cellClassName: "px-4 py-3.5",
         render: (s) => (
           <div>
@@ -181,24 +180,22 @@ export const StudentSessionsPage = () => {
       {
         key: "time",
         header: copy.table.time,
-        headerClassName:
-          "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        headerClassName: "px-4",
         cellClassName: "px-4 py-3.5 text-foreground",
         render: (s) => fmtDateTime(s.startAt),
       },
       {
         key: "location",
         header: copy.table.location,
-        headerClassName:
-          "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        headerClassName: "px-4",
         cellClassName: "px-4 py-3.5 text-foreground",
         render: (s) => s.location || copy.table.locationFallback,
       },
       {
         key: "status",
+        align: "center" as const,
         header: copy.table.status,
-        headerClassName:
-          "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        headerClassName: "px-4",
         cellClassName: "px-4 py-3.5",
         render: (s) => {
           const meta = SESSION_STATUS_META[s.status];
@@ -207,10 +204,10 @@ export const StudentSessionsPage = () => {
       },
       {
         key: "actions",
+        align: "center" as const,
         header: copy.table.actions,
-        headerClassName:
-          "px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground",
-        cellClassName: "px-4 py-3.5 text-right",
+        headerClassName: "px-4",
+        cellClassName: "px-4 py-3.5",
         render: (s) => (
           <Button
             type="button"

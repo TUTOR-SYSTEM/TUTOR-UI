@@ -143,15 +143,12 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
     data: studentsRaw,
     isLoading: studentsLoading,
     refetch: refetchStudents,
-  } = useGet(
-    ["class-students", classId],
-    `/classes/${classId}/students`,
-    { enabled: !!classId },
-  );
+  } = useGet(["class-students", classId], `/classes/${classId}/students`, {
+    enabled: !!classId,
+  });
 
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [createStudentOpen, setCreateStudentOpen] = useState(false);
-
 
   const cls = useMemo(() => {
     if (!classRaw) return null;
@@ -260,7 +257,8 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
       ? unwrapApiData<CurriculumDetail>(curriculumRaw)
       : null;
     for (const chapter of framework?.chapters ?? []) {
-      for (const lesson of chapter.lessons ?? []) map[lesson.id] = chapter.title;
+      for (const lesson of chapter.lessons ?? [])
+        map[lesson.id] = chapter.title;
     }
     return map;
   }, [curriculumRaw]);
@@ -270,16 +268,14 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
       {
         key: "stt",
         header: detail.students.columns.stt,
-        headerClassName:
-          "w-16 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        headerClassName: "w-16 px-5",
         cellClassName: "px-5 text-muted-foreground",
         render: (student, idx) => String(idx + 1).padStart(2, "0"),
       },
       {
         key: "student",
         header: detail.students.columns.student,
-        headerClassName:
-          "px-3 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        headerClassName: "px-3",
         cellClassName: "px-3",
         render: (student: ClassStudentDto, idx: number) => {
           const name = currentPersonName(student.firstName, student.lastName);
@@ -313,43 +309,43 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
       {
         key: "code",
         header: detail.students.columns.studentCode,
-        headerClassName:
-          "px-3 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        headerClassName: "px-3",
         cellClassName: "px-3 text-muted-foreground",
         render: (student) => student.userCode || "—",
       },
       {
         key: "phone",
         header: detail.students.columns.studentPhone,
-        headerClassName:
-          "px-3 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        headerClassName: "px-3",
         cellClassName: "px-3 text-muted-foreground",
         render: (student) => student.phone || "—",
       },
       {
         key: "parent",
         header: detail.students.columns.parent,
-        headerClassName:
-          "px-3 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        headerClassName: "px-3",
         cellClassName: "px-3 text-muted-foreground",
         render: (student) =>
           student.parent
-            ? currentPersonName(student.parent.firstName, student.parent.lastName)
+            ? currentPersonName(
+                student.parent.firstName,
+                student.parent.lastName,
+              )
             : "—",
       },
       {
         key: "parentPhone",
         header: detail.students.columns.parentPhone,
-        headerClassName:
-          "px-3 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        headerClassName: "px-3",
         cellClassName: "px-3 text-muted-foreground",
         render: (student) => student.parent?.phone || "—",
       },
       {
         key: "add",
+        align: "center" as const,
         header: "",
         headerClassName: "w-12 px-3",
-        cellClassName: "px-3 text-center",
+        cellClassName: "px-3",
         render: () => (
           <Button
             type="button"
@@ -660,17 +656,16 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
       />
 
       <AddStudentDialog
-
         open={createStudentOpen}
 
         onClose={() => setCreateStudentOpen(false)}
 
-        onAdd={() => void queryClient.invalidateQueries({ queryKey: ["students"] })}
-
+        onAdd={() =>
+          void queryClient.invalidateQueries({ queryKey: ["students"] })
+        }
       />
 
       <EnrollStudentsDialog
-
         open={enrollOpen}
 
         classId={classId}
@@ -680,7 +675,6 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
         onClose={() => setEnrollOpen(false)}
 
         onEnrolled={() => void refetchStudents()}
-
       />
 
       <CreateSessionDialog

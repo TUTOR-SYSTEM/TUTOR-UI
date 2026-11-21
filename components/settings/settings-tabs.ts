@@ -12,49 +12,14 @@ export type Tab =
   | "fees";
 
 
-/* ─── Tab config ─── */
-export const TABS: {
-  id: Tab;
-  label: string;
-  icon: ElementType;
-  desc: string;
-}[] = [
-  {
-    id: "profile",
-    label: "Hồ sơ cá nhân",
-    icon: User,
-    desc: "Thông tin và ảnh đại diện",
-  },
-  {
-    id: "security",
-    label: "Bảo mật",
-    icon: Lock,
-    desc: "Mật khẩu và xác thực",
-  },
-  {
-    id: "notifications",
-    label: "Thông báo",
-    icon: Bell,
-    desc: "Tuỳ chọn nhận thông báo",
-  },
-  {
-    id: "appearance",
-    label: "Giao diện & Ngôn ngữ",
-    icon: Palette,
-    desc: "Tuỳ chỉnh cách bảng điều khiển hiển thị.",
-  },
-  {
-    id: "classes",
-    label: "Giảng dạy",
-    icon: GraduationCap,
-    desc: "Thiết lập mặc định áp dụng khi tạo buổi học và lớp mới.",
-  },
-  {
-    id: "fees",
-    label: "Thanh toán",
-    icon: CreditCard,
-    desc: "Tài khoản nhận học phí từ phụ huynh.",
-  },
+/* ─── Tab config (label/desc nằm trong settings.dictionary.ts) ─── */
+export const TABS: { id: Tab; icon: ElementType }[] = [
+  { id: "profile", icon: User },
+  { id: "security", icon: Lock },
+  { id: "notifications", icon: Bell },
+  { id: "appearance", icon: Palette },
+  { id: "classes", icon: GraduationCap },
+  { id: "fees", icon: CreditCard },
 ];
 
 

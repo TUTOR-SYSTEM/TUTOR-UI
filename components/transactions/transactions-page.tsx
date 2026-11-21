@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import UsageGuides, {
   type UsageGuideStep,
 } from "@/components/ui/usage-guide.ui";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.ui";
 
 type TxType = "Income" | "Expense";
 
@@ -591,18 +592,18 @@ export const TransactionsPage = () => {
         }
       >
         <div className="overflow-x-auto rounded-xl border border-border/70">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-              <tr className="h-10 border-b border-border/70">
-                <th className="w-10 px-3 text-left">
+          <Table className="w-full min-w-[720px] text-sm">
+            <TableHeader>
+              <TableRow className="h-10 border-b border-border/70">
+                <TableHead className="w-10 px-3">
                   <input
                     type="checkbox"
                     checked={allSelectedOnPage}
                     onChange={toggleSelectAll}
                     aria-label={copy.table.selectAll}
                   />
-                </th>
-                <th className="px-3 text-left font-medium">
+                </TableHead>
+                <TableHead className="px-3">
                   <button
                     type="button"
                     onClick={() => toggleSort("name")}
@@ -611,8 +612,8 @@ export const TransactionsPage = () => {
                     {copy.table.transaction}
                     <SortIcon active={sortKey === "name"} />
                   </button>
-                </th>
-                <th className="px-3 text-left font-medium">
+                </TableHead>
+                <TableHead className="px-3">
                   <button
                     type="button"
                     onClick={() => toggleSort("category")}
@@ -621,8 +622,8 @@ export const TransactionsPage = () => {
                     {copy.table.category}
                     <SortIcon active={sortKey === "category"} />
                   </button>
-                </th>
-                <th className="px-3 text-left font-medium">
+                </TableHead>
+                <TableHead className="px-3">
                   <button
                     type="button"
                     onClick={() => toggleSort("account")}
@@ -631,11 +632,11 @@ export const TransactionsPage = () => {
                     {copy.table.account}
                     <SortIcon active={sortKey === "account"} />
                   </button>
-                </th>
-                <th className="px-3 text-left font-medium">
+                </TableHead>
+                <TableHead className="px-3">
                   {copy.table.type}
-                </th>
-                <th className="px-3 text-right font-medium">
+                </TableHead>
+                <TableHead className="px-3">
                   <button
                     type="button"
                     onClick={() => toggleSort("amount")}
@@ -644,26 +645,26 @@ export const TransactionsPage = () => {
                     {copy.table.amount}
                     <SortIcon active={sortKey === "amount"} />
                   </button>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {paged.map((tx) => {
                 const positive = tx.type === "Income";
                 return (
-                  <tr
+                  <TableRow
                     key={tx.id}
                     className="h-14 border-b border-border/60 transition-colors last:border-b-0 hover:bg-muted/40"
                   >
-                    <td className="px-3 align-middle">
+                    <TableCell className="px-3 align-middle">
                       <input
                         type="checkbox"
                         checked={selected.has(tx.id)}
                         onChange={() => toggleSelectOne(tx.id)}
                         aria-label={copy.table.selectRow(tx.name)}
                       />
-                    </td>
-                    <td className="px-3">
+                    </TableCell>
+                    <TableCell className="px-3">
                       <div className="flex items-center gap-2.5">
                         <span
                           className="size-8 shrink-0 rounded-full"
@@ -676,19 +677,19 @@ export const TransactionsPage = () => {
                           </p>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-3 text-muted-foreground">
+                    </TableCell>
+                    <TableCell className="px-3 text-muted-foreground">
                       <span className="inline-flex items-center gap-1.5">
                         <span>{tx.categoryIcon}</span>
                         {tx.category}
                       </span>
-                    </td>
-                    <td className="px-3">
+                    </TableCell>
+                    <TableCell className="px-3">
                       <span className="rounded-full border border-border/70 px-2 py-0.5 text-xs text-muted-foreground">
                         {tx.account}
                       </span>
-                    </td>
-                    <td className="px-3">
+                    </TableCell>
+                    <TableCell className="px-3">
                       <span
                         className={`inline-flex items-center gap-1 text-xs font-medium ${
                           positive ? "text-positive" : "text-negative"
@@ -701,31 +702,31 @@ export const TransactionsPage = () => {
                         )}
                         {positive ? copy.table.typeIncome : copy.table.typeExpense}
                       </span>
-                    </td>
-                    <td
-                      className={`px-3 text-right font-semibold tabular-nums ${
+                    </TableCell>
+                    <TableCell
+                      className={`px-3 font-semibold tabular-nums ${
                         positive ? "text-positive" : "text-foreground"
                       }`}
                     >
                       {positive ? "+" : "-"}
                       {currency(tx.amount)}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
 
               {paged.length === 0 ? (
-                <tr>
-                  <td
+                <TableRow>
+                  <TableCell
                     colSpan={6}
                     className="h-24 text-center text-sm text-muted-foreground"
                   >
                     {copy.table.noMatch}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : null}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         <div className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">

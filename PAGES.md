@@ -125,8 +125,6 @@
 
 | Route           | File                                         |
 | --------------- | -------------------------------------------- |
-| `/logger`       | `app/(app)/(admin)/logger/page.tsx`          |
-| `/test-monitor` | `app/(app)/(admin)/test-monitor/page.tsx`    |
 
 
 ---

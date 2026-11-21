@@ -29,6 +29,7 @@ import type {
   ClassReportsApiPayload,
   LearningReportSummary,
 } from "@/types";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.ui";
 
 const PAGE_SIZE = 8;
 
@@ -280,56 +281,56 @@ export function ReportsPage() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#E7EEEC] bg-[#F3F7F5]">
+          <Table className="w-full text-sm">
+            <TableHeader>
+              <TableRow>
                 {[
-                  "LỚP",
-                  "GIA SƯ",
-                  "SĨ SỐ",
-                  "ĐIỂM DANH",
-                  "TIẾN ĐỘ GIÁO TRÌNH",
-                  "BÀI TẬP",
-                  "ĐIỂM TB",
+                  "Lớp",
+                  "Gia sư",
+                  "Sĩ số",
+                  "Điểm danh",
+                  "Tiến độ giáo trình",
+                  "Bài tập",
+                  "Điểm TB",
                 ].map((col) => (
-                  <th
+                  <TableHead
                     key={col}
-                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]"
+                    className="px-4"
                   >
                     {col}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {classRows.map((row: ClassReportRow) => (
-                <tr
+                <TableRow
                   key={row.classId}
                   className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9] transition-colors"
                 >
-                  <td className="px-4 py-3.5 font-semibold text-[#16302b]">
+                  <TableCell className="px-4 py-3.5 font-semibold text-[#16302b]">
                     {row.className}
-                  </td>
-                  <td className="px-4 py-3.5 text-[#16302b]">
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5 text-[#16302b]">
                     {row.tutorName}
-                  </td>
-                  <td className="px-4 py-3.5 text-[#16302b]">
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5 text-[#16302b]">
                     {row.studentCount}
-                  </td>
-                  <td className="px-4 py-3.5">
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5">
                     <span
                       className={`rounded-md px-2.5 py-0.5 text-xs font-semibold ${rateBadgeClass(row.attendanceRate)}`}
                     >
                       {row.attendanceRate}%
                     </span>
-                  </td>
-                  <td className="px-4 py-3.5">
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5">
                     <ProgressBar value={row.curriculumProgress} />
-                  </td>
-                  <td className="px-4 py-3.5 text-[#16302b]">
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5 text-[#16302b]">
                     {row.assignmentsSubmitted}/{row.assignmentsTotal}
-                  </td>
-                  <td className="px-4 py-3.5">
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5">
                     {row.averageScore !== null ? (
                       <span className="inline-flex items-center gap-1 font-semibold text-[#16302b]">
                         <Award className="size-3.5 text-[#FF7A45]" />
@@ -338,36 +339,36 @@ export function ReportsPage() {
                     ) : (
                       <span className="text-[#9AAEA9]">—</span>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
 
               {!isClassesPending && classRows.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-14 text-center text-[#9AAEA9]">
+                <TableRow>
+                  <TableCell colSpan={7} className="py-14 text-center text-[#9AAEA9]">
                     Không tìm thấy lớp phù hợp.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {isClassesPending && (
-                <tr>
-                  <td colSpan={7} className="py-14 text-center text-[#9AAEA9]">
+                <TableRow>
+                  <TableCell colSpan={7} className="py-14 text-center text-[#9AAEA9]">
                     Đang tải…
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {isClassesError && (
-                <tr>
-                  <td colSpan={7} className="py-14 text-center text-red-500">
+                <TableRow>
+                  <TableCell colSpan={7} className="py-14 text-center text-red-500">
                     {getErrorMessage(
                       classesError,
                       "Không thể tải báo cáo theo lớp.",
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {/* Pagination */}

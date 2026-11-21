@@ -9,6 +9,7 @@ import { Pencil, Save } from "lucide-react";
 
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
+import { DatePicker } from "@/components/ui/date-picker.ui";
 import { Select } from "@/components/ui/select.ui";
 import { cn } from "@/lib/utils";
 import { usePut } from "@/lib/axios/query";
@@ -16,6 +17,8 @@ import { showFormApiError } from "@/lib/axios/form-error";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { useClassActions } from "@/lib/services/class.service";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
+import { useAdminTutors } from "@/hooks/useAdminUsers.hook";
+import { currentPersonName } from "@/lib/format/person-name";
 import { useStudentsCopy } from "@/hooks/useStudentsCopy.hook";
 import { ParentPicker } from "@/components/students/parent-picker";
 import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
@@ -38,10 +41,17 @@ const VN_PHONE_REGEX = /^(0|\+84)\d{9,10}$/;
  * student must not be blocked by incomplete or free-form parent data. */
 function buildSchema(t: StudentsDictionary["editDialog"]) {
   return z.object({
-    studentName: z
-      .string({ message: t.errStudentNameType })
-      .min(1, t.errStudentNameRequired)
+    lastName: z
+      .string()
+      .trim()
+      .min(1, t.errLastNameRequired)
       .max(255, t.errNameMax255),
+    firstName: z
+      .string()
+      .trim()
+      .min(1, t.errFirstNameRequired)
+      .max(255, t.errNameMax255),
+    tutorId: z.string().optional(),
     classId: z.string().optional(),
     gender: z.enum(["MALE", "FEMALE", "OTHER"]),
     birthday: z.string().optional(),
@@ -55,13 +65,11 @@ function buildSchema(t: StudentsDictionary["editDialog"]) {
     address: z.string().max(500, t.errMax255).optional(),
     district: z.string().max(30, t.errMax255).optional(),
     province: z.string().max(30, t.errMax255).optional(),
-    parentName: z.string().optional(),
+    parentLastName: z.string().optional(),
+    parentFirstName: z.string().optional(),
     parentRelationship: z.string().optional(),
     parentPhone: z.string().optional(),
     parentEmail: z.string().optional(),
-    parentAddress: z.string().optional(),
-    parentDistrict: z.string().optional(),
-    parentProvince: z.string().optional(),
   });
 }
 
@@ -69,7 +77,9 @@ type FormValues = z.infer<ReturnType<typeof buildSchema>>;
 
 /** Fields this form renders; a 422 on any other field falls back to a toast. */
 const STUDENT_FORM_FIELDS = [
-  "studentName",
+  "lastName",
+  "firstName",
+  "tutorId",
   "classId",
   "gender",
   "birthday",
@@ -78,7 +88,8 @@ const STUDENT_FORM_FIELDS = [
   "address",
   "district",
   "province",
-  "parentName",
+  "parentLastName",
+  "parentFirstName",
   "parentRelationship",
   "parentPhone",
   "parentEmail",
@@ -86,7 +97,9 @@ const STUDENT_FORM_FIELDS = [
 
 function getDefaultValues(student: Student): FormValues {
   return {
-    studentName: student.name,
+    lastName: student.lastName,
+    firstName: student.firstName,
+    tutorId: student.tutorId ?? "",
     classId: student.classId ?? "",
     gender:
       student.gender === "FEMALE" || student.gender === "OTHER"
@@ -98,13 +111,11 @@ function getDefaultValues(student: Student): FormValues {
     address: student.address ?? "",
     district: student.district ?? "",
     province: student.province ?? "",
-    parentName: student.parentName ?? "",
+    parentLastName: student.parentLastName,
+    parentFirstName: student.parentFirstName,
     parentRelationship: student.parentRelationship ?? "",
     parentPhone: student.parentPhone ?? "",
     parentEmail: student.parentEmail ?? "",
-    parentAddress: student.parentAddress ?? "",
-    parentDistrict: student.parentDistrict ?? "",
-    parentProvince: student.parentProvince ?? "",
   };
 }
 
@@ -145,7 +156,9 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
   const copy = useStudentsCopy();
   const common = useCommonCopy();
   const open = student !== null;
-  const isTutor = useCurrentUserRole() === "TUTOR";
+  const role = useCurrentUserRole();
+  const isTutor = role === "TUTOR";
+  const isAdmin = role === "ADMIN";
 
   const relationshipOptions = useMemo(
     () => [
@@ -165,6 +178,7 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
     reset,
     setError,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -190,9 +204,6 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
         "parentRelationship",
         "parentPhone",
         "parentEmail",
-        "parentAddress",
-        "parentDistrict",
-        "parentProvince",
       ] as const
     ).forEach((key) => setValue(key, saved[key]));
   };
@@ -208,9 +219,6 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
     setValue("parentRelationship", "");
     setValue("parentPhone", parent.phone ?? "");
     setValue("parentEmail", parent.email ?? "");
-    setValue("parentAddress", "");
-    setValue("parentDistrict", "");
-    setValue("parentProvince", "");
   };
 
   /* name typed away from the picked parent: go back to the student's own parent */
@@ -226,14 +234,34 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
     }
   }, [student, reset]);
 
-  /* classes for the class picker */
-  const { data: classesRaw } = useClassActions({
-    list: { limit: 100 },
-    listOptions: { enabled: open },
+  /* admin picks the managing tutor; the class picker then lists that tutor's classes */
+  const { data: tutorsRaw } = useAdminTutors(
+    { page: 1, limit: 100 },
+    open && isAdmin,
+  );
+  const tutorOptions = useMemo(
+    () =>
+      (tutorsRaw?.tutors ?? []).map((t) => ({
+        label: currentPersonName(t.firstName, t.lastName) || t.email || "",
+        value: t.id,
+      })),
+    [tutorsRaw],
+  );
+  const selectedTutorId = watch("tutorId") ?? "";
+
+  /* classes for the class picker (admin: only the selected tutor's classes) */
+  const { data: classesRaw, isPending: classesPending } = useClassActions({
+    list: { limit: 100, ...(isAdmin ? { tutorId: selectedTutorId } : {}) },
+    listOptions: { enabled: open && (!isAdmin || !!selectedTutorId) },
   }).list;
 
+  const managedClasses = useMemo(
+    () => (classesRaw?.classes ?? []) as ClassOption[],
+    [classesRaw],
+  );
+
   const classOptions = useMemo(() => {
-    const classes = (classesRaw?.classes ?? []) as ClassOption[];
+    const classes = managedClasses;
     return [
       { label: copy.editDialog.classNoneOption, value: "" },
       ...classes.map((c) => ({
@@ -241,7 +269,7 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
         value: c.id,
       })),
     ];
-  }, [classesRaw, copy]);
+  }, [managedClasses, copy]);
 
   /* mutation */
   const updateStudent = usePut<unknown, UpdateStudentPayload>(
@@ -253,7 +281,12 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
 
     const payload: UpdateStudentPayload = {
       id: student.id,
-      studentName: values.studentName.trim(),
+      lastName: values.lastName.trim(),
+      firstName: values.firstName.trim(),
+      tutorId:
+        isAdmin && values.tutorId && values.tutorId !== student.tutorId
+          ? values.tutorId
+          : undefined,
       studentPhone: values.studentPhone?.trim() || undefined,
       gender: values.gender,
       birthday: values.birthday
@@ -269,13 +302,11 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
       ...(otherParent
         ? { parentId: otherParent.id }
         : {
-            parentName: values.parentName?.trim() || undefined,
+            parentLastName: values.parentLastName?.trim() || undefined,
+            parentFirstName: values.parentFirstName?.trim() || undefined,
             parentPhone: values.parentPhone?.trim() || undefined,
             parentEmail: values.parentEmail?.trim() || undefined,
             parentRelationship: values.parentRelationship || undefined,
-            parentAddress: values.parentAddress?.trim() || undefined,
-            parentDistrict: values.parentDistrict?.trim() || undefined,
-            parentProvince: values.parentProvince?.trim() || undefined,
           }),
     };
 
@@ -326,41 +357,57 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
           <SectionTitle>{copy.editDialog.sectionStudentInfo}</SectionTitle>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Họ và tên */}
+            {/* Họ */}
             <Field
-              label={copy.editDialog.fullNameLabel}
+              label={copy.editDialog.lastNameLabel}
               required
-              error={errors.studentName?.message}
+              error={errors.lastName?.message}
             >
               <Input
-                {...register("studentName")}
-                placeholder={copy.editDialog.fullNamePlaceholder}
+                {...register("lastName")}
+                placeholder={copy.editDialog.lastNamePlaceholder}
                 autoFocus
-                invalid={!!errors.studentName}
+                invalid={!!errors.lastName}
                 disabled={isPending}
               />
             </Field>
 
-            {/* Lớp học */}
+            {/* Tên */}
             <Field
-              label={copy.editDialog.classNameLabel}
-              error={errors.classId?.message}
+              label={copy.editDialog.firstNameLabel}
+              required
+              error={errors.firstName?.message}
             >
-              <Controller
-                name="classId"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    options={classOptions}
-                    value={field.value ?? ""}
-                    onValueChange={field.onChange}
-                    placeholder={copy.editDialog.classNamePlaceholder}
-                    disabled={isPending}
-                    invalid={!!errors.classId}
-                  />
-                )}
+              <Input
+                {...register("firstName")}
+                placeholder={copy.editDialog.firstNamePlaceholder}
+                invalid={!!errors.firstName}
+                disabled={isPending}
               />
             </Field>
+
+            {/* Lớp học — gia sư tự chọn; admin chọn trong mục "lớp gia sư đang quản lý" bên dưới */}
+            {!isAdmin && (
+              <Field
+                label={copy.editDialog.classNameLabel}
+                error={errors.classId?.message}
+              >
+                <Controller
+                  name="classId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      options={classOptions}
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      placeholder={copy.editDialog.classNamePlaceholder}
+                      disabled={isPending}
+                      invalid={!!errors.classId}
+                    />
+                  )}
+                />
+              </Field>
+            )}
 
             {/* Giới tính */}
             <Field label={copy.editDialog.genderLabel}>
@@ -408,11 +455,17 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
               label={copy.editDialog.birthdayLabel}
               error={errors.birthday?.message}
             >
-              <Input
-                {...register("birthday")}
-                type="date"
-                invalid={!!errors.birthday}
-                disabled={isPending}
+              <Controller
+                name="birthday"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value ?? ""}
+                    onValueChange={field.onChange}
+                    invalid={!!errors.birthday}
+                    disabled={isPending}
+                  />
+                )}
               />
             </Field>
 
@@ -486,6 +539,74 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
                 disabled={isPending || isTutor}
               />
             </Field>
+
+            {/* Gia sư quản lý — chỉ ADMIN */}
+            {isAdmin && (
+              <div className="sm:col-span-2">
+                <Field
+                  label={copy.editDialog.tutorLabel}
+                  error={errors.tutorId?.message}
+                >
+                  <Controller
+                    name="tutorId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        options={tutorOptions}
+                        value={field.value ?? ""}
+                        onValueChange={(v) => {
+                          field.onChange(v);
+                          // Lớp thuộc gia sư cũ không còn hợp lệ.
+                          if (v !== field.value) setValue("classId", "");
+                        }}
+                        placeholder={copy.editDialog.tutorPlaceholder}
+                        disabled={isPending}
+                        invalid={!!errors.tutorId}
+                      />
+                    )}
+                  />
+                </Field>
+              </div>
+            )}
+
+            {/* Lớp của gia sư đang quản lý — chỉ ADMIN: chưa chọn gia sư / chưa có lớp / chọn lớp */}
+            {isAdmin && (
+              <div className="sm:col-span-2">
+                <Field
+                  label={copy.editDialog.managedClassesLabel}
+                  error={errors.classId?.message}
+                >
+                  {!selectedTutorId ? (
+                    <p className="text-sm text-muted-foreground">
+                      {copy.editDialog.managedClassesSelectTutor}
+                    </p>
+                  ) : classesPending ? (
+                    <p className="text-sm text-muted-foreground">
+                      {common.actions.loading}
+                    </p>
+                  ) : managedClasses.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {copy.editDialog.managedClassesEmpty}
+                    </p>
+                  ) : (
+                    <Controller
+                      name="classId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          options={classOptions}
+                          value={field.value ?? ""}
+                          onValueChange={field.onChange}
+                          placeholder={copy.editDialog.classNamePlaceholder}
+                          disabled={isPending}
+                          invalid={!!errors.classId}
+                        />
+                      )}
+                    />
+                  )}
+                </Field>
+              </div>
+            )}
           </div>
         </div>
 
@@ -501,18 +622,33 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
           {/* Họ và tên phụ huynh — gõ để tìm phụ huynh có sẵn. Re-linking is an admin action like the
               other parent edits (BE PUT /students is ADMIN-only). */}
           <Controller
-            name="parentName"
+            name="parentLastName"
             control={control}
-            render={({ field }) => (
-              <ParentPicker
-                label={copy.editDialog.parentNameLabel}
-                placeholder={copy.editDialog.parentNamePlaceholder}
-                value={field.value ?? ""}
-                onValueChange={field.onChange}
-                linked={otherParent}
-                onLink={pickParent}
-                onUnlink={unpickParent}
-                disabled={isPending || isTutor || relinksParent}
+            render={({ field: last }) => (
+              <Controller
+                name="parentFirstName"
+                control={control}
+                render={({ field: first }) => (
+                  <ParentPicker
+                    label=""
+                    placeholder=""
+                    split={{
+                      lastName: last.value ?? "",
+                      firstName: first.value ?? "",
+                      onLastNameChange: last.onChange,
+                      onFirstNameChange: first.onChange,
+                      lastLabel: copy.editDialog.parentLastNameLabel,
+                      firstLabel: copy.editDialog.parentFirstNameLabel,
+                      lastPlaceholder: copy.editDialog.parentLastNamePlaceholder,
+                      firstPlaceholder: copy.editDialog.parentFirstNamePlaceholder,
+                    }}
+                    linked={otherParent}
+                    onLink={pickParent}
+                    onUnlink={unpickParent}
+                    hideSuggestions
+                    disabled={isPending || isTutor || relinksParent}
+                  />
+                )}
               />
             )}
           />
@@ -567,44 +703,6 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
               />
             </Field>
 
-            {/* Địa chỉ phụ huynh */}
-            <Field
-              label={copy.editDialog.parentAddressLabel}
-              error={errors.parentAddress?.message}
-            >
-              <Input
-                {...register("parentAddress")}
-                placeholder={copy.editDialog.parentAddressPlaceholder}
-                invalid={!!errors.parentAddress}
-                disabled={isPending || isTutor || relinksParent}
-              />
-            </Field>
-
-            {/* Quận/Huyện phụ huynh */}
-            <Field
-              label={copy.editDialog.parentDistrictLabel}
-              error={errors.parentDistrict?.message}
-            >
-              <Input
-                {...register("parentDistrict")}
-                placeholder={copy.editDialog.parentDistrictPlaceholder}
-                invalid={!!errors.parentDistrict}
-                disabled={isPending || isTutor || relinksParent}
-              />
-            </Field>
-
-            {/* Tỉnh/Thành phố phụ huynh */}
-            <Field
-              label={copy.editDialog.parentProvinceLabel}
-              error={errors.parentProvince?.message}
-            >
-              <Input
-                {...register("parentProvince")}
-                placeholder={copy.editDialog.parentProvincePlaceholder}
-                invalid={!!errors.parentProvince}
-                disabled={isPending || isTutor || relinksParent}
-              />
-            </Field>
           </div>
         </div>
 

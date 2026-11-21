@@ -1,8 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
-
-import { Dialog } from "@/components/ui/dialog-form.ui";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
 import { type Category } from "./categories.data";
 
 type DeleteCategoryDialogProps = {
@@ -19,28 +17,25 @@ export const DeleteCategoryDialog = ({
   onConfirm,
 }: DeleteCategoryDialogProps) => {
   return (
-    <Dialog
-      isOpen={Boolean(category)}
-      icon={AlertTriangle}
-      title="Delete category"
-      subtitle="This action cannot be undone."
-      cancelText="Cancel"
-      onCancel={onClose}
-      submitText={isLoading ? "Deleting…" : "Delete"}
-      submitVariant="destructive"
-      onSubmit={() => category && onConfirm(category)}
+    <ConfirmDialog
+      open={Boolean(category)}
+      onClose={onClose}
+      onConfirm={() => category && onConfirm(category)}
       loading={isLoading}
-    >
-      <div className="flex items-start gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive">
-          <AlertTriangle className="size-4" />
-        </span>
-        <p className="text-sm text-muted-foreground">
-          Are you sure you want to delete{" "}
-          <span className="font-medium text-foreground">{category?.name}</span>?
-          Transactions using this category will need to be reassigned.
-        </p>
-      </div>
-    </Dialog>
+      title="Delete category"
+      confirmLabel={isLoading ? "Deleting…" : "Delete"}
+      cancelLabel="Cancel"
+      description={
+        <>
+          <p>
+            Are you sure you want to delete{" "}
+            <span className="font-medium text-foreground">{category?.name}</span>?
+          </p>
+          <p className="mt-1">
+            This action cannot be undone. Transactions using this category will need to be reassigned.
+          </p>
+        </>
+      }
+    />
   );
 };

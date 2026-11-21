@@ -15,7 +15,5 @@ export * from "./schedule.types";
 export * from "./lesson.types";
 export * from "./attendance.types";
 export * from "./parent.types";
-export * from "./flow-request.types";
 export * from "./flow-diagram.types";
-export * from "./log.types";
-export * from "./test-scenario.types";
+export * from "./jev.types";

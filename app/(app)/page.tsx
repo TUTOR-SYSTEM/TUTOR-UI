@@ -32,6 +32,7 @@ import type {
   DashboardStats,
 } from "@/types";
 import { safeRedirectHref } from "@/lib/notification-redirect";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.ui";
 
 /* ─── helpers ─── */
 function getGreeting(labels: DashboardDictionary["greeting"]) {
@@ -280,77 +281,77 @@ export default function HomePage() {
               {copy.schedule.viewWeek}
             </Link>
           </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#EEF3F1] text-xs text-[#9AAEA9]">
-                <th className="px-5 py-2.5 text-left font-medium">
+          <Table className="w-full text-sm">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-5">
                   {copy.schedule.colTime}
-                </th>
-                <th className="px-3 py-2.5 text-left font-medium">
+                </TableHead>
+                <TableHead className="px-3">
                   {copy.schedule.colClassSubject}
-                </th>
-                <th className="px-3 py-2.5 text-left font-medium">
+                </TableHead>
+                <TableHead className="px-3">
                   {copy.schedule.colLocation}
-                </th>
-                <th className="px-5 py-2.5 text-left font-medium">
+                </TableHead>
+                <TableHead className="px-5">
                   {copy.schedule.colFormat}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {isLoading ? (
-                <tr>
-                  <td
+                <TableRow>
+                  <TableCell
                     colSpan={4}
                     className="px-5 py-8 text-center text-[#9AAEA9]"
                   >
                     {copy.schedule.loading}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : schedule.length === 0 ? (
-                <tr>
-                  <td
+                <TableRow>
+                  <TableCell
                     colSpan={4}
                     className="px-5 py-8 text-center text-[#9AAEA9]"
                   >
                     {copy.schedule.emptyToday}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 schedule.map((row: DashboardScheduleItem) => (
-                  <tr
+                  <TableRow
                     key={row.id}
                     className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9] transition-colors"
                   >
-                    <td className="px-5 py-3 font-medium text-[#16302b]">
+                    <TableCell className="px-5 py-3 font-medium text-[#16302b]">
                       {formatTime(row.startAt)}
-                    </td>
-                    <td className="px-3 py-3">
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
                       <p className="font-semibold text-[#16302b]">
                         {row.className}
                       </p>
                       <p className="text-xs text-[#8AA09B]">
                         {row.title ?? row.subject}
                       </p>
-                    </td>
-                    <td className="px-3 py-3 text-[#16302b]">
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-[#16302b]">
                       {row.location ??
                         (row.format === "ONLINE"
                           ? copy.schedule.onlineLocationFallback
                           : "—")}
-                    </td>
-                    <td className="px-5 py-3">
+                    </TableCell>
+                    <TableCell className="px-5 py-3">
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${modeBadge(row.format)}`}
                       >
                         {formatMode(row.format, copy.schedule)}
                       </span>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {/* Notifications panel */}

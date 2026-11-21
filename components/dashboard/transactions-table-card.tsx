@@ -1,6 +1,7 @@
 "use client";
 
 import { useDashboardCopy } from "@/hooks/useDashboardCopy.hook";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.ui";
 
 const MOCK_ROWS = [
   {
@@ -56,42 +57,42 @@ export const TransactionsTableCard = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
-            <tr>
-              <th className="px-5 py-3 text-left font-medium">
+        <Table className="w-full text-sm">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="px-5">
                 {copy.transactionsTable.colTransaction}
-              </th>
-              <th className="px-4 py-3 text-left font-medium">
+              </TableHead>
+              <TableHead className="px-4">
                 {copy.transactionsTable.colCategory}
-              </th>
-              <th className="px-4 py-3 text-left font-medium">
+              </TableHead>
+              <TableHead className="px-4">
                 {copy.transactionsTable.colAccount}
-              </th>
-              <th className="px-4 py-3 text-left font-medium">
+              </TableHead>
+              <TableHead className="px-4">
                 {copy.transactionsTable.colType}
-              </th>
-              <th className="px-4 py-3 text-right font-medium">
+              </TableHead>
+              <TableHead className="px-4">
                 {copy.transactionsTable.colAmount}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {MOCK_ROWS.map((row) => (
-              <tr
+              <TableRow
                 key={row.id}
                 className="border-b last:border-0 hover:bg-muted/30"
               >
-                <td className="px-5 py-3 font-medium">
+                <TableCell className="px-5 py-3 font-medium">
                   {rows[row.transactionKey]}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
+                </TableCell>
+                <TableCell className="px-4 py-3 text-muted-foreground">
                   {rows[row.categoryKey]}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
+                </TableCell>
+                <TableCell className="px-4 py-3 text-muted-foreground">
                   {rows[row.accountKey]}
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell className="px-4 py-3">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       row.type === "INCOME"
@@ -103,18 +104,18 @@ export const TransactionsTableCard = () => {
                       ? copy.transactionsTable.typeIncome
                       : copy.transactionsTable.typeExpense}
                   </span>
-                </td>
-                <td
-                  className={`px-4 py-3 text-right font-semibold tabular-nums ${
+                </TableCell>
+                <TableCell
+                  className={`px-4 py-3 font-semibold tabular-nums ${
                     row.type === "INCOME" ? "text-positive" : "text-negative"
                   }`}
                 >
                   {row.amount}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </section>
   );

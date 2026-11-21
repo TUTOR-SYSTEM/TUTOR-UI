@@ -1,0 +1,5 @@
+error: Cannot find module '@/lib/jev/triage' from '/tmp/claude-1000/-home-haidangphan-Documents-tutor-ui/5ee2a603-8103-4d0e-ac08-6f7170b72ae1/scratchpad/run.ts'
+
+note: invalid dependency name "@/lib"
+
+Bun v1.4.4 (Linux x64)

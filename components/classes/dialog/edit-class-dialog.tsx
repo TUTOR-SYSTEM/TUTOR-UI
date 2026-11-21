@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen,
-  Check,
   Laptop,
   Loader2,
   MapPin,
@@ -20,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { SUBJECT_OPTIONS as SUBJECT_NAMES } from "@/lib/subjects";
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
+import { DatePicker } from "@/components/ui/date-picker.ui";
 import { Label } from "@/components/ui/label.ui";
 import { Select } from "@/components/ui/select.ui";
 import { useGet, usePut } from "@/lib/axios/query";
@@ -28,6 +28,11 @@ import { getErrorMessage } from "@/lib/axios";
 import { useClassFormCopy } from "@/hooks/useClassFormCopy.hook";
 import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
+import { useCurrentUserId } from "@/hooks/useCurrentUserId";
+import { useAllClassesCopy } from "@/hooks/useAllClassesCopy.hook";
+import { useAdminTutors } from "@/hooks/useAdminUsers.hook";
+import { useAuthStore } from "@/zustand/auth.store";
+import { currentPersonName } from "@/lib/format/person-name";
 import { FieldError } from "../components/field-error";
 import type {
   ApiStudent,
@@ -38,11 +43,16 @@ import type {
   FormState,
 } from "@/types";
 import { CURRICULUM_QUERY_KEY } from "@/lib/services/curriculum.service";
+import { formatThousands, stripThousands } from "@/lib/format/money";
+import {
+  StudentSearchDropdown,
+  studentDisplayName,
+} from "@/components/classes/components/student-search-dropdown";
+import { invalidateClassRelatedQueries } from "@/lib/services/class.service";
 
 /* ─── Constants (match create-class-modal) ─── */
 
 const BRAND = "#0E9F8E";
-
 
 /* ─── Helpers ─── */
 
@@ -64,6 +74,7 @@ function getInitialState(item: ClassesProps["classItem"]): FormState {
   const loc = item?.location ?? "";
   return {
     name: item?.name ?? "",
+    tutorId: item?.tutorId ?? "",
     subject: item?.subject ?? "",
     feePerSession: item?.feePerSession ?? 0,
     description: item?.description ?? "",
@@ -83,7 +94,41 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
   const copy = useClassFormCopy();
   const commonCopy = useCommonCopy();
   const role = useCurrentUserRole();
+  const currentUserId = useCurrentUserId();
+  const authUser = useAuthStore((s) => s.user);
+  const allClassesCopy = useAllClassesCopy();
   const open = classItem !== null;
+
+  // Gia sư quản lý: ADMIN xem được danh sách tutor; TUTOR chỉ thấy lớp của mình nên
+  // khi thiếu tutorId thì chính là người đang đăng nhập.
+  const managingTutorId =
+    classItem?.tutorId ?? (role === "TUTOR" ? currentUserId : null);
+  const { data: tutorsRaw } = useAdminTutors(
+    { page: 1, limit: 100 },
+    open && role === "ADMIN",
+  );
+  const managingTutorName = useMemo(() => {
+    if (!managingTutorId) return "";
+    if (managingTutorId === currentUserId && authUser) {
+      return (
+        currentPersonName(authUser.firstName, authUser.lastName) ||
+        authUser.email ||
+        ""
+      );
+    }
+    const tutor = tutorsRaw?.tutors?.find((t) => t.id === managingTutorId);
+    return tutor
+      ? currentPersonName(tutor.firstName, tutor.lastName) || tutor.email || ""
+      : "";
+  }, [managingTutorId, currentUserId, authUser, tutorsRaw]);
+  const tutorOptions = useMemo(
+    () =>
+      (tutorsRaw?.tutors ?? []).map((t) => ({
+        label: currentPersonName(t.firstName, t.lastName) || t.email || "",
+        value: t.id,
+      })),
+    [tutorsRaw],
+  );
   const queryClient = useQueryClient();
   const prevClassItemRef = useRef(classItem);
 
@@ -95,7 +140,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
 
   const [form, setForm] = useState<FormState>(getInitialState(classItem));
   const [feeInput, setFeeInput] = useState(
-    classItem ? String(classItem.feePerSession) : "0",
+    classItem ? formatThousands(String(classItem.feePerSession)) : "",
   );
   const [curriculumSearch, setCurriculumSearch] = useState("");
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
@@ -103,14 +148,17 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
   const subjectOptions = useMemo(() => {
     const base = SUBJECT_NAMES.map((s) => ({ label: s, value: s }));
     const current = form.subject;
-    return current && !SUBJECT_NAMES.includes(current as (typeof SUBJECT_NAMES)[number])
+    return current &&
+      !SUBJECT_NAMES.includes(current as (typeof SUBJECT_NAMES)[number])
       ? [{ label: current, value: current }, ...base]
       : base;
   }, [form.subject]);
   const [studentIdsOverride, setStudentIdsOverride] = useState<string[] | null>(
     null,
   );
-  const [teachingType, setTeachingType] = useState<"1-1" | "group">("group");
+  const [teachingType, setTeachingType] = useState<"1-1" | "group">(
+    classItem?.maxStudents === 1 ? "1-1" : "group",
+  );
   const [studentSearch, setStudentSearch] = useState("");
 
   /* sync when classItem changes */
@@ -118,11 +166,11 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
     if (classItem && classItem !== prevClassItemRef.current) {
       const init = getInitialState(classItem);
       setForm(init);
-      setFeeInput(String(classItem.feePerSession));
+      setFeeInput(formatThousands(String(classItem.feePerSession)));
       setCurriculumSearch("");
       setStudentSearch("");
       setStudentIdsOverride(null);
-      setTeachingType("group");
+      setTeachingType(classItem.maxStudents === 1 ? "1-1" : "group");
       setErrors({});
     }
     prevClassItemRef.current = classItem;
@@ -216,6 +264,15 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
     [canListAllStudents, studentsPayload, currentStudentsData],
   );
 
+  /* tên học sinh theo id (cho chip đã chọn) */
+  const studentNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const s of [...(currentStudentsData ?? []), ...allStudents]) {
+      map[s.id] = studentDisplayName(s, copy.common.studentFallbackName);
+    }
+    return map;
+  }, [currentStudentsData, allStudents, copy.common.studentFallbackName]);
+
   /* derive selected IDs — use override when user has made changes, else fall back to fetched */
   const selectedStudentIds =
     studentIdsOverride ?? currentStudentsData?.map((s) => s.id) ?? [];
@@ -226,7 +283,8 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
     if (value === "1-1") {
       const current =
         studentIdsOverride ?? currentStudentsData?.map((s) => s.id) ?? [];
-      setStudentIdsOverride(current.slice(0, 1));
+      // Từ nhóm (2+ hs) sang 1 kèm 1: xóa hết lựa chọn cũ để chọn lại.
+      setStudentIdsOverride(current.length > 1 ? [] : current);
     }
   };
 
@@ -246,7 +304,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
     Record<string, unknown>
   >((payload) => `/classes/${payload.id}`, {
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["classes", "list"] });
+      void invalidateClassRelatedQueries(queryClient);
       toast.success(copy.edit.toastSuccess);
       onClose();
     },
@@ -274,21 +332,30 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
     const location = (
       form.format === "ONLINE" ? form.onlineLocation : form.offlineLocation
     ).trim();
+    // Roster chỉ gửi khi đã tải xong: nếu chưa có danh sách, gửi `studentIds: []` sẽ xoá hết học sinh.
+    const rosterReady = studentIdsOverride !== null || currentStudentsData !== undefined;
     mutate({
       id: classItem.id,
       name: form.name.trim(),
       subject: form.subject,
       tuition: form.feePerSession,
-      description: form.description.trim() || undefined,
+      // `null` xoá giá trị cũ; `undefined` sẽ bị BE coi là giữ nguyên.
+      description: form.description.trim() || null,
       status: form.status,
       format: form.format,
-      location: location || undefined,
-      curriculumId: form.curriculumId || undefined,
+      location: location || null,
+      maxStudents: teachingType === "1-1" ? 1 : 10,
+      // Admin không quản lý chương trình học ở popup này — không gửi để giữ nguyên giá trị hiện có.
+      ...(role === "ADMIN"
+        ? form.tutorId && form.tutorId !== classItem.tutorId
+          ? { tutorId: form.tutorId }
+          : {}
+        : { curriculumId: form.curriculumId || null }),
       startTime: form.startDate
         ? new Date(form.startDate).toISOString()
         : undefined,
       endTime: form.endDate ? new Date(form.endDate).toISOString() : undefined,
-      studentIds: selectedStudentIds,
+      ...(rosterReady ? { studentIds: selectedStudentIds } : {}),
     });
   };
 
@@ -309,6 +376,25 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
       loading={loading}
     >
       <div className="space-y-6">
+        {/* Gia sư quản lý: ADMIN đổi được; TUTOR chỉ xem */}
+        <div className="space-y-1.5">
+          <Label>{allClassesCopy.addDialog.tutorLabel}</Label>
+          {role === "ADMIN" ? (
+            <Select
+              options={tutorOptions}
+              value={form.tutorId}
+              onValueChange={(v) => update("tutorId", v)}
+              placeholder={managingTutorName || allClassesCopy.unknownTutor}
+            />
+          ) : (
+            <Input
+              value={managingTutorName || allClassesCopy.unknownTutor}
+              disabled
+              readOnly
+            />
+          )}
+        </div>
+
         {/* Name + Subject */}
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div className="space-y-1.5">
@@ -436,118 +522,123 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
           </div>
         </div>
 
-        {/* Curriculum */}
-        <div className="space-y-2">
-          <Label>{copy.common.curriculumLabel}</Label>
-          <p className="text-xs text-[#9AAEA9]">{copy.common.curriculumHint}</p>
+        {/* Curriculum (hidden for ADMIN) */}
+        {role !== "ADMIN" && (
+          <div className="space-y-2">
+            <Label>{copy.common.curriculumLabel}</Label>
+            <p className="text-xs text-[#9AAEA9]">
+              {copy.common.curriculumHint}
+            </p>
 
-          {selectedFramework ? (
-            <div className="flex items-center gap-3 rounded-xl border border-[#0E9F8E] bg-[#E4F6EF] px-4 py-3">
-              <span
-                className="flex size-9 shrink-0 items-center justify-center rounded-full text-white"
-                style={{ background: BRAND }}
-              >
-                <BookOpen className="size-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-[#16302b]">
-                  {selectedFramework.subject}
-                  {selectedFramework.grade
-                    ? copy.common.curriculumGradeSuffix(selectedFramework.grade)
-                    : ""}
+            {selectedFramework ? (
+              <div className="flex items-center gap-3 rounded-xl border border-[#0E9F8E] bg-[#E4F6EF] px-4 py-3">
+                <span
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full text-white"
+                  style={{ background: BRAND }}
+                >
+                  <BookOpen className="size-4" />
                 </span>
-                <span className="block truncate text-xs text-[#9AAEA9]">
-                  {copy.common.curriculumCodeLine(
-                    selectedFramework.code,
-                    selectedFramework.courseTime,
-                  )}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-[#16302b]">
+                    {selectedFramework.subject}
+                    {selectedFramework.grade
+                      ? copy.common.curriculumGradeSuffix(
+                          selectedFramework.grade,
+                        )
+                      : ""}
+                  </span>
+                  <span className="block truncate text-xs text-[#9AAEA9]">
+                    {copy.common.curriculumCodeLine(
+                      selectedFramework.code,
+                      selectedFramework.courseTime,
+                    )}
+                  </span>
                 </span>
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  update("curriculumId", "");
-                  setCurriculumSearch("");
-                }}
-                aria-label={copy.common.curriculumDeselectAriaLabel}
-                className="flex size-7 shrink-0 items-center justify-center rounded-full text-[#9AAEA9] transition-colors hover:bg-white hover:text-red-500"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9AAEA9]" />
-                <Input
-                  value={curriculumSearch}
-                  onChange={(e) => setCurriculumSearch(e.target.value)}
-                  placeholder={copy.common.curriculumSearchPlaceholder}
-                  className="pl-10"
-                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    update("curriculumId", "");
+                    setCurriculumSearch("");
+                  }}
+                  aria-label={copy.common.curriculumDeselectAriaLabel}
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-[#9AAEA9] transition-colors hover:bg-white hover:text-red-500"
+                >
+                  <X className="size-4" />
+                </button>
               </div>
-
-              {curriculumSearch.trim() && (
-                <div className="scrollbar-thin max-h-50 overflow-y-auto rounded-xl border border-[#E7EEEC]">
-                  {frameworksLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="size-5 animate-spin text-[#9AAEA9]" />
-                    </div>
-                  ) : filteredFrameworks.length === 0 ? (
-                    <div className="py-6 text-center text-sm text-[#9AAEA9]">
-                      {copy.common.curriculumNoResults}
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-[#E7EEEC]">
-                      {filteredFrameworks.map((fw) => (
-                        <button
-                          key={fw.id}
-                          type="button"
-                          onClick={() => {
-                            update("curriculumId", fw.id);
-                            setCurriculumSearch("");
-                          }}
-                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#F3F7F5]"
-                        >
-                          <span
-                            className="flex size-9 shrink-0 items-center justify-center rounded-full text-white"
-                            style={{ background: "#9AAEA9" }}
-                          >
-                            <BookOpen className="size-4" />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-medium text-[#16302b]">
-                              {fw.subject}
-                              {fw.grade
-                                ? copy.common.curriculumGradeSuffix(fw.grade)
-                                : ""}
-                            </span>
-                            <span className="block truncate text-xs text-[#9AAEA9]">
-                              {copy.common.curriculumCodeLine(
-                                fw.code,
-                                fw.courseTime,
-                              )}
-                            </span>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+            ) : (
+              <>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9AAEA9]" />
+                  <Input
+                    value={curriculumSearch}
+                    onChange={(e) => setCurriculumSearch(e.target.value)}
+                    placeholder={copy.common.curriculumSearchPlaceholder}
+                    className="pl-10"
+                  />
                 </div>
-              )}
-            </>
-          )}
-        </div>
+
+                {curriculumSearch.trim() && (
+                  <div className="scrollbar-thin max-h-50 overflow-y-auto rounded-xl border border-[#E7EEEC]">
+                    {frameworksLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="size-5 animate-spin text-[#9AAEA9]" />
+                      </div>
+                    ) : filteredFrameworks.length === 0 ? (
+                      <div className="py-6 text-center text-sm text-[#9AAEA9]">
+                        {copy.common.curriculumNoResults}
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-[#E7EEEC]">
+                        {filteredFrameworks.map((fw) => (
+                          <button
+                            key={fw.id}
+                            type="button"
+                            onClick={() => {
+                              update("curriculumId", fw.id);
+                              setCurriculumSearch("");
+                            }}
+                            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#F3F7F5]"
+                          >
+                            <span
+                              className="flex size-9 shrink-0 items-center justify-center rounded-full text-white"
+                              style={{ background: "#9AAEA9" }}
+                            >
+                              <BookOpen className="size-4" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-medium text-[#16302b]">
+                                {fw.subject}
+                                {fw.grade
+                                  ? copy.common.curriculumGradeSuffix(fw.grade)
+                                  : ""}
+                              </span>
+                              <span className="block truncate text-xs text-[#9AAEA9]">
+                                {copy.common.curriculumCodeLine(
+                                  fw.code,
+                                  fw.courseTime,
+                                )}
+                              </span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
         {/* Start + End date */}
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label>{copy.common.startDateLabel}</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={form.startDate}
-              onChange={(e) => {
-                update("startDate", e.target.value);
+              onValueChange={(v) => {
+                update("startDate", v);
                 setErrors((p) => ({ ...p, startDate: "" }));
               }}
               invalid={!!errors.startDate}
@@ -556,11 +647,10 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
           </div>
           <div className="space-y-1.5">
             <Label>{copy.common.endDateLabel}</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={form.endDate}
-              onChange={(e) => {
-                update("endDate", e.target.value);
+              onValueChange={(v) => {
+                update("endDate", v);
                 setErrors((p) => ({ ...p, endDate: "" }));
               }}
               invalid={!!errors.endDate}
@@ -579,9 +669,10 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
               <Input
                 type="text"
                 value={feeInput}
+                inputMode="numeric"
                 onChange={(e) => {
-                  const raw = e.target.value.replace(/\D/g, "");
-                  setFeeInput(raw);
+                  const raw = stripThousands(e.target.value);
+                  setFeeInput(formatThousands(raw));
                   update("feePerSession", raw ? Number(raw) : 0);
                   setErrors((p) => ({ ...p, feePerSession: "" }));
                 }}
@@ -677,82 +768,21 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
             ))}
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9AAEA9]" />
-            <Input
-              value={studentSearch}
-              onChange={(e) => setStudentSearch(e.target.value)}
-              placeholder={copy.common.studentsSearchPlaceholder}
-              className="pl-10"
-            />
-          </div>
-
-          <div className="scrollbar-thin max-h-70 overflow-y-auto rounded-xl border border-[#E7EEEC]">
-            {studentsLoading ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 className="size-5 animate-spin text-[#9AAEA9]" />
-              </div>
-            ) : allStudents.length === 0 ? (
-              <div className="py-10 text-center text-sm text-[#9AAEA9]">
-                {copy.common.studentsNoResults}
-              </div>
-            ) : (
-              <div className="divide-y divide-[#E7EEEC]">
-                {allStudents.map((s: ApiStudent) => {
-                  const selected = selectedStudentIds.includes(s.id);
-                  const fullName =
-                    [s.lastName, s.firstName].filter(Boolean).join(" ") ||
-                    s.username ||
-                    copy.common.studentFallbackName;
-                  const disabled =
-                    !selected && selectedStudentIds.length >= maxStudents;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => toggleStudent(s.id)}
-                      disabled={disabled}
-                      className={cn(
-                        "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
-                        selected ? "bg-[#E4F6EF]" : "hover:bg-[#F3F7F5]",
-                        disabled && "cursor-not-allowed opacity-40",
-                      )}
-                    >
-                      <span
-                        className="flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                        style={{ background: selected ? BRAND : "#9AAEA9" }}
-                      >
-                        {fullName.slice(0, 1).toUpperCase()}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-[#16302b]">
-                          {fullName}
-                        </span>
-                        {s.phone && (
-                          <span className="block truncate text-xs text-[#9AAEA9]">
-                            {s.phone}
-                          </span>
-                        )}
-                      </span>
-                      <span
-                        className={cn(
-                          "flex size-5 shrink-0 items-center justify-center border-2 transition-colors",
-                          teachingType === "group"
-                            ? "rounded-md"
-                            : "rounded-full",
-                          selected
-                            ? "border-[#0E9F8E] bg-[#0E9F8E]"
-                            : "border-[#E7EEEC] bg-white",
-                        )}
-                      >
-                        {selected && <Check className="size-3 text-white" />}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <StudentSearchDropdown
+            search={studentSearch}
+            onSearchChange={setStudentSearch}
+            students={allStudents}
+            loading={studentsLoading}
+            selectedIds={selectedStudentIds}
+            names={studentNames}
+            max={maxStudents}
+            multi={teachingType === "group"}
+            onToggle={(s) => toggleStudent(s.id)}
+            onRemove={(id) => toggleStudent(id)}
+            placeholder={copy.common.studentsSearchPlaceholder}
+            noResultsText={copy.common.studentsNoResults}
+            fallbackName={copy.common.studentFallbackName}
+          />
         </div>
       </div>
     </Dialog>

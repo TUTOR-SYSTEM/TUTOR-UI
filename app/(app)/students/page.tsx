@@ -76,15 +76,24 @@ function mapApiToStudent(api: ApiStudent, language: Language): Student {
     : "";
   const prefix = "T";
   const classes = api.classes ?? [];
+  const tutorName = api.tutor
+    ? formatPersonName(api.tutor.firstName, api.tutor.lastName, language) ||
+      api.tutor.userCode ||
+      ""
+    : "";
   return {
     id: api.id,
+    tutorId: api.tutorId ?? null,
     parentId: api.parentId ?? null,
     initials: initials(fullName),
     avatarColor: SUBJECT_COLORS[prefix] ?? "#0E9F8E",
     name: fullName,
+    firstName: api.firstName?.trim() ?? "",
+    lastName: api.lastName?.trim() ?? "",
     subject: "",
     classId: classes[0]?.id ?? null,
     classCode: classes.map((c) => c.code).join(", "),
+    tutorName,
     studentId: api.userCode ?? "",
     phone: api.phone ?? "",
     gender: api.gender ?? null,
@@ -94,6 +103,8 @@ function mapApiToStudent(api: ApiStudent, language: Language): Student {
     district: api.district ?? null,
     province: api.province ?? null,
     parentName,
+    parentFirstName: api.parent?.firstName?.trim() ?? "",
+    parentLastName: api.parent?.lastName?.trim() ?? "",
     parentPhone: api.parent?.phone ?? "",
     parentEmail: api.parent?.email ?? null,
     parentRelationship: api.parent?.relationship ?? null,
@@ -206,7 +217,10 @@ export default function StudentsPage() {
     isActive: filterActive === "" ? undefined : filterActive === "true",
   };
 
-  const studentActions = useStudentActions({ list: queryParams });
+  const studentActions = useStudentActions({
+    list: queryParams,
+    generateCodeOptions: { enabled: false },
+  });
   const {
     data: apiPayload,
     isPending,
@@ -330,23 +344,28 @@ export default function StudentsPage() {
 
       {/* ── Filter tabs ── */}
       <div className="flex items-center justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          {classTabs.map((tab) => (
-            <Button
-              key={tab.value}
-              type="button"
-              variant={activeTab === tab.value ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                setActiveTab(tab.value);
-                setPage(1);
-              }}
-              className="rounded-full"
-            >
-              {tab.label}
-            </Button>
-          ))}
-        </div>
+        {/* Tab lớp chỉ cho gia sư; admin lọc lớp qua nút "Bộ lọc". */}
+        {isAdmin ? (
+          <div />
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            {classTabs.map((tab) => (
+              <Button
+                key={tab.value}
+                type="button"
+                variant={activeTab === tab.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setActiveTab(tab.value);
+                  setPage(1);
+                }}
+                className="rounded-full"
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+        )}
         <Button
           type="button"
           variant="outline"
@@ -372,6 +391,7 @@ export default function StudentsPage() {
                   copy.list.tableHeaders.stt,
                   copy.list.tableHeaders.name,
                   copy.list.tableHeaders.classCode,
+                  copy.list.tableHeaders.tutor,
                   copy.list.tableHeaders.studentCode,
                   copy.list.tableHeaders.studentPhone,
                   copy.list.tableHeaders.parentName,
@@ -380,7 +400,7 @@ export default function StudentsPage() {
                 ].map((col, i) => (
                   <TableHead
                     key={col}
-                    className={`${i === 7 ? "text-right" : ""} ${i === 0 ? "w-14" : ""}`}
+                    className={`${i === 0 ? "w-14" : ""} ${col === copy.list.tableHeaders.actions ? "text-center" : ""}`}
                   >
                     {col}
                   </TableHead>
@@ -430,6 +450,11 @@ export default function StudentsPage() {
                     )}
                   </TableCell>
 
+                  {/* Tutor */}
+                  <TableCell className="text-foreground">
+                    {s.tutorName || "—"}
+                  </TableCell>
+
                   {/* Student ID */}
                   <TableCell>
                     <span className="rounded-md bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground">
@@ -450,8 +475,8 @@ export default function StudentsPage() {
 
                   {/* Actions: password (ADMIN + TUTOR owner); edit/delete (ADMIN only) */}
                   {canManage && (
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1.5">
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1.5">
                         <Button
                           type="button"
                           variant="ghost"

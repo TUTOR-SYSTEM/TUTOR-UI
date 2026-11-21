@@ -20,6 +20,7 @@ export type AppShellDictionary = {
     grades: string;
     sessions: string;
     tutors: string;
+    allClasses: string;
   };
   nav: {
     overview: string;
@@ -30,6 +31,7 @@ export type AppShellDictionary = {
     curriculum: string;
     grades: string;
     tutors: string;
+    allClasses: string;
     students: string;
     fees: string;
     discussions: string;
@@ -37,9 +39,6 @@ export type AppShellDictionary = {
     users: string;
     reports: string;
     settings: string;
-    flowRequests: string;
-    logger: string;
-    testMonitor: string;
     curriculumOfChild: string;
     gradesOfChild: string;
   };
@@ -91,6 +90,7 @@ const vi: AppShellDictionary = {
     grades: "Điểm số",
     sessions: "Buổi học",
     tutors: "Gia sư",
+    allClasses: "Tất cả lớp học",
   },
   nav: {
     overview: "Tổng quan",
@@ -101,6 +101,7 @@ const vi: AppShellDictionary = {
     curriculum: "Chương trình",
     grades: "Điểm số",
     tutors: "Gia sư",
+    allClasses: "Tất cả lớp học",
     students: "Học sinh",
     fees: "Học phí",
     discussions: "Tin nhắn",
@@ -108,9 +109,6 @@ const vi: AppShellDictionary = {
     users: "Người dùng",
     reports: "Báo cáo học tập",
     settings: "Cài đặt",
-    flowRequests: "Flow Requests",
-    logger: "Nhật ký request",
-    testMonitor: "Kiểm thử endpoint",
     curriculumOfChild: "Chương trình của con",
     gradesOfChild: "Điểm số của con",
   },
@@ -162,6 +160,7 @@ const en: AppShellDictionary = {
     grades: "Grades",
     sessions: "Sessions",
     tutors: "Tutors",
+    allClasses: "All classes",
   },
   nav: {
     overview: "Overview",
@@ -172,6 +171,7 @@ const en: AppShellDictionary = {
     curriculum: "Curriculum",
     grades: "Grades",
     tutors: "Tutors",
+    allClasses: "All classes",
     students: "Students",
     fees: "Tuition",
     discussions: "Messages",
@@ -179,9 +179,6 @@ const en: AppShellDictionary = {
     users: "Users",
     reports: "Progress Reports",
     settings: "Settings",
-    flowRequests: "Flow Requests",
-    logger: "Request logs",
-    testMonitor: "Endpoint testing",
     curriculumOfChild: "Child's Curriculum",
     gradesOfChild: "Child's Grades",
   },

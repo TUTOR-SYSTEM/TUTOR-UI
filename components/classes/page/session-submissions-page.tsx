@@ -241,16 +241,14 @@ export const SessionSubmissionsPage = ({
           </div>
         ) : (
           <Table className="min-w-[720px]">
-            <TableHeader className="bg-muted/30 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <TableRow className="h-10 hover:bg-transparent">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
                 <TableHead className="px-5">Học sinh</TableHead>
-                <TableHead className="w-28 px-4">Mã HS</TableHead>
-                <TableHead className="w-40 px-4">Trạng thái</TableHead>
-                <TableHead className="w-40 px-4">Ngày nộp</TableHead>
-                <TableHead className="w-20 px-4 text-center">Điểm</TableHead>
-                <TableHead className="w-36 px-4 text-center">
-                  Thao tác
-                </TableHead>
+                <TableHead className="w-28">Mã HS</TableHead>
+                <TableHead className="w-40 text-center">Trạng thái</TableHead>
+                <TableHead className="w-40">Ngày nộp</TableHead>
+                <TableHead className="w-20">Điểm</TableHead>
+                <TableHead className="w-36 text-center">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -289,7 +287,7 @@ export const SessionSubmissionsPage = ({
                     <TableCell className="px-4 text-muted-foreground">
                       {student.userCode || "—"}
                     </TableCell>
-                    <TableCell className="px-4">
+                    <TableCell className="px-4 text-center">
                       <StatusBadge
                         label={statusMeta.label}
                         className={statusMeta.className}
@@ -298,7 +296,7 @@ export const SessionSubmissionsPage = ({
                     <TableCell className="px-4 text-muted-foreground">
                       {submission ? fmtDateTime(submission.updatedAt) : "—"}
                     </TableCell>
-                    <TableCell className="px-4 text-center font-semibold">
+                    <TableCell className="px-4 font-semibold">
                       {submission?.score ?? "—"}
                     </TableCell>
                     <TableCell className="px-4 text-center">

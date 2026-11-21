@@ -1,5 +1,6 @@
 "use client";
 
+import { useSettingsCopy } from "@/hooks/useSettingsCopy.hook";
 import { Button } from "@/components/ui/button.ui";
 import { Input } from "@/components/ui/input.ui";
 import { useState } from "react";
@@ -18,6 +19,7 @@ export type BankInfoState = {
 
 
 export function FeesPanel() {
+  const { fees: copy } = useSettingsCopy();
   const [bank, setBank] = useState<BankInfoState>({
     bankName: "Vietcombank",
     accountHolder: "NGUYEN MINH QUAN",
@@ -36,9 +38,9 @@ export function FeesPanel() {
   const handleCopyAccountNumber = async () => {
     try {
       await navigator.clipboard.writeText(bank.accountNumber.replace(/\s/g, ""));
-      toast.success("Đã sao chép số tài khoản");
+      toast.success(copy.copied);
     } catch {
-      toast.error("Sao chép thất bại");
+      toast.error(copy.copyFailed);
     }
   };
 
@@ -50,12 +52,12 @@ export function FeesPanel() {
         <div className="relative flex items-start justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-white/70">
-              Tài khoản nhận tiền
+              {copy.receivingAccount}
             </p>
             <p className="mt-1 text-lg font-semibold">{bank.bankName}</p>
           </div>
           <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
-            Mặc định
+            {copy.default}
           </span>
         </div>
         <p className="relative mt-6 text-2xl font-semibold tracking-[0.2em]">
@@ -72,28 +74,28 @@ export function FeesPanel() {
       {/* Bank info card */}
       <div className="rounded-lg border border-border-light p-4 shadow-sm">
         <p className="mb-4 text-sm font-semibold text-foreground">
-          Thông tin ngân hàng
+          {copy.bankInfoTitle}
         </p>
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="Ngân hàng">
+          <FormField label={copy.bank}>
             <Input
               value={bank.bankName}
               onChange={(e) => updateBank("bankName", e.target.value)}
             />
           </FormField>
-          <FormField label="Chủ tài khoản">
+          <FormField label={copy.holder}>
             <Input
               value={bank.accountHolder}
               onChange={(e) => updateBank("accountHolder", e.target.value)}
             />
           </FormField>
-          <FormField label="Số tài khoản">
+          <FormField label={copy.accountNumber}>
             <Input
               value={bank.accountNumber}
               onChange={(e) => updateBank("accountNumber", e.target.value)}
             />
           </FormField>
-          <FormField label="Chi nhánh">
+          <FormField label={copy.branch}>
             <Input
               value={bank.branch}
               onChange={(e) => updateBank("branch", e.target.value)}
@@ -106,15 +108,14 @@ export function FeesPanel() {
       <div className="rounded-lg border border-border-light p-4 shadow-sm">
         <div className="mb-1 flex items-center gap-2">
           <p className="text-sm font-semibold text-foreground">
-            Mã QR nhận học phí
+            {copy.qrTitle}
           </p>
           <span className="rounded-full bg-primary-light px-2 py-0.5 text-[11px] font-semibold text-primary">
-            Tự động tạo
+            {copy.qrAuto}
           </span>
         </div>
         <p className="mb-4 text-xs text-muted-foreground">
-          Mã được tạo từ thông tin ngân hàng ở trên. Phụ huynh quét để chuyển
-          học phí trực tiếp vào tài khoản của bạn.
+          {copy.qrDesc}
         </p>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="w-full max-w-[180px] shrink-0 rounded-xl border border-border-light p-3 text-center">
@@ -136,19 +137,19 @@ export function FeesPanel() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-col divide-y divide-border-light">
               <div className="flex items-center justify-between py-2 text-sm">
-                <span className="text-muted-foreground">Ngân hàng</span>
+                <span className="text-muted-foreground">{copy.bank}</span>
                 <span className="font-medium text-foreground">
                   {bank.bankName}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 text-sm">
-                <span className="text-muted-foreground">Số tài khoản</span>
+                <span className="text-muted-foreground">{copy.accountNumber}</span>
                 <span className="font-medium text-foreground">
                   {bank.accountNumber}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 text-sm">
-                <span className="text-muted-foreground">Chủ tài khoản</span>
+                <span className="text-muted-foreground">{copy.holder}</span>
                 <span className="font-medium text-foreground">
                   {bank.accountHolder}
                 </span>
@@ -160,7 +161,7 @@ export function FeesPanel() {
                 className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-hover"
               >
                 <Download className="size-3.5" />
-                Tải mã QR
+                {copy.downloadQr}
               </Button>
               <Button variant="ghost"
                 type="button"
@@ -168,7 +169,7 @@ export function FeesPanel() {
                 className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
               >
                 <Copy className="size-3.5" />
-                Sao chép số TK
+                {copy.copyAccount}
               </Button>
             </div>
           </div>
@@ -178,14 +179,14 @@ export function FeesPanel() {
       <div className="rounded-lg border border-border-light p-4 shadow-sm">
         <SwitchRow
           defaultChecked
-          label="Gửi nhắc thanh toán tự động"
-          desc="Nhắn phụ huynh khi học phí đến hạn."
+          label={copy.switches[0].label}
+          desc={copy.switches[0].desc}
         />
       </div>
       <div className="rounded-lg border border-border-light p-4 shadow-sm">
         <SwitchRow
-          label="Gửi biên lai điện tử"
-          desc="Tự động gửi biên lai sau mỗi lần nhận tiền."
+          label={copy.switches[1].label}
+          desc={copy.switches[1].desc}
         />
       </div>
 

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
-import { ClassesPage } from "@/components/classes";
+import { ClassesRoute } from "@/components/classes/classes-route";
 
 export const metadata: Metadata = {
   title: "Classes",
 };
 
 export default function Page() {
-  return <ClassesPage />;
+  return <ClassesRoute />;
 }

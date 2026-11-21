@@ -28,7 +28,9 @@ export function SetStudentPasswordDialog({
 }: SetStudentPasswordDialogProps) {
   const copy = useStudentsCopy();
   const common = useCommonCopy();
-  const { setPassword: setStudentPassword } = useStudentActions();
+  const { setPassword: setStudentPassword } = useStudentActions({
+    generateCodeOptions: { enabled: false },
+  });
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);

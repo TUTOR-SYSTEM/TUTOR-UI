@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
+import { DatePicker } from "@/components/ui/date-picker.ui";
 import { Select } from "@/components/ui/select.ui";
 import { usePut } from "@/lib/axios/query";
 import { getErrorMessage } from "@/lib/axios";
@@ -120,19 +121,11 @@ export const TuitionDetailDialog = ({ tuition, onClose }: Props) => {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label className="text-sm font-medium">Hạn đóng</label>
-          <Input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-          />
+          <DatePicker value={dueDate} onValueChange={setDueDate} />
         </div>
         <div className="space-y-1.5">
           <label className="text-sm font-medium">Ngày đóng</label>
-          <Input
-            type="date"
-            value={paidDate}
-            onChange={(e) => setPaidDate(e.target.value)}
-          />
+          <DatePicker value={paidDate} onValueChange={setPaidDate} />
         </div>
       </div>
 
