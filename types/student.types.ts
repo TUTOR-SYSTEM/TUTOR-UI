@@ -44,10 +44,10 @@ export type FormValuesStudent = {
   gender: GENDER_ENUM;
   studentPhone: string;
   school: string;
-  parentName: string;
-  parentRelationship: string;
-  parentPhone: string;
-  parentEmail: string;
+  /** Họ phụ huynh (bắt buộc ở form tạo; ghép với `parentFirstName` thành `parentName` khi gửi). */
+  parentLastName: string;
+  /** Tên phụ huynh (bắt buộc ở form tạo). */
+  parentFirstName: string;
   /** Mật khẩu đăng nhập cho học sinh (trống = BE sinh ngẫu nhiên). */
   password?: string;
   /** Mật khẩu cho phụ huynh MỚI (bỏ qua khi liên kết phụ huynh có sẵn). */
@@ -83,17 +83,27 @@ export type SetStudentPasswordPayload = { id: string; password: string };
 export type ParentOption = {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   phone: string | null;
   email: string | null;
 };
 
 export type Student = {
   id: string;
+  /** Managing tutor id — null when unassigned. */
+  tutorId: string | null;
   /** Linked PARENT user id — null when the student has no parent account. */
   parentId: string | null;
+  /** Tên gia sư quản lý (hiển thị ở danh sách) — rỗng khi chưa gán. */
+  tutorName?: string;
   initials: string;
   avatarColor: string;
   name: string;
+  /** Tên (BE `firstName`) — phần sau họ với tên Việt. */
+  firstName: string;
+  /** Họ (BE `lastName`). */
+  lastName: string;
   subject: string;
   /** Current class id (enrolled via class_students) — null if not enrolled in any class. */
   classId: string | null;
@@ -107,6 +117,8 @@ export type Student = {
   district: string | null;
   province: string | null;
   parentName: string;
+  parentFirstName: string;
+  parentLastName: string;
   parentPhone: string;
   parentEmail: string | null;
   parentRelationship: string | null;
@@ -156,6 +168,16 @@ export type ApiStudent = {
   gradesId?: string[];
   parentId?: string | null;
   tutorId?: string | null;
+  /** Gia sư quản lý (tóm tắt) — null khi chưa gán. */
+  tutor?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    userCode: string | null;
+    email: string;
+    phone: string | null;
+    avatar: string | null;
+  } | null;
   /** Parent contact info — nested object, not flat parentName/parentPhone/... fields. */
   parent?: ApiStudentParent | null;
   /** Enrolled class(es) — joined from class_students, not the (unused) legacy `classId` column above. */
@@ -177,7 +199,12 @@ export type StudentsApiPayload = {
 
 export type UpdateStudentPayload = {
   id: string;
-  studentName?: string;
+  /** Chỉ ADMIN: chuyển học sinh sang gia sư khác. */
+  tutorId?: string;
+  /** Họ — BE `lastName`. */
+  lastName?: string;
+  /** Tên — BE `firstName`. */
+  firstName?: string;
   studentPhone?: string;
   gender?: "MALE" | "FEMALE" | "OTHER";
   birthday?: string;
@@ -190,6 +217,10 @@ export type UpdateStudentPayload = {
   /** Link an existing PARENT user; sent alone (without parent fields) so the shared parent is untouched. */
   parentId?: string;
   parentName?: string;
+  /** Họ phụ huynh — BE `parentLastName`. */
+  parentLastName?: string;
+  /** Tên phụ huynh — BE `parentFirstName`. */
+  parentFirstName?: string;
   parentPhone?: string;
   parentEmail?: string;
   parentRelationship?: string;

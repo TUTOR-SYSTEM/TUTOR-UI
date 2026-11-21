@@ -20,14 +20,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
+import { DatePicker } from "@/components/ui/date-picker.ui";
 import { Label } from "@/components/ui/label.ui";
 import { Select } from "@/components/ui/select.ui";
 import { getErrorMessage } from "@/lib/axios";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
-import {
-  useClassActions,
-  CLASSES_QUERY_KEY,
-} from "@/lib/services/class.service";
+import { useClassActions, invalidateClassRelatedQueries } from "@/lib/services/class.service";
 import { useCurriculumActions } from "@/lib/services/curriculum.service";
 import { useScheduleActions } from "@/lib/services/schedule.service";
 import { useClassFormCopy } from "@/hooks/useClassFormCopy.hook";
@@ -337,7 +335,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
         });
       }
 
-      queryClient.invalidateQueries({ queryKey: CLASSES_QUERY_KEY });
+      void invalidateClassRelatedQueries(queryClient);
       toast.success(copy.create.toast.createSuccess);
       setShowSuccess(true);
     } catch (err) {
@@ -900,11 +898,10 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label>{copy.common.startDateLabel}</Label>
-                      <Input
-                        type="date"
+                      <DatePicker
                         value={startDate}
-                        onChange={(e) => {
-                          setStartDate(e.target.value);
+                        onValueChange={(v) => {
+                          setStartDate(v);
                           setErrors((p) => ({ ...p, startDate: "" }));
                         }}
                         invalid={!!errors.startDate}
@@ -913,11 +910,10 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                     </div>
                     <div className="space-y-1.5">
                       <Label>{copy.common.endDateLabel}</Label>
-                      <Input
-                        type="date"
+                      <DatePicker
                         value={endDate}
-                        onChange={(e) => {
-                          setEndDate(e.target.value);
+                        onValueChange={(v) => {
+                          setEndDate(v);
                           setErrors((p) => ({ ...p, endDate: "" }));
                         }}
                         invalid={!!errors.endDate}

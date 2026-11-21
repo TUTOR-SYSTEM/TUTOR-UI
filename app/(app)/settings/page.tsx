@@ -1,13 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button.ui";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { apiGet } from "@/lib/axios/query";
-import { unwrapApiData } from "@/lib/axios/api-unwrap";
-import { useAuthStore } from "@/zustand/auth.store";
-import type { ApiUser } from "@/types";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
+import { useSettingsCopy } from "@/hooks/useSettingsCopy.hook";
 import { TABS, TAB_ACCESS, type Tab } from "@/components/settings/settings-tabs";
 import { ProfilePanel } from "@/components/settings/profile-panel";
 import { SecurityPanel } from "@/components/settings/security-panel";
@@ -28,8 +25,8 @@ const PANELS: Record<Tab, React.ReactNode> = {
 
 /* ─── Page ─── */
 export default function SettingsPage() {
-  const setUser = useAuthStore((s) => s.setUser);
   const role = useCurrentUserRole();
+  const copy = useSettingsCopy();
   const [activeTab, setActiveTab] = useState<Tab>("profile");
 
   const visibleTabs = useMemo(
@@ -41,25 +38,8 @@ export default function SettingsPage() {
     [role],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    const fetchUser = async () => {
-      try {
-        const raw = await apiGet<unknown>("/users/detail-user");
-        const user = unwrapApiData<ApiUser>(raw);
-        if (!cancelled) {
-          setUser(user);
-        }
-      } catch {
-        /* silent */
-      }
-    };
-    fetchUser();
-    return () => {
-      cancelled = true;
-    };
-  }, [setUser]);
-
+  // Không tự gọi GET /users/detail-user ở đây: AuthProvider đã nạp user vào store lúc vào app,
+  // và ProfilePanel cập nhật store sau mỗi lần lưu.
   // Tab đang chọn có thể bị ẩn theo role (đổi role, hoặc role vừa mới resolve
   // xong) — suy ra tab hiển thị thực tế ngay trong render thay vì setState
   // trong effect (tránh cascading render), rơi về tab đầu tiên còn hiển thị.
@@ -91,12 +71,12 @@ export default function SettingsPage() {
                   <p
                     className={`text-sm font-medium truncate ${active ? "text-white" : ""}`}
                   >
-                    {tab.label}
+                    {copy.tabs[tab.id].label}
                   </p>
                   <p
                     className={`text-[11px] truncate ${active ? "text-white/70" : "text-muted-foreground"}`}
                   >
-                    {tab.desc}
+                    {copy.tabs[tab.id].desc}
                   </p>
                 </div>
                 {!active && (
@@ -124,8 +104,8 @@ export default function SettingsPage() {
               // tab/role keeps the generic desc from TABS.
               const desc =
                 tab.id === "profile" && role === "TUTOR"
-                  ? "Thông tin này hiển thị với phụ huynh và học sinh của bạn."
-                  : tab.desc;
+                  ? copy.tutorProfileDesc
+                  : copy.tabs[tab.id].desc;
               return (
                 <div className="flex items-center gap-3">
                   <span className="flex size-9 items-center justify-center rounded-lg bg-primary-light">
@@ -136,7 +116,7 @@ export default function SettingsPage() {
                   </span>
                   <div>
                     <h2 className="text-base font-semibold text-foreground">
-                      {tab.label}
+                      {copy.tabs[tab.id].label}
                     </h2>
                     <p className="text-xs text-muted-foreground">{desc}</p>
                   </div>

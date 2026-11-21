@@ -1,5 +1,6 @@
 "use client";
 
+import { useSettingsCopy } from "@/hooks/useSettingsCopy.hook";
 import { Button } from "@/components/ui/button.ui";
 import { Input } from "@/components/ui/input.ui";
 import type * as React from "react";
@@ -43,6 +44,7 @@ export type ProfileFormState = {
 
 
 export function ProfilePanel() {
+  const { profile: copy, common } = useSettingsCopy();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const role = useCurrentUserRole();
@@ -105,7 +107,7 @@ export function ProfilePanel() {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("Ảnh tối đa 2MB");
+      alert(copy.avatarTooLarge);
       return;
     }
 
@@ -122,7 +124,7 @@ export function ProfilePanel() {
       }
       setAvatarPreview(null);
     } catch {
-      alert("Tải ảnh thất bại");
+      alert(copy.uploadFailed);
       setAvatarPreview(null);
     } finally {
       setAvatarUploading(false);
@@ -146,7 +148,7 @@ export function ProfilePanel() {
       }
       setAvatarPreview(null);
     } catch {
-      alert("Xoá ảnh thất bại");
+      alert(copy.removeFailed);
     } finally {
       setAvatarRemoving(false);
     }
@@ -155,10 +157,14 @@ export function ProfilePanel() {
   const handleProfileSave = async () => {
     setProfileSaving(true);
     try {
-      const { firstName, lastName, ...rest } = form;
-      const payload: UpdateUserPayload = isNameLocked
-        ? rest
-        : { firstName, lastName, ...rest };
+      // STUDENT không được tự đổi họ tên lẫn email (BE trả 400) — không gửi hai trường này.
+      // `subjects` (môn dạy) chỉ thuộc hồ sơ TUTOR (tutor-profile-panel) — không gửi từ panel này.
+      const { firstName, lastName, email, subjects: _subjects, ...rest } = form;
+      void _subjects;
+      const payload: UpdateUserPayload = {
+        ...rest,
+        ...(isNameLocked ? {} : { firstName, lastName, email }),
+      };
       const raw = await axiosInstance.put("/users", payload);
       const updatedUser = unwrapApiData<Partial<ApiUser>>(raw.data);
       // Merge instead of replace: the update endpoint may return a partial
@@ -167,12 +173,12 @@ export function ProfilePanel() {
       // Overlay the submitted form values, then any authoritative fields the
       // server echoes back.
       if (user) {
-        setUser({ ...user, ...form, ...updatedUser });
+        setUser({ ...user, ...form, ...(isNameLocked ? { email: user.email } : {}), ...updatedUser });
       }
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 2000);
     } catch {
-      alert("Cập nhật thất bại");
+      alert(copy.updateFailed);
     } finally {
       setProfileSaving(false);
     }
@@ -232,15 +238,15 @@ export function ProfilePanel() {
           </Button>
         </div>
         <div>
-          <p className="text-sm font-semibold text-foreground">Ảnh đại diện</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">JPG, PNG tối đa 2MB</p>
+          <p className="text-sm font-semibold text-foreground">{copy.avatarTitle}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{copy.avatarHint}</p>
           <Button variant="ghost"
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={avatarUploading}
             className="mt-2 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
           >
-            {avatarUploading ? "Đang tải..." : "Tải ảnh lên"}
+            {avatarUploading ? copy.uploading : copy.uploadPhoto}
           </Button>
           <Input
             ref={fileInputRef}
@@ -253,10 +259,10 @@ export function ProfilePanel() {
       </div>
 
       <Separator className="my-6" />
-      <SectionHeading>Thông tin cơ bản</SectionHeading>
+      <SectionHeading>{copy.basicInfoTitle}</SectionHeading>
 
       <div className="rounded-lg border border-border-light px-4">
-        <FormRow label="Họ">
+        <FormRow label={copy.lastName}>
           <Input
             value={form.lastName}
             onChange={
@@ -267,12 +273,11 @@ export function ProfilePanel() {
           />
           {isNameLocked && (
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Học sinh không thể tự đổi họ tên — liên hệ gia sư hoặc quản trị
-              viên nếu cần chỉnh sửa.
+              {copy.studentNameLocked}
             </p>
           )}
         </FormRow>
-        <FormRow label="Tên">
+        <FormRow label={copy.firstName}>
           <Input
             value={form.firstName}
             onChange={
@@ -282,28 +287,23 @@ export function ProfilePanel() {
             }
           />
         </FormRow>
-        <FormRow label="Email">
+        <FormRow label={copy.email}>
           <Input
             value={form.email}
             type="email"
+            readOnly={isNameLocked}
+            disabled={isNameLocked}
             onChange={(e) => updateField("email", e.target.value)}
           />
         </FormRow>
-        <FormRow label="Số điện thoại">
+        <FormRow label={copy.phone}>
           <Input
             value={form.phone}
             type="tel"
             onChange={(e) => updateField("phone", e.target.value)}
           />
         </FormRow>
-        <FormRow label={role === "STUDENT" ? "Môn đang học" : "Môn dạy"}>
-          <Input
-            value={form.subjects}
-            placeholder="Ví dụ: Toán, Vật lý..."
-            onChange={(e) => updateField("subjects", e.target.value)}
-          />
-        </FormRow>
-        <FormRow label="Giới thiệu">
+        <FormRow label={copy.bio}>
           <Textarea
             value={form.description}
             rows={2}
@@ -315,31 +315,31 @@ export function ProfilePanel() {
       {isParent && (
         <>
           <Separator className="my-6" />
-          <SectionHeading>Học sinh liên kết</SectionHeading>
+          <SectionHeading>{copy.linkedStudentsTitle}</SectionHeading>
 
           <p className="text-sm text-muted-foreground">
-            Chức năng xem học sinh liên kết hiện chưa khả dụng.
+            {copy.linkedStudentsUnavailable}
           </p>
         </>
       )}
 
       <Separator className="my-6" />
-      <SectionHeading>Địa chỉ</SectionHeading>
+      <SectionHeading>{copy.addressTitle}</SectionHeading>
 
       <div className="rounded-lg border border-border-light px-4">
-        <FormRow label="Địa chỉ">
+        <FormRow label={copy.address}>
           <Input
             value={form.address}
             onChange={(e) => updateField("address", e.target.value)}
           />
         </FormRow>
-        <FormRow label="Quận / Huyện">
+        <FormRow label={copy.district}>
           <Input
             value={form.district}
             onChange={(e) => updateField("district", e.target.value)}
           />
         </FormRow>
-        <FormRow label="Tỉnh / Thành phố">
+        <FormRow label={copy.province}>
           <Input
             value={form.province}
             onChange={(e) => updateField("province", e.target.value)}
@@ -362,10 +362,10 @@ export function ProfilePanel() {
             <Check className="size-4" />
           ) : null}
           {profileSaving
-            ? "Đang lưu..."
+            ? common.saving
             : profileSaved
-              ? "Đã lưu!"
-              : "Lưu thay đổi"}
+              ? common.saved
+              : common.save}
         </Button>
       </div>
     </div>

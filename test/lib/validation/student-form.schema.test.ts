@@ -13,10 +13,8 @@ const valid = {
   gender: GENDER_ENUM.MALE,
   studentPhone: "",
   school: "",
-  parentName: "Trần Văn Hùng",
-  parentRelationship: "FATHER",
-  parentPhone: "",
-  parentEmail: "",
+  parentLastName: "Trần",
+  parentFirstName: "Văn Hùng",
 };
 
 function messageFor(overrides: Record<string, unknown>, field: string) {
@@ -30,16 +28,12 @@ describe("buildStudentCreateSchema", () => {
     expect(buildStudentCreateSchema(m).safeParse(valid).success).toBe(true);
   });
 
-  it("requires the student name and the parent name", () => {
+  it("requires the student name and both parent last name and first name", () => {
     expect(messageFor({ studentName: "   " }, "studentName")).toBe(m.required);
     expect(messageFor({ studentName: "A" }, "studentName")).toBe(m.nameMin);
-    expect(messageFor({ parentName: "" }, "parentName")).toBe(m.required);
-  });
-
-  it("treats the parent email as optional but validates it when given", () => {
-    expect(messageFor({ parentEmail: "" }, "parentEmail")).toBeUndefined();
-    expect(messageFor({ parentEmail: "phuhuynh@gmail.com" }, "parentEmail")).toBeUndefined();
-    expect(messageFor({ parentEmail: "not-an-email" }, "parentEmail")).toBe(m.emailInvalid);
+    expect(messageFor({ parentLastName: "" }, "parentLastName")).toBe(m.required);
+    expect(messageFor({ parentLastName: "   " }, "parentLastName")).toBe(m.required);
+    expect(messageFor({ parentFirstName: "" }, "parentFirstName")).toBe(m.required);
   });
 
   it("limits phone length", () => {

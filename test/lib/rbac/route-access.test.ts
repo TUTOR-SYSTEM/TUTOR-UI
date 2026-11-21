@@ -11,11 +11,11 @@ describe("getRouteAccess", () => {
 
   it("returns the allow-list for an exact prefix match", () => {
     expect(getRouteAccess("/tutors")).toEqual(["ADMIN"]);
-    expect(getRouteAccess("/test-monitor")).toEqual(["ADMIN"]);
   });
 
   it("applies the prefix to nested child routes", () => {
     expect(getRouteAccess("/classes/123/curriculum")).toEqual([
+      "ADMIN",
       "TUTOR",
       "STUDENT",
       "PARENT",

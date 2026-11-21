@@ -398,20 +398,18 @@ export const TuitionsBoard = ({
           <TableHeader>
             <TableRow className="border-b border-[#E7EEEC] bg-[#F3F7F5] hover:bg-[#F3F7F5]">
               {[
-                "STT",
-                "HỌC SINH",
-                "LỚP",
-                "KỲ HỌC PHÍ",
-                "SỐ TIỀN",
-                "HẠN ĐÓNG",
-                "TRẠNG THÁI",
-                "THAO TÁC",
+                "Thứ tự",
+                "Học sinh",
+                "Lớp",
+                "Kỳ học phí",
+                "Số tiền",
+                "Hạn đóng",
+                "Trạng thái",
+                "Thao tác",
               ].map((col, i) => (
                 <TableHead
                   key={col}
-                  className={`text-xs font-semibold uppercase tracking-wide text-[#9AAEA9] ${
-                    i === 0 ? "w-14 pl-5" : ""
-                  } ${i === 7 ? "text-right" : ""}`}
+                  className={`${i === 0 ? "w-14 pl-5" : ""} ${i === 6 || i === 7 ? "text-center" : ""}`}
                 >
                   {col}
                 </TableHead>
@@ -502,7 +500,7 @@ export const TuitionsBoard = ({
                       </TableCell>
 
                       {/* Status */}
-                      <TableCell className="py-3.5">
+                      <TableCell className="py-3.5 text-center">
                         <span
                           className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
                           style={{
@@ -515,7 +513,7 @@ export const TuitionsBoard = ({
                       </TableCell>
 
                       {/* Actions */}
-                      <TableCell className="py-3.5 text-right">
+                      <TableCell className="py-3.5 text-center">
                         <Button
                           type="button"
                           variant="ghost"

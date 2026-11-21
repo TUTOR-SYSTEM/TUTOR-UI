@@ -1,5 +1,6 @@
 "use client";
 
+import { useSettingsCopy } from "@/hooks/useSettingsCopy.hook";
 import { useState } from "react";
 
 import { Input } from "@/components/ui/input.ui";
@@ -8,36 +9,25 @@ import { FormField } from "@/components/ui/form-field.ui";
 import { SwitchRow } from "@/components/ui/switch-row.ui";
 import { SaveButton } from "@/components/settings/settings-save-button";
 
-const SESSION_DURATIONS = [
-  { label: "60 phút", value: "60 phút" },
-  { label: "90 phút", value: "90 phút" },
-  { label: "120 phút", value: "120 phút" },
-];
-
-const TIMEZONES = [
-  { label: "(GMT+7) Hà Nội", value: "(GMT+7) Hà Nội" },
-  { label: "(GMT+7) TP. Hồ Chí Minh", value: "(GMT+7) TP. Hồ Chí Minh" },
-  { label: "(GMT+7) Đà Nẵng", value: "(GMT+7) Đà Nẵng" },
-];
-
 export function ClassesPanel() {
-  const [sessionDuration, setSessionDuration] = useState("90 phút");
-  const [timezone, setTimezone] = useState("(GMT+7) Hà Nội");
+  const { classes: copy } = useSettingsCopy();
+  const [sessionDuration, setSessionDuration] = useState("90");
+  const [timezone, setTimezone] = useState("hanoi");
   return (
     <div className="grid grid-cols-2 gap-6 w-full">
       <div className="rounded-lg border border-border-light p-4 shadow-sm">
         <p className="mb-4 text-sm font-semibold text-foreground">
-          Mặc định buổi học
+          {copy.defaultsTitle}
         </p>
         <div className="grid grid-4 gap-4">
-          <FormField label="Thời lượng buổi học">
+          <FormField label={copy.sessionDuration}>
             <Select
-              options={SESSION_DURATIONS}
+              options={copy.durations}
               value={sessionDuration}
               onValueChange={setSessionDuration}
             />
           </FormField>
-          <FormField label="Học phí mặc định / buổi">
+          <FormField label={copy.defaultFee}>
             <div className="relative">
               <Input
                 type="text"
@@ -50,14 +40,14 @@ export function ClassesPanel() {
               </span>
             </div>
           </FormField>
-          <FormField label="Múi giờ">
+          <FormField label={copy.timezone}>
             <Select
-              options={TIMEZONES}
+              options={copy.timezones}
               value={timezone}
               onValueChange={setTimezone}
             />
           </FormField>
-          <FormField label="Giờ làm việc">
+          <FormField label={copy.workHours}>
             <Input
               type="text"
               defaultValue="08:00 – 21:00"
@@ -68,24 +58,14 @@ export function ClassesPanel() {
       </div>
 
       <div className="rounded-lg border border-border-light divide-y divide-border-light px-4 shadow-sm">
-        <SwitchRow
-          defaultChecked
-          label="Tự động nhắc học sinh"
-          desc="Gửi SMS nhắc học sinh trước buổi học 1 giờ."
-        />
-        <SwitchRow
-          defaultChecked
-          label="Cho phép đặt lịch online"
-          desc="Học sinh có thể tự đăng ký vào khung giờ trống."
-        />
-        <SwitchRow
-          label="Tự động tạo hoá đơn cuối tháng"
-          desc="Tổng hợp học phí theo số buổi đã dạy."
-        />
-        <SwitchRow
-          label="Thời gian nghỉ giữa buổi"
-          desc="Tự chừa 15 phút giữa hai buổi liên tiếp."
-        />
+        {copy.switches.map((sw, i) => (
+          <SwitchRow
+            key={i}
+            defaultChecked={i < 2}
+            label={sw.label}
+            desc={sw.desc}
+          />
+        ))}
         <SaveButton />
       </div>
     </div>

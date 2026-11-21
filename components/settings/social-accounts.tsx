@@ -1,5 +1,6 @@
 "use client";
 
+import { useSettingsCopy } from "@/hooks/useSettingsCopy.hook";
 import { Button } from "@/components/ui/button.ui";
 import { useState } from "react";
 import { Check } from "lucide-react";
@@ -43,6 +44,7 @@ export function FacebookIcon() {
 
 /* ─── Social accounts section ─── */
 export function SocialAccounts() {
+  const { security: copy } = useSettingsCopy();
   const [accounts, setAccounts] = useState([
     {
       id: "google",
@@ -96,13 +98,13 @@ export function SocialAccounts() {
               {a.connected && a.email ? (
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{a.email}</p>
               ) : (
-                <p className="mt-0.5 text-xs text-muted-foreground">Chưa liên kết</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{copy.socialNotLinked}</p>
               )}
 
                 {a.connected && (
                 <span className="mt-1.5 flex w-fit items-center gap-1 whitespace-nowrap rounded-full bg-primary-light px-2.5 py-0.5 text-[11px] font-semibold text-primary">
                   <Check className="size-3" />
-                  Đã liên kết
+                  {copy.socialLinked}
                 </span>
               )}
             </div>
@@ -118,14 +120,14 @@ export function SocialAccounts() {
                   : "bg-primary text-white hover:bg-primary-hover"
               }`}
             >
-              {a.connected ? "Huỷ liên kết" : "Liên kết"}
+              {a.connected ? copy.socialUnlink : copy.socialLink}
             </Button>
           </div>
         </div>
       ))}
 
       <p className="text-xs text-muted-foreground">
-        Liên kết tài khoản mạng xã hội để đăng nhập nhanh mà không cần mật khẩu.
+        {copy.socialHint}
       </p>
     </div>
   );

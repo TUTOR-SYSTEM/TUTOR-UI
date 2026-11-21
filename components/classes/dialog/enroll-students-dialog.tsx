@@ -29,6 +29,7 @@ export function EnrollStudentsDialog({ open, classId, enrolledIds, onClose, onEn
   const { list } = useStudentActions({
     list: { page: 1, limit: 100 },
     listOptions: { enabled: open },
+    generateCodeOptions: { enabled: false },
   });
   const { enrollStudents } = useClassActions();
 

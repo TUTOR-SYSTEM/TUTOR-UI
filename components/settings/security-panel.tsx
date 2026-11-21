@@ -1,11 +1,13 @@
 "use client";
 
+import { useSettingsCopy } from "@/hooks/useSettingsCopy.hook";
 import { Button } from "@/components/ui/button.ui";
 import { Input } from "@/components/ui/input.ui";
 import { Label } from "@/components/ui/label.ui";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { getErrorMessage } from "@/lib/axios";
+import { applyApiFieldErrors } from "@/lib/axios/form-error";
 import { useForm, UseFormRegister } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,30 +16,36 @@ import { useUserActions } from "@/lib/services/user.service";
 import { SectionHeading } from "@/components/ui/section-heading.ui";
 import { Separator } from "@/components/ui/separator.ui";
 import { SocialAccounts } from "@/components/settings/social-accounts";
+import type { SettingsDictionary } from "@/lib/i18n/settings.dictionary";
 
 /* ─── Change-password schema ─── */
 // Mirrors gateway `changePasswordSchema`: the current password only needs to be non-empty
 // (old passwords may predate the rules); the new one must match the full policy.
-export const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Vui lòng nhập mật khẩu hiện tại"),
-    newPassword: z
-      .string()
-      .min(8, "Tối thiểu 8 ký tự")
-      .max(20, "Tối đa 20 ký tự")
-      .regex(/[A-Z]/, "Phải có ít nhất 1 chữ hoa")
-      .regex(/[a-z]/, "Phải có ít nhất 1 chữ thường")
-      .regex(/[0-9]/, "Phải có ít nhất 1 chữ số")
-      .regex(/[^A-Za-z0-9]/, "Phải có ít nhất 1 ký tự đặc biệt"),
-    confirmPassword: z.string().min(1, "Vui lòng xác nhận mật khẩu"),
-  })
-  .refine((d) => d.newPassword === d.confirmPassword, {
-    message: "Mật khẩu xác nhận không khớp",
-    path: ["confirmPassword"],
-  });
+// Built from a copy so validation messages follow the active language.
+export function createChangePasswordSchema(v: SettingsDictionary["security"]["validation"]) {
+  return z
+    .object({
+      currentPassword: z.string().min(1, v.currentRequired),
+      newPassword: z
+        .string()
+        .min(8, v.min)
+        .max(20, v.max)
+        .regex(/[A-Z]/, v.upper)
+        .regex(/[a-z]/, v.lower)
+        .regex(/[0-9]/, v.digit)
+        .regex(/[^A-Za-z0-9]/, v.special),
+      confirmPassword: z.string().min(1, v.confirmRequired),
+    })
+    .refine((d) => d.newPassword === d.confirmPassword, {
+      message: v.mismatch,
+      path: ["confirmPassword"],
+    });
+}
 
 
-export type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
+export type ChangePasswordValues = z.infer<
+  ReturnType<typeof createChangePasswordSchema>
+>;
 
 
 export const CHANGE_PASSWORD_DEFAULTS: ChangePasswordValues = {
@@ -90,6 +98,11 @@ export function PasswordInput({
 
 
 export function SecurityPanel() {
+  const { security: copy } = useSettingsCopy();
+  const schema = useMemo(
+    () => createChangePasswordSchema(copy.validation),
+    [copy.validation],
+  );
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -101,7 +114,7 @@ export function SecurityPanel() {
     setError,
     formState: { errors },
   } = useForm<ChangePasswordValues>({
-    resolver: zodResolver(changePasswordSchema),
+    resolver: zodResolver(schema),
     defaultValues: CHANGE_PASSWORD_DEFAULTS,
   });
 
@@ -115,21 +128,20 @@ export function SecurityPanel() {
       },
       {
         onSuccess: () => {
-          toast.success("Cập nhật mật khẩu thành công");
+          toast.success(copy.updateSuccess);
           reset();
         },
         onError: (err) => {
-          const msg = getErrorMessage(err);
-          const isCurrentPasswordError =
-            msg.toLowerCase().includes("current") ||
-            msg.toLowerCase().includes("hiện tại") ||
-            msg.toLowerCase().includes("sai") ||
-            msg.toLowerCase().includes("incorrect");
-          if (isCurrentPasswordError) {
-            setError("currentPassword", { message: msg });
-          } else {
-            toast.error(msg);
+          // 422 → gạch chân đúng ô theo errors[]; mọi mã khác (400, 401, 5xx...) → toast.
+          if (
+            applyApiFieldErrors(err, setError, [
+              "currentPassword",
+              "newPassword",
+            ])
+          ) {
+            return;
           }
+          toast.error(getErrorMessage(err));
         },
       },
     );
@@ -138,34 +150,34 @@ export function SecurityPanel() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
-          <SectionHeading>Đổi mật khẩu</SectionHeading>
+          <SectionHeading>{copy.changePasswordTitle}</SectionHeading>
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-4"
           >
             <PasswordInput
-              label="Mật khẩu hiện tại"
+              label={copy.currentPassword}
               show={showCurrent}
               onToggle={() => setShowCurrent((v) => !v)}
               registration={register("currentPassword")}
               error={errors.currentPassword?.message}
             />
             <PasswordInput
-              label="Mật khẩu mới"
+              label={copy.newPassword}
               show={showNew}
               onToggle={() => setShowNew((v) => !v)}
               registration={register("newPassword")}
               error={errors.newPassword?.message}
             />
             <PasswordInput
-              label="Xác nhận mật khẩu mới"
+              label={copy.confirmPassword}
               show={showConfirm}
               onToggle={() => setShowConfirm((v) => !v)}
               registration={register("confirmPassword")}
               error={errors.confirmPassword?.message}
             />
             <p className="text-xs text-muted-foreground">
-              Mật khẩu tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường và số.
+              {copy.passwordHint}
             </p>
 
             <div className="flex justify-end pt-2">
@@ -175,7 +187,7 @@ export function SecurityPanel() {
                 className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-primary-hover disabled:opacity-60"
               >
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isPending ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
+                {isPending ? copy.updatingPassword : copy.updatePassword}
               </Button>
             </div>
           </form>
@@ -184,35 +196,16 @@ export function SecurityPanel() {
         <div className="hidden self-stretch border-l border-border-light lg:block" />
 
         <div className="min-w-0 flex-1">
-          <SectionHeading>Liên kết tài khoản mạng xã hội</SectionHeading>
+          <SectionHeading>{copy.socialTitle}</SectionHeading>
           <SocialAccounts />
         </div>
       </div>
 
       <Separator className="my-6" />
-      <SectionHeading>Phiên đăng nhập</SectionHeading>
+      <SectionHeading>{copy.sessionsTitle}</SectionHeading>
 
       <div className="grid grid-cols-2 gap-3">
-        {[
-          {
-            device: "Chrome · Windows 11",
-            location: "TP. Hồ Chí Minh",
-            time: "Đang hoạt động",
-            current: true,
-          },
-          {
-            device: "Safari · iPhone 14",
-            location: "TP. Hồ Chí Minh",
-            time: "2 giờ trước",
-            current: false,
-          },
-          {
-            device: "Firefox · MacOS",
-            location: "Hà Nội",
-            time: "Hôm qua",
-            current: false,
-          },
-        ].map((s) => (
+        {copy.sessions.map((s) => (
           <div
             key={s.device}
             className="flex items-center justify-between rounded-lg border border-border-light px-4 py-3"
@@ -222,7 +215,7 @@ export function SecurityPanel() {
                 {s.device}
                 {s.current && (
                   <span className="ml-2 rounded-full bg-primary-light px-2 py-0.5 text-[11px] font-semibold text-primary">
-                    Hiện tại
+                    {copy.currentBadge}
                   </span>
                 )}
               </p>
@@ -235,7 +228,7 @@ export function SecurityPanel() {
                 type="button"
                 className="text-xs font-medium text-[#ef4444] hover:underline"
               >
-                Đăng xuất
+                {copy.signOut}
               </Button>
             )}
           </div>
@@ -246,7 +239,7 @@ export function SecurityPanel() {
         type="button"
         className="w-full rounded-lg border border-[#ef4444]/30 py-2 text-sm font-medium text-[#ef4444] hover:bg-[#ef4444]/5 transition-colors"
       >
-        Đăng xuất khỏi tất cả thiết bị
+        {copy.signOutAll}
       </Button>
     </div>
   );

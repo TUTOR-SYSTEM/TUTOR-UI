@@ -6,12 +6,12 @@ import { Check } from "lucide-react";
 import { useTheme } from "@/components/providers/theme.provider";
 import { useColorTheme } from "@/components/providers/color-theme.provider";
 import { accents } from "@/lib/color-themes";
-import { useLocale } from "@/hooks/useLocale.hook";
+import { useSettingsCopy } from "@/hooks/useSettingsCopy.hook";
 
 export function AppearancePanel() {
   const { theme, setTheme } = useTheme();
   const { accent, setAccent } = useColorTheme();
-  const { language, setLocale } = useLocale();
+  const { language, setLocale, appearance: copy } = useSettingsCopy();
 
   const resolvedTheme = theme === "system" ? "light" : theme;
   const currentAccentId = accent === "default" ? "teal" : accent;
@@ -19,10 +19,10 @@ export function AppearancePanel() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Chủ đề hiển thị */}
+      {/* Theme */}
       <div className="rounded-lg border border-border-light p-4 shadow-sm">
         <p className="mb-4 text-sm font-semibold text-foreground">
-          Chủ đề hiển thị
+          {copy.themeTitle}
         </p>
         <div className="grid grid-cols-2 gap-4">
           {(["light", "dark"] as const).map((t) => (
@@ -68,7 +68,7 @@ export function AppearancePanel() {
                   )}
                 </span>
                 <span className="text-sm font-medium text-foreground">
-                  {t === "light" ? "Sáng" : "Tối"}
+                  {t === "light" ? copy.light : copy.dark}
                 </span>
               </div>
             </OptionCard>
@@ -78,9 +78,9 @@ export function AppearancePanel() {
 
       {/* Màu nhấn */}
       <div className="rounded-lg border border-border-light p-4 shadow-sm">
-        <p className="text-sm font-semibold text-foreground">Màu nhấn</p>
+        <p className="text-sm font-semibold text-foreground">{copy.accentTitle}</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Màu chủ đạo cho nút và trạng thái hoạt động.
+          {copy.accentDesc}
         </p>
         <div className="mt-4 flex items-center gap-3">
           {accents.map((c) => (
@@ -106,11 +106,11 @@ export function AppearancePanel() {
 
       {/* Ngôn ngữ */}
       <div className="rounded-lg border border-border-light p-4 shadow-sm">
-        <p className="mb-4 text-sm font-semibold text-foreground">Ngôn ngữ</p>
+        <p className="mb-4 text-sm font-semibold text-foreground">{copy.languageTitle}</p>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { code: "vi", label: "Tiếng Việt", sub: "Mặc định", flag: "🇻🇳" },
-            { code: "en", label: "English", sub: "English (US)", flag: "🇬🇧" },
+            { code: "vi", ...copy.vietnamese, flag: "🇻🇳" },
+            { code: "en", ...copy.english, flag: "🇬🇧" },
           ].map((l) => (
             <OptionCard
               key={l.code}

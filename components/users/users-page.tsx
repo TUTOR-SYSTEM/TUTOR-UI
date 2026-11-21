@@ -179,18 +179,15 @@ export function UsersPage() {
   const columns: DataTableColumn<ManagedUser>[] = [
     {
       key: "stt",
-      header: "STT",
-      headerClassName:
-        "w-14 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+      header: "Thứ tự",
+      headerClassName: "w-14 px-4",
       cellClassName: "px-4 py-3.5 font-medium text-[#9AAEA9]",
-      render: (_u, i) =>
-        String((page - 1) * pageSize + i + 1).padStart(2, "0"),
+      render: (_u, i) => String((page - 1) * pageSize + i + 1).padStart(2, "0"),
     },
     {
       key: "user",
-      header: "NGƯỜI DÙNG",
-      headerClassName:
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+      header: "Người dùng",
+      headerClassName: "px-4",
       cellClassName: "px-4 py-3.5",
       render: (u) => (
         <div className="flex items-center gap-3">
@@ -211,9 +208,8 @@ export function UsersPage() {
     },
     {
       key: "role",
-      header: "VAI TRÒ",
-      headerClassName:
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+      header: "Vai trò",
+      headerClassName: "px-4",
       cellClassName: "px-4 py-3.5",
       render: (u) => {
         const roleColor = ROLE_COLOR[u.role];
@@ -229,9 +225,9 @@ export function UsersPage() {
     },
     {
       key: "status",
-      header: "TRẠNG THÁI",
-      headerClassName:
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+      align: "center" as const,
+      header: "Trạng thái",
+      headerClassName: "px-4",
       cellClassName: "px-4 py-3.5",
       render: (u) => (
         <Button
@@ -258,17 +254,16 @@ export function UsersPage() {
     },
     {
       key: "createdAt",
-      header: "NGÀY TẠO",
-      headerClassName:
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+      header: "Ngày tạo",
+      headerClassName: "px-4",
       cellClassName: "px-4 py-3.5 text-[#16302b]",
       render: (u) => formatDate(u.createdAt),
     },
     {
       key: "actions",
-      header: "THAO TÁC",
-      headerClassName:
-        "px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+      align: "center" as const,
+      header: "Thao tác",
+      headerClassName: "px-4",
       cellClassName: "px-4 py-3.5",
       render: (u) => (
         <div className="flex items-center justify-end gap-1.5">

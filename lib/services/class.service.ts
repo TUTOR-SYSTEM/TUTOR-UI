@@ -1,6 +1,7 @@
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { useGet, usePost, usePut, useDelete } from "@/lib/axios/query";
-import type { UseQueryOptions } from "@tanstack/react-query";
+import type { QueryClient, UseQueryOptions } from "@tanstack/react-query";
+import { STUDENTS_QUERY_KEY } from "@/lib/services/student.service";
 import type {
   ApiResponse,
   DeleteResult,
@@ -13,6 +14,17 @@ import type {
 // ─── Query keys ──────────────────────────────────────────────────────────────
 
 export const CLASSES_QUERY_KEY = ["classes"] as const;
+
+/**
+ * Làm mới mọi dữ liệu bị ảnh hưởng khi lớp đổi (tên/mã/gia sư/roster...):
+ * danh sách lớp VÀ danh sách học sinh (mã lớp, gia sư hiển thị ở trang học sinh).
+ */
+export function invalidateClassRelatedQueries(queryClient: QueryClient) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: CLASSES_QUERY_KEY }),
+    queryClient.invalidateQueries({ queryKey: STUDENTS_QUERY_KEY }),
+  ]);
+}
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 

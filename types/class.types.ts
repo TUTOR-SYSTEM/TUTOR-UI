@@ -43,6 +43,10 @@ export type ApiClassNextSession = {
 /** Raw class row as returned by `GET /classes`. */
 export type ApiClassRow = {
   id: string;
+  /** Managing tutor id. */
+  tutorId?: string;
+  /** Sĩ số tối đa: 1 = 1 kèm 1, 10 = lớp nhóm. */
+  maxStudents?: number | null;
   name: string;
   code: string;
   subject: string;
@@ -143,6 +147,10 @@ export type ClassStudentDto = {
 export type ClassesProps = {
   classItem: {
     id: string;
+    /** Gia sư quản lý lớp (ADMIN đổi được; TUTOR chỉ xem). */
+    tutorId?: string | null;
+    /** Sĩ số tối đa: 1 = 1 kèm 1, 10 = lớp nhóm. */
+    maxStudents?: number | null;
     name: string;
     subject: string;
     feePerSession: number;
@@ -159,6 +167,8 @@ export type ClassesProps = {
 
 export type FormState = {
   name: string;
+  /** Gia sư quản lý (ADMIN chọn được khi sửa lớp). */
+  tutorId: string;
   subject: string;
   feePerSession: number;
   description: string;

@@ -13,7 +13,12 @@ type ConfirmDialogProps = {
   onConfirm: () => void;
   loading?: boolean;
   title?: string;
-  description: ReactNode;
+  /** Nội dung tự định nghĩa. Bỏ trống và truyền `entity` để dùng câu hỏi xóa chuẩn. */
+  description?: ReactNode;
+  /** Đối tượng bị xóa/đổi, vd `{ label: "lớp học", name: "Toán 10" }`. */
+  entity?: { label: string; name: string };
+  /** Dòng cảnh báo cuối (mặc định: "Hành động này không thể hoàn tác."). */
+  warning?: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   icon?: LucideIcon;
@@ -24,7 +29,7 @@ type ConfirmDialogProps = {
 /**
  * Generic confirm/delete dialog shared across feature dialogs (students,
  * classes, curriculum, ...). Feature wrappers own the mutation and pass in
- * the entity-specific description/labels.
+ * the entity-specific description/labels. Icon nằm trong thân dialog (không lặp ở header).
  */
 export function ConfirmDialog({
   open,
@@ -33,6 +38,8 @@ export function ConfirmDialog({
   loading = false,
   title,
   description,
+  entity,
+  warning,
   confirmLabel,
   cancelLabel,
   icon: Icon = TriangleAlert,
@@ -41,10 +48,23 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const { confirmDialog } = useCommonCopy();
 
+  const body =
+    description ??
+    (entity ? (
+      <>
+        <p>
+          {confirmDialog.questionPrefix}{" "}
+          {entity.label}{" "}
+          <span className="font-semibold text-foreground">{entity.name}</span>
+          {confirmDialog.questionSuffix}
+        </p>
+        <p className="mt-1">{warning ?? confirmDialog.irreversible}</p>
+      </>
+    ) : null);
+
   return (
     <Dialog
       isOpen={open}
-      icon={Icon}
       title={title ?? confirmDialog.deleteTitle}
       cancelText={cancelLabel ?? confirmDialog.cancel}
       onCancel={onClose}
@@ -68,7 +88,7 @@ export function ConfirmDialog({
             )}
           />
         </span>
-        <div className="text-sm text-muted-foreground">{description}</div>
+        <div className="text-sm text-muted-foreground">{body}</div>
       </div>
     </Dialog>
   );

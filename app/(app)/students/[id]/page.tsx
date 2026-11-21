@@ -33,6 +33,7 @@ import {
   fmtDate,
   fmtDateTime,
 } from "@/components/sessions/session-shared";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.ui";
 
 type Tab = "info" | "scores" | "sessions" | "files" | "progress";
 
@@ -56,10 +57,13 @@ function mapApiToStudent(api: ApiStudent, language: Language): Student {
   const classes = api.classes ?? [];
   return {
     id: api.id,
+    tutorId: api.tutorId ?? null,
     parentId: api.parentId ?? null,
     initials: initials(fullName),
     avatarColor: "#0E9F8E",
     name: fullName,
+    firstName: api.firstName?.trim() ?? "",
+    lastName: api.lastName?.trim() ?? "",
     subject: "",
     classId: classes[0]?.id ?? null,
     classCode: classes.map((c) => c.code).join(", "),
@@ -72,6 +76,8 @@ function mapApiToStudent(api: ApiStudent, language: Language): Student {
     district: api.district ?? null,
     province: api.province ?? null,
     parentName,
+    parentFirstName: api.parent?.firstName?.trim() ?? "",
+    parentLastName: api.parent?.lastName?.trim() ?? "",
     parentPhone: api.parent?.phone ?? "",
     parentEmail: api.parent?.email ?? null,
     parentRelationship: api.parent?.relationship ?? null,
@@ -139,6 +145,8 @@ export default function StudentDetailPage() {
   } = useStudentActions({
     detailId: studentId,
     detailOptions: { enabled: !!studentId },
+    // Page này không cần mã học sinh mới — tắt để khỏi bắn GET /students/get-student-code.
+    generateCodeOptions: { enabled: false },
   }).detail;
 
   const { language } = useLocale();
@@ -434,33 +442,33 @@ export default function StudentDetailPage() {
               {copy.detail.scoresEmpty}
             </p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#E7EEEC] bg-[#F3F7F5]">
+            <Table className="w-full text-sm">
+              <TableHeader>
+                <TableRow>
                   {[
                     copy.detail.scoresTable.gradedDate,
                     copy.detail.scoresTable.score,
                     copy.detail.scoresTable.comment,
                   ].map((h) => (
-                    <th
+                    <TableHead
                       key={h}
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]"
+                      className="px-4"
                     >
                       {h}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {gradedExercises.map((e) => (
-                  <tr
+                  <TableRow
                     key={e.id}
                     className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9] transition-colors"
                   >
-                    <td className="px-4 py-3 text-[#9AAEA9]">
+                    <TableCell className="px-4 py-3 text-[#9AAEA9]">
                       {fmtDateTime(e.gradedAt)}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
                       <span
                         className={`font-bold ${
                           (e.score ?? 0) >= 8
@@ -473,14 +481,14 @@ export default function StudentDetailPage() {
                         {e.score}
                       </span>
                       <span className="text-[#9AAEA9]">/10</span>
-                    </td>
-                    <td className="px-4 py-3 text-[#9AAEA9]">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-[#9AAEA9]">
                       {e.comment || "—"}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
         </div>
       )}
@@ -496,48 +504,48 @@ export default function StudentDetailPage() {
               {copy.detail.sessionsEmpty}
             </p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#E7EEEC] bg-[#F3F7F5]">
+            <Table className="w-full text-sm">
+              <TableHeader>
+                <TableRow>
                   {[
                     copy.detail.sessionsTable.submittedDate,
                     copy.detail.sessionsTable.status,
                     copy.detail.sessionsTable.score,
-                  ].map((h) => (
-                    <th
+                  ].map((h, i) => (
+                    <TableHead
                       key={h}
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]"
+                      className={i === 1 ? "px-4 text-center" : "px-4"}
                     >
                       {h}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {exercisesList.map((e) => {
                   const meta = EXERCISE_STATUS_META[e.status];
                   return (
-                    <tr
+                    <TableRow
                       key={e.id}
                       className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9] transition-colors"
                     >
-                      <td className="px-4 py-3 font-medium text-[#16302b]">
+                      <TableCell className="px-4 py-3 font-medium text-[#16302b]">
                         {fmtDateTime(e.updatedAt)}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-center">
                         <StatusBadge
                           label={meta.label}
                           className={meta.className}
                         />
-                      </td>
-                      <td className="px-4 py-3 text-[#16302b]">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-[#16302b]">
                         {e.score ?? "—"}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
         </div>
       )}

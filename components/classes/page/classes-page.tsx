@@ -303,8 +303,7 @@ export const ClassesPage = () => {
       {
         key: "stt",
         header: copy.list.table.columns.stt,
-        headerClassName:
-          "w-14 pl-5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+        headerClassName: "w-14 pl-5 px-4",
         cellClassName: "relative py-3.5 pl-5 pr-2 font-medium text-[#9AAEA9]",
         render: (cls: ClassItem, idx: number) => (
           <>
@@ -319,8 +318,7 @@ export const ClassesPage = () => {
       {
         key: "name",
         header: copy.list.table.columns.className,
-        headerClassName:
-          "px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+        headerClassName: "px-4",
         cellClassName: "px-4 py-3.5",
         render: (cls: ClassItem) => (
           <>
@@ -339,8 +337,7 @@ export const ClassesPage = () => {
       {
         key: "subject",
         header: copy.list.table.columns.subject,
-        headerClassName:
-          "px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+        headerClassName: "px-4",
         cellClassName: "px-4 py-3.5",
         render: (cls: ClassItem, idx: number) => {
           const subjectColor = getSubjectColor(cls.subject, idx);
@@ -360,8 +357,7 @@ export const ClassesPage = () => {
       {
         key: "fee",
         header: copy.list.table.columns.fee,
-        headerClassName:
-          "px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+        headerClassName: "px-4",
         cellClassName: "px-4 py-3.5 tabular-nums",
         render: (cls: ClassItem) => (
           <>
@@ -377,8 +373,7 @@ export const ClassesPage = () => {
       {
         key: "students",
         header: copy.list.table.columns.students,
-        headerClassName:
-          "px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+        headerClassName: "px-4",
         cellClassName: "px-4 py-3.5",
         render: (cls: ClassItem) => (
           <ClassStudentBadges students={cls.students} />
@@ -387,8 +382,7 @@ export const ClassesPage = () => {
       {
         key: "schedule",
         header: copy.list.table.columns.schedule,
-        headerClassName:
-          "px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+        headerClassName: "px-4",
         cellClassName: "px-4 py-3.5",
         render: (cls: ClassItem) => {
           if (cls.scheduleGroups.length > 0) {
@@ -438,9 +432,9 @@ export const ClassesPage = () => {
         ? [
             {
               key: "actions",
+              align: "center" as const,
               header: copy.list.table.columns.actions,
-              headerClassName:
-                "px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]",
+              headerClassName: "px-4",
               cellClassName: "px-4 py-3.5",
               render: (cls: ClassItem) => (
                 <div className="flex items-center justify-end gap-1.5">

@@ -62,12 +62,16 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   );
 }
 
+/**
+ * Header cell chuẩn dùng chung: cao 56px, chữ đậm, không in hoa, căn trái mặc định.
+ * Không override chiều cao/in hoa/màu ở từng page — chỉnh tại đây nếu cần đổi kiểu chung.
+ */
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       data-slot="table-head"
       className={cn(
-        "h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-muted-foreground",
+        "h-14 whitespace-nowrap px-4 text-left align-middle text-sm font-semibold normal-case text-muted-foreground",
         className,
       )}
       {...props}

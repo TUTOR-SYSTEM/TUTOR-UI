@@ -32,6 +32,7 @@ import UsageGuides, {
   type UsageGuideStep,
 } from "@/components/ui/usage-guide.ui";
 import Image from "next/image";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.ui";
 
 /* ─── Types ─────────────────────────────────────────────── */
 
@@ -320,35 +321,35 @@ const GradeTable = ({ classId }: { classId: string }) => {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table
+              <Table
                 className="w-full text-sm"
                 style={{ minWidth: `${440 + gradeSessions.length * 110}px` }}
               >
-                <thead>
-                  <tr className="border-b border-[#E7EEEC] bg-[#F3F7F5]">
-                    <th className="w-10 py-3 pl-4 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10 pl-4">
                       STT
-                    </th>
-                    <th className="min-w-40 px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                    </TableHead>
+                    <TableHead className="min-w-40 px-3">
                       Học sinh
-                    </th>
+                    </TableHead>
                     {gradeSessions.map((sess, i) => (
-                      <th
+                      <TableHead
                         key={sess.id}
-                        className="w-25 px-2 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]"
+                        className="w-25 px-2"
                       >
                         Buổi {sess.sessionNumber ?? i + 1}
-                      </th>
+                      </TableHead>
                     ))}
-                    <th className="w-20 px-2 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                    <TableHead className="w-20 px-2">
                       Điểm TB
-                    </th>
-                    <th className="w-20 px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                    </TableHead>
+                    <TableHead className="w-20 px-3">
                       Xếp loại
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {students.map((s, idx) => {
                     const name = `${s.firstName} ${s.lastName}`;
                     const initials = getInitials(s.firstName, s.lastName);
@@ -364,14 +365,14 @@ const GradeTable = ({ classId }: { classId: string }) => {
                       classify(avg);
 
                     return (
-                      <tr
+                      <TableRow
                         key={s.id}
                         className="border-b border-[#EEF3F1] last:border-0 transition-colors hover:bg-[#F9FDFB]"
                       >
-                        <td className="py-3 pl-4 text-xs font-medium text-[#9AAEA9]">
+                        <TableCell className="py-3 pl-4 text-xs font-medium text-[#9AAEA9]">
                           {String(idx + 1).padStart(2, "0")}
-                        </td>
-                        <td className="px-3 py-3">
+                        </TableCell>
+                        <TableCell className="px-3 py-3">
                           <div className="flex items-center gap-2">
                             {s.avatar ? (
                               <Image
@@ -397,11 +398,11 @@ const GradeTable = ({ classId }: { classId: string }) => {
                               </p>
                             </div>
                           </div>
-                        </td>
+                        </TableCell>
                         {gradeSessions.map((sess) => {
                           const ex = scoreMap[s.id]?.[sess.id];
                           return (
-                            <td key={sess.id} className="px-2 py-3 text-center">
+                            <TableCell key={sess.id} className="px-2 py-3">
                               {!ex ? (
                                 <span className="text-xs text-[#C5D5D1]">
                                   —
@@ -420,10 +421,10 @@ const GradeTable = ({ classId }: { classId: string }) => {
                                   Chờ chấm
                                 </span>
                               )}
-                            </td>
+                            </TableCell>
                           );
                         })}
-                        <td className="px-2 py-3 text-center">
+                        <TableCell className="px-2 py-3">
                           <span
                             className={cn(
                               "text-xs font-bold",
@@ -432,8 +433,8 @@ const GradeTable = ({ classId }: { classId: string }) => {
                           >
                             {avg ?? "—"}
                           </span>
-                        </td>
-                        <td className="px-3 py-3 text-center">
+                        </TableCell>
+                        <TableCell className="px-3 py-3">
                           {avg !== null ? (
                             <span
                               className={cn(
@@ -446,12 +447,12 @@ const GradeTable = ({ classId }: { classId: string }) => {
                           ) : (
                             <span className="text-xs text-[#C5D5D1]">—</span>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             <div className="flex items-center justify-between border-t border-[#EEF3F1] px-4 py-2.5">
@@ -679,9 +680,9 @@ const AllExercisesList = () => {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead>
-              <tr className="border-b border-[#E7EEEC] bg-[#F3F7F5]">
+          <Table className="w-full min-w-[720px] text-sm">
+            <TableHeader>
+              <TableRow>
                 {[
                   "Học sinh",
                   "Lớp",
@@ -690,17 +691,17 @@ const AllExercisesList = () => {
                   "Điểm",
                   "Cập nhật",
                   "",
-                ].map((h) => (
-                  <th
+                ].map((h, i) => (
+                  <TableHead
                     key={h}
-                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]"
+                    className={i === 3 || i === 6 ? "px-4 text-center" : "px-4"}
                   >
                     {h}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.map((ex) => {
                 const name = `${ex.student.firstName} ${ex.student.lastName}`;
                 const initials = getInitials(
@@ -713,11 +714,11 @@ const AllExercisesList = () => {
                     ? `/classes/${ex.class.id}/sessions/${ex.session.id}/submissions/${ex.id}`
                     : null;
                 return (
-                  <tr
+                  <TableRow
                     key={ex.id}
                     className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F9FDFB] transition-colors"
                   >
-                    <td className="px-4 py-3">
+                    <TableCell className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {ex.student.avatar ? (
                           <img
@@ -734,16 +735,16 @@ const AllExercisesList = () => {
                           {name}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-[#16302b]">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-xs text-[#16302b]">
                       {ex.class ? `${ex.class.name} (${ex.class.code})` : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-[#16302b]">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-xs text-[#16302b]">
                       {ex.session?.sessionNumber
                         ? `Buổi ${ex.session.sessionNumber}`
                         : "—"}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-center">
                       <span
                         className={cn(
                           "rounded-full px-2 py-0.5 text-[10px] font-semibold",
@@ -752,14 +753,14 @@ const AllExercisesList = () => {
                       >
                         {badge.label}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs font-semibold text-[#16302b]">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-xs font-semibold text-[#16302b]">
                       {ex.score ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-[#9AAEA9]">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-xs text-[#9AAEA9]">
                       {fmtDateTime(ex.updatedAt)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-center">
                       {gradeHref && (
                         <Link
                           href={gradeHref}
@@ -768,12 +769,12 @@ const AllExercisesList = () => {
                           {ex.status === "GRADED" ? "Xem" : "Chấm điểm"} →
                         </Link>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

@@ -14,6 +14,15 @@ import {
   TableRow,
 } from "@/components/ui/table.ui";
 
+/** Căn ngang của cột (áp dụng cho cả header và cell). Mặc định `left`. */
+export type DataTableAlign = "left" | "center" | "right";
+
+const ALIGN_CLASS: Record<DataTableAlign, string> = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+};
+
 export type DataTableColumn<T> = {
   key: string;
   header: ReactNode;
@@ -21,6 +30,8 @@ export type DataTableColumn<T> = {
   headerClassName?: string;
   cellClassName?: string;
   width?: string | number;
+  /** Dùng `center` cho cột trạng thái / thao tác. */
+  align?: DataTableAlign;
 };
 
 export type DataTableProps<T> = {
@@ -69,7 +80,7 @@ function DataTable<T>({
           {columns.map((col) => (
             <TableHead
               key={col.key}
-              className={cn("h-auto", col.headerClassName)}
+              className={cn(ALIGN_CLASS[col.align ?? "left"], col.headerClassName)}
             >
               {col.header}
             </TableHead>
@@ -87,7 +98,10 @@ function DataTable<T>({
             }
           >
             {columns.map((col) => (
-              <TableCell key={col.key} className={col.cellClassName}>
+              <TableCell
+                key={col.key}
+                className={cn(ALIGN_CLASS[col.align ?? "left"], col.cellClassName)}
+              >
                 {col.render(row, index)}
               </TableCell>
             ))}

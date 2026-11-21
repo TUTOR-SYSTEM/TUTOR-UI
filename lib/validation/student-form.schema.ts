@@ -36,19 +36,10 @@ export function buildStudentCreateSchema(
     gender: z.nativeEnum(GENDER_ENUM),
     studentPhone: z.string().trim().max(20, m.phoneMax),
     school: z.string().trim().max(255, m.schoolMax),
-    parentName: z.string().trim().min(1, m.required).max(255, m.nameMax),
-    parentRelationship: z.string(),
-    parentPhone: z.string().trim().max(20, m.phoneMax),
-    // Optional: empty is fine, otherwise it must look like an email.
-    parentEmail: z
-      .string()
-      .trim()
-      .refine((value) => value === "" || z.email().safeParse(value).success, {
-        message: m.emailInvalid,
-      }),
+    parentLastName: z.string().trim().min(1, m.required).max(255, m.nameMax),
+    parentFirstName: z.string().trim().min(1, m.required).max(255, m.nameMax),
     // default "" → output luôn là string (khớp FormValuesStudent); input thiếu vẫn hợp lệ.
     password: z.string().default(""),
-    parentPassword: z.string().default(""),
   });
   return base.superRefine((values, ctx) => {
     if (options.requireTutor && !values.tutorId) {
@@ -56,9 +47,5 @@ export function buildStudentCreateSchema(
     }
     const studentIssue = optionalPasswordIssue(values.password ?? "", m);
     if (studentIssue) ctx.addIssue({ code: "custom", path: ["password"], message: studentIssue });
-    const parentIssue = optionalPasswordIssue(values.parentPassword ?? "", m);
-    if (parentIssue) {
-      ctx.addIssue({ code: "custom", path: ["parentPassword"], message: parentIssue });
-    }
   });
 }

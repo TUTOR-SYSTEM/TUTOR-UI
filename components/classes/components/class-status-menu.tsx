@@ -1,75 +1,79 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarClock, CheckCircle2, MoreVertical, PlayCircle } from "lucide-react";
+import { CalendarClock, CheckCircle2, PlayCircle, type LucideIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button.ui";
-import MenuPopover from "@/components/ui/menu-popover.ui";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
+import { StatusMenu } from "@/components/ui/status-menu.ui";
+import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
 import type { ClassStatus } from "@/types";
 
-const ALL_CLASS_STATUSES: ClassStatus[] = ["OPEN", "UPCOMING", "CLOSED"];
-
-const classStatusIcon: Record<ClassStatus, React.ElementType> = {
+const classStatusIcon: Record<ClassStatus, LucideIcon> = {
   OPEN: PlayCircle,
   UPCOMING: CalendarClock,
   CLOSED: CheckCircle2,
 };
 
-/** Header "change class status" menu — hidden once the class is `CLOSED` (finished). */
+const ALL_CLASS_STATUSES: ClassStatus[] = ["OPEN", "UPCOMING", "CLOSED"];
+
+/**
+ * Menu đổi trạng thái lớp. Chuyển sang "Đã đóng" phải xác nhận trước (ConfirmDialog);
+ * ẩn menu ở page cha khi lớp đã đóng.
+ */
 export const ClassStatusMenu = ({
   status,
   statusLabel,
   onChangeStatus,
   disabled,
   ariaLabel,
+  triggerIcon,
 }: {
   status: ClassStatus;
   statusLabel: Record<ClassStatus, string>;
   onChangeStatus: (status: ClassStatus) => void;
   disabled?: boolean;
   ariaLabel: string;
+  /** Icon nút mở menu; mặc định là ⋮. */
+  triggerIcon?: LucideIcon;
 }) => {
-  const [open, setOpen] = useState(false);
+  const common = useCommonCopy();
+  const [pendingStatus, setPendingStatus] = useState<ClassStatus | null>(null);
+
+  const options = ALL_CLASS_STATUSES.map((value) => ({
+    value,
+    label: statusLabel[value],
+    icon: classStatusIcon[value],
+  }));
+
+  const handleSelect = (next: ClassStatus) => {
+    if (next === "CLOSED") setPendingStatus(next);
+    else onChangeStatus(next);
+  };
 
   return (
-    <MenuPopover
-      align="start"
-      open={open}
-      onOpenChange={setOpen}
-      trigger={
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          aria-label={ariaLabel}
-          disabled={disabled}
-        >
-          <MoreVertical className="size-4" />
-        </Button>
-      }
-    >
-      <div className="flex flex-col gap-0.5">
-        {ALL_CLASS_STATUSES.map((s) => {
-          const Icon = classStatusIcon[s];
-          const isCurrent = s === status;
-          return (
-            <Button
-              key={s}
-              type="button"
-              variant="ghost"
-              disabled={isCurrent || disabled}
-              onClick={() => {
-                onChangeStatus(s);
-                setOpen(false);
-              }}
-              className="h-auto! w-full! justify-start! gap-2! px-2! py-1.5! text-sm! font-normal"
-            >
-              <Icon className="size-3.5" />
-              {statusLabel[s]}
-            </Button>
-          );
-        })}
-      </div>
-    </MenuPopover>
+    <>
+      <StatusMenu
+        current={status}
+        options={options}
+        onSelect={handleSelect}
+        ariaLabel={ariaLabel}
+        disabled={disabled}
+        triggerIcon={triggerIcon}
+        align="start"
+      />
+      <ConfirmDialog
+        open={pendingStatus !== null}
+        onClose={() => setPendingStatus(null)}
+        onConfirm={() => {
+          if (pendingStatus) onChangeStatus(pendingStatus);
+          setPendingStatus(null);
+        }}
+        variant="default"
+        loading={disabled}
+        title={common.statusConfirm.closeClassTitle}
+        description={common.statusConfirm.closeClassDescription}
+        confirmLabel={common.statusConfirm.confirm}
+      />
+    </>
   );
 };

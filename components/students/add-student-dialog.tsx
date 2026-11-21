@@ -28,7 +28,6 @@ import {
   GENDER_ENUM,
   ParentOption,
   StudentProps,
-  RELATIONSHIP_OPTIONS,
 } from "@/types";
 
 type ClassOption = { id: string; name: string; code: string };
@@ -41,12 +40,9 @@ const DEFAULT_VALUES: FormValuesStudent = {
   gender: GENDER_ENUM.MALE,
   studentPhone: "",
   school: "",
-  parentName: "",
-  parentRelationship: "",
-  parentPhone: "",
-  parentEmail: "",
+  parentLastName: "",
+  parentFirstName: "",
   password: "",
-  parentPassword: "",
 };
 
 /** Fields rendered by this form; a 422 on any other field falls back to a toast. */
@@ -59,11 +55,8 @@ const FORM_FIELDS = [
   "studentPhone",
   "school",
   "password",
-  "parentName",
-  "parentRelationship",
-  "parentPhone",
-  "parentEmail",
-  "parentPassword",
+  "parentLastName",
+  "parentFirstName",
 ] as const;
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -111,18 +104,11 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
   /* picked an existing parent: show their data in the parent fields, locked (sent as parentId only) */
   const linkParent = (parent: ParentOption) => {
     setLinkedParent(parent);
-    setValue("parentRelationship", "");
-    setValue("parentPhone", parent.phone ?? "");
-    setValue("parentEmail", parent.email ?? "");
-    setValue("parentPassword", "");
   };
 
   /* name typed away from the picked parent: unlock the fields for a new parent */
   const unlinkParent = () => {
     setLinkedParent(null);
-    setValue("parentRelationship", "");
-    setValue("parentPhone", "");
-    setValue("parentEmail", "");
   };
 
   /* reset form on close */
@@ -168,14 +154,15 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
   const createStudent = usePost<unknown, CreateStudentPayload>("/students");
 
   const onSubmit = (values: FormValuesStudent) => {
+    /* BE create nhận một `parentName` duy nhất theo thứ tự "Họ Tên" (tách bằng khoảng trắng đầu tiên). */
+    const parentFullName = [values.parentLastName, values.parentFirstName]
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(" ");
     const parentPayload: Partial<CreateStudentPayload> = linkedParent
       ? { parentId: linkedParent.id }
       : {
-          parentName: values.parentName?.trim() || undefined,
-          parentRelationship: values.parentRelationship || undefined,
-          parentPhone: values.parentPhone?.trim() || undefined,
-          parentEmail: values.parentEmail?.trim() || undefined,
-          parentPassword: values.parentPassword || undefined,
+          parentName: parentFullName || undefined,
         };
     const payload: CreateStudentPayload = {
       tutorId: isAdmin ? values.tutorId : undefined,
@@ -199,12 +186,10 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
           classCode: values.classCode?.trim() ?? "",
           studentPhone: values.studentPhone?.trim() ?? "",
           school: values.school?.trim() ?? "",
-          parentName: linkedParent ? linkedParent.name : values.parentName.trim(),
-          parentEmail: linkedParent ? (linkedParent.email ?? "") : values.parentEmail.trim(),
-          parentRelationship: linkedParent ? "" : values.parentRelationship.trim(),
-          parentPhone: linkedParent
-            ? (linkedParent.phone ?? "")
-            : (values.parentPhone?.trim() ?? ""),
+          parentName: linkedParent ? linkedParent.name : parentFullName,
+          parentEmail: linkedParent ? (linkedParent.email ?? "") : "",
+          parentRelationship: "",
+          parentPhone: linkedParent ? (linkedParent.phone ?? "") : "",
         });
         handleClose();
       },
@@ -375,88 +360,40 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
         <div className="flex flex-col gap-4">
           <SectionTitle>{a.sectionParentInfo}</SectionTitle>
 
-          {/* Họ và tên phụ huynh — gõ để tìm phụ huynh có sẵn */}
+          {/* Họ + Tên phụ huynh (bắt buộc) — gõ để tìm phụ huynh có sẵn */}
           <Controller
-            name="parentName"
+            name="parentLastName"
             control={control}
-            render={({ field }) => (
-              <ParentPicker
-                label={a.parentNameLabel}
-                placeholder={a.parentNamePlaceholder}
-                required
-                value={field.value ?? ""}
-                onValueChange={field.onChange}
-                linked={linkedParent}
-                onLink={linkParent}
-                onUnlink={unlinkParent}
-                error={errors.parentName?.message}
+            render={({ field: last }) => (
+              <Controller
+                name="parentFirstName"
+                control={control}
+                render={({ field: first }) => (
+                  <ParentPicker
+                    label=""
+                    placeholder=""
+                    split={{
+                      lastName: last.value ?? "",
+                      firstName: first.value ?? "",
+                      onLastNameChange: last.onChange,
+                      onFirstNameChange: first.onChange,
+                      lastLabel: a.parentLastNameLabel,
+                      firstLabel: a.parentFirstNameLabel,
+                      lastPlaceholder: a.parentLastNamePlaceholder,
+                      firstPlaceholder: a.parentFirstNamePlaceholder,
+                      required: true,
+                      lastError: errors.parentLastName?.message,
+                      firstError: errors.parentFirstName?.message,
+                    }}
+                    linked={linkedParent}
+                    onLink={linkParent}
+                    onUnlink={unlinkParent}
+                  />
+                )}
               />
             )}
           />
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label={a.relationshipLabel} error={errors.parentRelationship?.message}>
-              <Controller
-                name="parentRelationship"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    options={RELATIONSHIP_OPTIONS}
-                    value={field.value ?? ""}
-                    onValueChange={field.onChange}
-                    placeholder={a.relationshipPlaceholder}
-                    disabled={!!linkedParent}
-                  />
-                )}
-              />
-            </FormField>
-
-            <FormField
-              label={a.parentPhoneLabel}
-              htmlFor="student-create-parent-phone"
-              error={errors.parentPhone?.message}
-            >
-              <Input
-                id="student-create-parent-phone"
-                {...register("parentPhone")}
-                type="tel"
-                placeholder={a.parentPhonePlaceholder}
-                disabled={!!linkedParent}
-                invalid={!!errors.parentPhone}
-              />
-            </FormField>
-
-            <FormField
-              label={a.parentEmailLabel}
-              htmlFor="student-create-parent-email"
-              error={errors.parentEmail?.message}
-            >
-              <Input
-                id="student-create-parent-email"
-                {...register("parentEmail")}
-                type="email"
-                placeholder={a.parentEmailPlaceholder}
-                disabled={!!linkedParent}
-                invalid={!!errors.parentEmail}
-              />
-            </FormField>
-
-            <FormField
-              label={a.parentPasswordLabel}
-              htmlFor="student-create-parent-password"
-              error={errors.parentPassword?.message}
-            >
-              <Input
-                id="student-create-parent-password"
-                {...register("parentPassword")}
-                type="password"
-                autoComplete="new-password"
-                placeholder={a.passwordPlaceholder}
-                disabled={!!linkedParent}
-                invalid={!!errors.parentPassword}
-              />
-            </FormField>
-          </div>
         </div>
       </form>
     </Dialog>

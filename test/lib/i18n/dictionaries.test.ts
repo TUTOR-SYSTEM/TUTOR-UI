@@ -9,17 +9,16 @@ import { classesDictionary } from "@/lib/i18n/classes.dictionary";
 import { commonDictionary } from "@/lib/i18n/common.dictionary";
 import { curriculumDictionary } from "@/lib/i18n/curriculum.dictionary";
 import { dashboardDictionary } from "@/lib/i18n/dashboard.dictionary";
+import { allClassesDictionary } from "@/lib/i18n/all-classes.dictionary";
 import { flowRequestDictionary } from "@/lib/i18n/flow-request.dictionary";
-import { flowRequestsDictionary } from "@/lib/i18n/flow-requests.dictionary";
-import { loggerDictionary } from "@/lib/i18n/logger.dictionary";
 import { scheduleDictionary } from "@/lib/i18n/schedule.dictionary";
 import { studentSessionsDictionary } from "@/lib/i18n/student-sessions.dictionary";
 import { studentsDictionary } from "@/lib/i18n/students.dictionary";
-import { testMonitorDictionary } from "@/lib/i18n/test-monitor.dictionary";
 import { transactionsDictionary } from "@/lib/i18n/transactions.dictionary";
 
 const ALL_DICTIONARIES: Record<string, Record<string, unknown>> = {
   accounts: accountsDictionary,
+  allClasses: allClassesDictionary,
   apiGaps: apiGapsDictionary,
   appShell: appShellDictionary,
   auth: authDictionary,
@@ -29,12 +28,9 @@ const ALL_DICTIONARIES: Record<string, Record<string, unknown>> = {
   curriculum: curriculumDictionary,
   dashboard: dashboardDictionary,
   flowRequest: flowRequestDictionary,
-  flowRequests: flowRequestsDictionary,
-  logger: loggerDictionary,
   schedule: scheduleDictionary,
   studentSessions: studentSessionsDictionary,
   students: studentsDictionary,
-  testMonitor: testMonitorDictionary,
   transactions: transactionsDictionary,
 };
 
@@ -42,9 +38,7 @@ const ALL_DICTIONARIES: Record<string, Record<string, unknown>> = {
  * Keys that are intentionally empty: the UI renders `prefix + <name> + suffix + "?"`,
  * so the suffix is blank for vi and en.
  */
-const INTENTIONALLY_EMPTY = new Set([
-  "flowRequests.vi.deleteDialog.descriptionSuffix",
-  "flowRequests.en.deleteDialog.descriptionSuffix",
+const INTENTIONALLY_EMPTY = new Set<string>([
 ]);
 
 /** Collect every leaf key path, e.g. "list.tableHeaders.name". */

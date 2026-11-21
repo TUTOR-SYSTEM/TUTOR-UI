@@ -17,6 +17,8 @@ export function toParentOption(user: ApiManagedUser, language: Language): Parent
   return {
     id: user.id,
     name: formatPersonName(user.firstName, user.lastName, language) || user.email || "",
+    firstName: user.firstName?.trim() ?? "",
+    lastName: user.lastName?.trim() ?? "",
     phone: user.phone ?? null,
     email: user.email ?? null,
   };
@@ -24,19 +26,39 @@ export function toParentOption(user: ApiManagedUser, language: Language): Parent
 
 type Suggestion = { parent: ParentOption; match: ParentMatch };
 
+/** Họ / Tên as two inputs; the search term is the combined name. */
+type SplitName = {
+  lastName: string;
+  firstName: string;
+  onLastNameChange: (value: string) => void;
+  onFirstNameChange: (value: string) => void;
+  lastLabel: string;
+  firstLabel: string;
+  lastPlaceholder: string;
+  firstPlaceholder: string;
+  /** Marks both Họ and Tên as required (`*`). */
+  required?: boolean;
+  lastError?: string;
+  firstError?: string;
+};
+
 type ParentPickerProps = {
   label: string;
   placeholder: string;
   required?: boolean;
-  /** Parent name as typed; typing drives the debounced search. */
-  value: string;
-  onValueChange: (value: string) => void;
+  /** Parent name as typed; typing drives the debounced search. Ignored when `split` is set. */
+  value?: string;
+  onValueChange?: (value: string) => void;
+  /** Render Họ + Tên inputs instead of a single full-name input. */
+  split?: SplitName;
   /** Parent picked from the suggestions; the parent fields follow it. */
   linked: ParentOption | null;
   onLink: (parent: ParentOption) => void;
   /** Called when the typed name no longer matches `linked` (the link is dropped). */
   onUnlink?: () => void;
   disabled?: boolean;
+  /** Hide the "trùng tên" suggestion list (the name inputs still work as plain fields). */
+  hideSuggestions?: boolean;
   /** Validation error for the typed name (shown under the input). */
   error?: string;
 };
@@ -49,19 +71,24 @@ export function ParentPicker({
   label,
   placeholder,
   required,
-  value,
+  value: singleValue = "",
   onValueChange,
+  split,
   linked,
   onLink,
   onUnlink,
   disabled,
+  hideSuggestions = false,
   error,
 }: ParentPickerProps) {
   const copy = useStudentsCopy();
   const { language } = useLocale();
+  const value = split
+    ? formatPersonName(split.firstName, split.lastName, language)
+    : singleValue;
   const search = useDebounce(value.trim(), 300);
   const hasSearch = search.length > 0;
-  const enabled = hasSearch && !disabled;
+  const enabled = hasSearch && !disabled && !hideSuggestions;
 
   // Full term: finds names containing the typed text.
   const byTerm = useUserActions({
@@ -93,28 +120,82 @@ export function ParentPicker({
   const showSuggestions = enabled && value.trim() !== linked?.name;
 
   const handleChange = (next: string) => {
-    onValueChange(next);
+    onValueChange?.(next);
     if (linked && next.trim() !== linked.name) onUnlink?.();
+  };
+
+  const handleSplitChange = (part: "last" | "first", next: string) => {
+    if (!split) return;
+    if (part === "last") split.onLastNameChange(next);
+    else split.onFirstNameChange(next);
+    const combined = formatPersonName(
+      part === "first" ? next : split.firstName,
+      part === "last" ? next : split.lastName,
+      language,
+    );
+    if (linked && combined.trim() !== linked.name) onUnlink?.();
   };
 
   const handlePick = (parent: ParentOption) => {
     onLink(parent);
-    onValueChange(parent.name);
+    if (split) {
+      split.onLastNameChange(parent.lastName);
+      split.onFirstNameChange(parent.firstName);
+    } else {
+      onValueChange?.(parent.name);
+    }
   };
 
   return (
     <div className="flex flex-col gap-3">
-      <FormField label={label} htmlFor="parent-picker-name" required={required} error={error}>
-        <Input
-          id="parent-picker-name"
-          value={value}
-          onChange={(e) => handleChange(e.target.value)}
-          placeholder={placeholder}
-          disabled={disabled}
-          invalid={!!error}
-          autoComplete="off"
-        />
-      </FormField>
+      {split ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField
+            label={split.lastLabel}
+            htmlFor="parent-picker-last-name"
+            required={split.required}
+            error={split.lastError}
+          >
+            <Input
+              id="parent-picker-last-name"
+              value={split.lastName}
+              onChange={(e) => handleSplitChange("last", e.target.value)}
+              placeholder={split.lastPlaceholder}
+              disabled={disabled}
+              invalid={!!split.lastError}
+              autoComplete="off"
+            />
+          </FormField>
+          <FormField
+            label={split.firstLabel}
+            htmlFor="parent-picker-first-name"
+            required={split.required}
+            error={split.firstError}
+          >
+            <Input
+              id="parent-picker-first-name"
+              value={split.firstName}
+              onChange={(e) => handleSplitChange("first", e.target.value)}
+              placeholder={split.firstPlaceholder}
+              disabled={disabled}
+              invalid={!!split.firstError}
+              autoComplete="off"
+            />
+          </FormField>
+        </div>
+      ) : (
+        <FormField label={label} htmlFor="parent-picker-name" required={required} error={error}>
+          <Input
+            id="parent-picker-name"
+            value={value}
+            onChange={(e) => handleChange(e.target.value)}
+            placeholder={placeholder}
+            disabled={disabled}
+            invalid={!!error}
+            autoComplete="off"
+          />
+        </FormField>
+      )}
 
       {showSuggestions && (
         <div className="flex flex-col gap-2">

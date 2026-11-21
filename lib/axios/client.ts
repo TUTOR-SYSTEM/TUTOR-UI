@@ -88,7 +88,9 @@ export const shouldSkip401Refresh = (
     key.includes("/auth/register") ||
     key.includes("/auth/forgot-password") ||
     key.includes("/auth/reset-password") ||
-    key.includes("/auth/verify-email")
+    key.includes("/auth/verify-email") ||
+    // Sai mật khẩu hiện tại: BE trả 401 nhưng phiên vẫn hợp lệ — không refresh/đăng xuất.
+    key.includes("/users/change-password")
   );
 };
 

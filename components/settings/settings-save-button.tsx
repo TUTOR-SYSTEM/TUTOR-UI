@@ -1,10 +1,12 @@
 "use client";
 
+import { useSettingsCopy } from "@/hooks/useSettingsCopy.hook";
 import { Button } from "@/components/ui/button.ui";
 import { useState } from "react";
 import { Check } from "lucide-react";
 
-export function SaveButton({ label = "Lưu thay đổi" }: { label?: string }) {
+export function SaveButton({ label }: { label?: string }) {
+  const { common } = useSettingsCopy();
   const [saved, setSaved] = useState(false);
   const handle = () => {
     setSaved(true);
@@ -20,7 +22,7 @@ export function SaveButton({ label = "Lưu thay đổi" }: { label?: string }) {
         }`}
       >
         {saved && <Check className="size-4" />}
-        {saved ? "Đã lưu!" : label}
+        {saved ? common.saved : (label ?? common.save)}
       </Button>
     </div>
   );

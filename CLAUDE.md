@@ -233,7 +233,6 @@ Uses CVA variants. Key props:
 | Variable              | Description          | Default                 |
 | --------------------- | -------------------- | ----------------------- |
 | `NEXT_PUBLIC_API_URL` | Backend API base URL (gateway) | `http://localhost:8888` |
-| `NEXT_PUBLIC_THIRD_SERVICE_URL` | THIRD_SERVICE base URL — sockets aren't proxied through the gateway, so the `/logs` realtime feed (`hooks/useLogSocket.hook.ts`) connects here directly | `http://localhost:4000` |
 
 ## Git Remote
 
@@ -246,6 +245,7 @@ origin: https://gitlab.com/finance_tracker_phandanghai/my-finance-tracker.git
 Quy ước code FE và tích hợp API (FE ↔ BE) sống trong `.claude/rules/*.md` (nguồn duy nhất — sửa quy
 ước thì sửa ở đó, không chép lại vào file này):
 
+- `response-style.md` — trả lời bằng tiếng Việt, ngắn gọn.
 - `structure-naming.md` — đặt tên file, path alias, cấu trúc route, testing.
 - `fe-rbac-role-guarding.md` — phân quyền route theo role (ADMIN/TUTOR/STUDENT/PARENT).
 - `ui-components.md` — primitives `components/ui/*` (Button, Dialog/ConfirmDialog, DataTable,

@@ -254,9 +254,9 @@ const vi: FlowRequestDictionary = {
   requests: {
     heading: "Request FE → Gateway → Kafka → Service",
     hint: "Danh sách các request thực tế UI gửi đi, topic Kafka gateway phân phối, và service đảm nhận xử lý.",
-    colMethod: "METHOD",
-    colEndpoint: "ENDPOINT (FE)",
-    colFlow: "LUỒNG XỬ LÝ",
+    colMethod: "Method",
+    colEndpoint: "Endpoint (FE)",
+    colFlow: "Luồng xử lý",
     empty: "Không có request khớp.",
     unroutedHeading: "Request FE chưa định tuyến qua gateway (legacy)",
     unroutedHint:
@@ -417,9 +417,9 @@ const en: FlowRequestDictionary = {
   requests: {
     heading: "Request FE → Gateway → Kafka → Service",
     hint: "Real requests sent by the UI, the Kafka topics the gateway publishes, and the handling service.",
-    colMethod: "METHOD",
-    colEndpoint: "ENDPOINT (FE)",
-    colFlow: "HANDLING FLOW",
+    colMethod: "Method",
+    colEndpoint: "Endpoint (FE)",
+    colFlow: "Handling flow",
     empty: "No matching requests.",
     unroutedHeading: "FE requests not routed through the gateway (legacy)",
     unroutedHint:

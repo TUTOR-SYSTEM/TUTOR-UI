@@ -15,7 +15,7 @@ export default function AppRootLayout({
         <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col bg-sidebar">
           <AppHeader />
-          <main className="flex-1 overflow-y-auto p-4 border rounded-bl-lg rounded-br-lg border-t-0 transform-gpu">
+          <main className="flex-1 overflow-y-auto p-6 border rounded-bl-lg rounded-br-lg border-t-0 transform-gpu">
             <RouteAccessGuard>{children}</RouteAccessGuard>
           </main>
         </div>

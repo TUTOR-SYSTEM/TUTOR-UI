@@ -38,6 +38,22 @@ export type CommonDictionary = {
     deleteTitle: string;
     confirm: string;
     cancel: string;
+    /** "Bạn có chắc muốn xóa" + " {label} {name}" + "?" */
+    questionPrefix: string;
+    questionSuffix: string;
+    irreversible: string;
+  };
+  statusConfirm: {
+    closeClassTitle: string;
+    closeClassDescription: string;
+    confirm: string;
+  };
+  datePicker: {
+    placeholder: string;
+    today: string;
+    clear: string;
+    prevMonth: string;
+    nextMonth: string;
   };
 };
 
@@ -79,6 +95,21 @@ const vi: CommonDictionary = {
     deleteTitle: "Xác nhận xóa",
     confirm: "Xóa",
     cancel: "Hủy",
+    questionPrefix: "Bạn có chắc muốn xóa",
+    questionSuffix: "?",
+    irreversible: "Hành động này không thể hoàn tác.",
+  },
+  statusConfirm: {
+    closeClassTitle: "Đóng lớp học?",
+    closeClassDescription: "Lớp sẽ chuyển sang trạng thái Đã đóng.",
+    confirm: "Xác nhận",
+  },
+  datePicker: {
+    placeholder: "Chọn ngày",
+    today: "Hôm nay",
+    clear: "Xóa",
+    prevMonth: "Tháng trước",
+    nextMonth: "Tháng sau",
   },
 };
 
@@ -120,6 +151,21 @@ const en: CommonDictionary = {
     deleteTitle: "Confirm delete",
     confirm: "Delete",
     cancel: "Cancel",
+    questionPrefix: "Are you sure you want to delete",
+    questionSuffix: "?",
+    irreversible: "This action cannot be undone.",
+  },
+  statusConfirm: {
+    closeClassTitle: "Close this class?",
+    closeClassDescription: "The class will be moved to the Closed status.",
+    confirm: "Confirm",
+  },
+  datePicker: {
+    placeholder: "Pick a date",
+    today: "Today",
+    clear: "Clear",
+    prevMonth: "Previous month",
+    nextMonth: "Next month",
   },
 };
 
