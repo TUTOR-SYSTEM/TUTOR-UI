@@ -261,7 +261,7 @@ export const SessionSubmissionsPage = ({
                   : EXERCISE_STATUS_META.NOT_SUBMITTED;
 
                 return (
-                  <TableRow key={student.id} className="h-16 hover:bg-muted/20">
+                  <TableRow key={student.id} className="hover:bg-muted/20">
                     <TableCell className="px-5">
                       <div className="flex items-center gap-3">
                         {student.avatar ? (

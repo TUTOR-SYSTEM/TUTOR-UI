@@ -594,7 +594,7 @@ export const TransactionsPage = () => {
         <div className="overflow-x-auto rounded-xl border border-border/70">
           <Table className="w-full min-w-[720px] text-sm">
             <TableHeader>
-              <TableRow className="h-10 border-b border-border/70">
+              <TableRow className="border-b border-border/70">
                 <TableHead className="w-10 px-3">
                   <input
                     type="checkbox"

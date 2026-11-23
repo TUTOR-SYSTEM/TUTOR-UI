@@ -102,6 +102,7 @@ export type CurriculumDictionary = {
     };
     lesson: {
       expandAriaLabel: string;
+      editAriaLabel: string;
       deleteAriaLabel: string;
       titlePlaceholder: string;
       descriptionPlaceholder: string;
@@ -115,6 +116,7 @@ export type CurriculumDictionary = {
     chapter: {
       label: (index: number, title: string) => string;
       lessonCountSuffix: (count: number) => string;
+      editAriaLabel: string;
       deleteAriaLabel: string;
       addLessonSuccess: string;
       addLessonErrorFallback: string;
@@ -131,6 +133,39 @@ export type CurriculumDictionary = {
       descriptionOptionalHint: string;
       descriptionPlaceholder: string;
       cancelButton: string;
+      submitButton: string;
+      toastSuccess: string;
+      toastErrorFallback: string;
+    };
+    deleteChapterConfirm: {
+      title: string;
+      descriptionPrefix: string;
+      warning: string;
+      confirmLabel: string;
+    };
+    deleteLessonConfirm: {
+      title: string;
+      descriptionPrefix: string;
+      warning: string;
+      confirmLabel: string;
+    };
+    deleteFileConfirm: {
+      title: string;
+      descriptionPrefix: string;
+      warning: string;
+      confirmLabel: string;
+    };
+    editChapterModal: {
+      title: string;
+      submitButton: string;
+      toastSuccess: string;
+      toastErrorFallback: string;
+    };
+    editLessonModal: {
+      title: string;
+      titleLabel: string;
+      titleRequired: string;
+      descriptionLabel: string;
       submitButton: string;
       toastSuccess: string;
       toastErrorFallback: string;
@@ -244,6 +279,7 @@ const vi: CurriculumDictionary = {
     },
     lesson: {
       expandAriaLabel: "Mở rộng",
+      editAriaLabel: "Sửa bài",
       deleteAriaLabel: "Xóa bài",
       titlePlaceholder: "Tên bài học...",
       descriptionPlaceholder: "Mô tả (tuỳ chọn)...",
@@ -259,6 +295,7 @@ const vi: CurriculumDictionary = {
       label: (index, title) =>
         /^chương\s*\d/i.test(title.trim()) ? title : `Chương ${index} · ${title}`,
       lessonCountSuffix: (count) => `${count} bài`,
+      editAriaLabel: "Sửa chương",
       deleteAriaLabel: "Xóa chương",
       addLessonSuccess: "Đã thêm bài học",
       addLessonErrorFallback: "Thêm bài thất bại",
@@ -278,6 +315,39 @@ const vi: CurriculumDictionary = {
       submitButton: "Tạo chương",
       toastSuccess: "Đã tạo chương mới",
       toastErrorFallback: "Tạo chương thất bại",
+    },
+    deleteChapterConfirm: {
+      title: "Xóa chương",
+      descriptionPrefix: "Bạn có chắc muốn xóa chương",
+      warning: "Toàn bộ bài học trong chương này cũng sẽ bị xóa. Hành động này không thể hoàn tác.",
+      confirmLabel: "Xóa",
+    },
+    deleteLessonConfirm: {
+      title: "Xóa bài học",
+      descriptionPrefix: "Bạn có chắc muốn xóa bài",
+      warning: "Toàn bộ tệp bài giảng và bài tập của bài này cũng sẽ bị gỡ. Hành động này không thể hoàn tác.",
+      confirmLabel: "Xóa",
+    },
+    deleteFileConfirm: {
+      title: "Xóa tệp",
+      descriptionPrefix: "Bạn có chắc muốn xóa tệp",
+      warning: "Tệp sẽ bị gỡ khỏi bài học. Hành động này không thể hoàn tác.",
+      confirmLabel: "Xóa",
+    },
+    editChapterModal: {
+      title: "Sửa chương",
+      submitButton: "Lưu",
+      toastSuccess: "Đã cập nhật chương",
+      toastErrorFallback: "Cập nhật chương thất bại",
+    },
+    editLessonModal: {
+      title: "Sửa bài học",
+      titleLabel: "Tên bài",
+      titleRequired: "Vui lòng nhập tên bài",
+      descriptionLabel: "Mô tả",
+      submitButton: "Lưu",
+      toastSuccess: "Đã cập nhật bài học",
+      toastErrorFallback: "Cập nhật bài học thất bại",
     },
     deleteChapterToastSuccess: "Đã xóa chương",
     deleteChapterToastErrorFallback: "Xóa chương thất bại",
@@ -388,6 +458,7 @@ const en: CurriculumDictionary = {
     },
     lesson: {
       expandAriaLabel: "Expand",
+      editAriaLabel: "Edit lesson",
       deleteAriaLabel: "Delete lesson",
       titlePlaceholder: "Lesson title...",
       descriptionPlaceholder: "Description (optional)...",
@@ -402,6 +473,7 @@ const en: CurriculumDictionary = {
       label: (index, title) =>
         /^chapter\s*\d/i.test(title.trim()) ? title : `Chapter ${index} · ${title}`,
       lessonCountSuffix: (count) => `${count} lessons`,
+      editAriaLabel: "Edit chapter",
       deleteAriaLabel: "Delete chapter",
       addLessonSuccess: "Lesson added",
       addLessonErrorFallback: "Failed to add lesson",
@@ -421,6 +493,39 @@ const en: CurriculumDictionary = {
       submitButton: "Create chapter",
       toastSuccess: "Chapter created",
       toastErrorFallback: "Failed to create chapter",
+    },
+    deleteChapterConfirm: {
+      title: "Delete chapter",
+      descriptionPrefix: "Are you sure you want to delete chapter",
+      warning: "All lessons in this chapter will also be deleted. This action cannot be undone.",
+      confirmLabel: "Delete",
+    },
+    deleteLessonConfirm: {
+      title: "Delete lesson",
+      descriptionPrefix: "Are you sure you want to delete lesson",
+      warning: "All lecture and exercise files of this lesson will also be removed. This action cannot be undone.",
+      confirmLabel: "Delete",
+    },
+    deleteFileConfirm: {
+      title: "Delete file",
+      descriptionPrefix: "Are you sure you want to delete file",
+      warning: "The file will be removed from the lesson. This action cannot be undone.",
+      confirmLabel: "Delete",
+    },
+    editChapterModal: {
+      title: "Edit chapter",
+      submitButton: "Save",
+      toastSuccess: "Chapter updated",
+      toastErrorFallback: "Failed to update chapter",
+    },
+    editLessonModal: {
+      title: "Edit lesson",
+      titleLabel: "Lesson name",
+      titleRequired: "Please enter a lesson name",
+      descriptionLabel: "Description",
+      submitButton: "Save",
+      toastSuccess: "Lesson updated",
+      toastErrorFallback: "Failed to update lesson",
     },
     deleteChapterToastSuccess: "Chapter deleted",
     deleteChapterToastErrorFallback: "Failed to delete chapter",

@@ -9,24 +9,17 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import {
-  ChevronRight,
-  ClipboardCheck,
-  Clock,
-  Loader2,
-  Star,
-  XCircle,
-} from "lucide-react";
+import { ClipboardCheck, Eye, Loader2, Star, XCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button.ui";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table.ui";
 import { useSessionActions } from "@/lib/services/session.service";
 import { useExerciseActions } from "@/lib/services/exercise.service";
 import { getErrorMessage } from "@/lib/axios";
 import { useCurrentUserId } from "@/hooks/useCurrentUserId";
 import { fmtDate } from "@/components/sessions/session-shared";
 import type {
-  ExercisesResponse,
-  StudentSessionsResponse,
   StudentSessionListItem,
   ExerciseDetail,
 } from "@/types/session.types";
@@ -48,68 +41,84 @@ type AssignmentRowData = {
   score: number | null;
 };
 
-const actionLabel = (status: PracticeStatus) =>
-  status === "GRADED"
-    ? "Xem điểm"
-    : status === "SUBMITTED"
-      ? "Xem / nộp lại"
-      : "Nộp bài";
-
-const AssignmentRow = ({ a }: { a: AssignmentRowData }) => {
-  const meta = PRACTICE_STATUS[a.status];
-  const overdueColor =
-    a.status === "NOT_SUBMITTED" ? "text-[#E85D24]" : "text-[#16302b]";
-
-  return (
-    <Link
-      href={a.href}
-      className="relative block overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm transition-colors hover:border-[#0E9F8E]/40"
-    >
-      <span className={cn("absolute inset-y-0 left-0 w-1", meta.bar)} />
-      <div className="flex items-start gap-4 pl-5 pr-4 py-4">
-        <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#F1F0FE] text-[#6366F1]">
-          <ClipboardCheck className="size-5" />
+const ASSIGNMENT_COLUMNS: DataTableColumn<AssignmentRowData>[] = [
+  {
+    key: "title",
+    header: "Bài tập",
+    render: (a) => (
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F1F0FE] text-[#6366F1]">
+          <ClipboardCheck className="size-4" />
         </span>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-bold text-[#16302b]">{a.title}</h3>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                meta.badge,
-              )}
-            >
-              <span className="size-1.5 rounded-full bg-current opacity-70" />
-              {meta.label}
-            </span>
-          </div>
-
-          <p className="mt-1 text-sm text-[#5c726d]">{a.description}</p>
-
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-            <span className={cn("flex items-center gap-1.5", overdueColor)}>
-              <Clock className="size-3.5" />
-              Buổi học: <span className="font-semibold">{a.dueLabel}</span>
-            </span>
-            {a.status === "GRADED" && (
-              <span className="flex items-center gap-1.5 text-[#4f46e5]">
-                <Star className="size-3.5 fill-current" />
-                Điểm: <span className="font-bold">{a.score?.toFixed(1)}</span>
-                <span className="text-[#9AAEA9]">/10</span>
-              </span>
-            )}
-          </div>
+        <div className="min-w-0">
+          <p className="truncate font-semibold text-[#16302b]">{a.title}</p>
+          <p className="truncate text-xs text-[#5c726d]">{a.description}</p>
         </div>
-
-        <span className="mt-1 flex shrink-0 items-center gap-1 self-center text-sm font-semibold text-[#0E9F8E]">
-          {actionLabel(a.status)}
-          <ChevronRight className="size-4" />
-        </span>
       </div>
-    </Link>
-  );
-};
+    ),
+  },
+  {
+    key: "session",
+    header: "Buổi học",
+    render: (a) => (
+      <span className="text-xs font-medium text-[#16302b]">{a.dueLabel}</span>
+    ),
+  },
+  {
+    key: "status",
+    header: "Trạng thái",
+    align: "center",
+    render: (a) => {
+      const meta = PRACTICE_STATUS[a.status];
+      return (
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",
+            meta.badge,
+          )}
+        >
+          <span className="size-1.5 rounded-full bg-current opacity-70" />
+          {meta.label}
+        </span>
+      );
+    },
+  },
+  {
+    key: "score",
+    header: "Điểm",
+    align: "center",
+    render: (a) =>
+      a.status === "GRADED" && a.score !== null ? (
+        <span className="inline-flex items-center gap-1 font-bold text-[#4f46e5]">
+          <Star className="size-3.5 fill-current" />
+          {a.score.toFixed(1)}
+          <span className="text-xs font-normal text-[#9AAEA9]">/10</span>
+        </span>
+      ) : (
+        <span className="text-[#9AAEA9]">—</span>
+      ),
+  },
+  {
+    key: "action",
+    header: "Thao tác",
+    align: "center",
+    render: (a) => (
+      <Button
+        asChild
+        variant="ghost"
+        size="sm"
+        className="text-[#0E9F8E]"
+        aria-label="Xem bài tập đã giao"
+        title="Xem bài tập đã giao"
+      >
+        <Link href={a.href}>
+          <Eye className="size-4" />
+          Xem bài tập
+        </Link>
+      </Button>
+    ),
+  },
+];
 
 /* ─── Main view ─── */
 
@@ -202,7 +211,7 @@ export const StudentAssignmentsView = () => {
   const loading = sessionsLoading || exercisesLoading;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 pb-8">
+    <div className="flex w-full flex-col gap-4 pb-8">
       <div>
         <h1 className="text-2xl font-bold text-[#16302b]">Bài tập được giao</h1>
         <p className="mt-1 text-sm text-[#9AAEA9]">
@@ -243,18 +252,17 @@ export const StudentAssignmentsView = () => {
             {getErrorMessage(sessionsError, "Không thể tải danh sách bài tập")}
           </p>
         </div>
-      ) : assignments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-[#E7EEEC] bg-white py-16 text-center">
-          <ClipboardCheck className="size-9 text-[#C5D5D1]" />
-          <p className="mt-2 text-sm text-[#9AAEA9]">
-            Chưa có bài tập nào được giao.
-          </p>
-        </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {assignments.map((a) => (
-            <AssignmentRow key={a.key} a={a} />
-          ))}
+        <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
+          <DataTable
+            data={assignments}
+            columns={ASSIGNMENT_COLUMNS}
+            rowKey={(a) => a.key}
+            emptyMessage="Chưa có bài tập nào được giao."
+            headerRowClassName="border-b border-[#E7EEEC] bg-[#F3F7F5]"
+            rowClassName="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9]"
+            pageSize={10}
+          />
         </div>
       )}
 

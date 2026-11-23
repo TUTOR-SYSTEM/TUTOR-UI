@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
+  Eye,
   KeyRound,
   Loader2,
   Pencil,
@@ -14,6 +15,7 @@ import {
   } from "lucide-react";
 
 import { AddStudentDialog } from "@/components/students/add-student-dialog";
+import { RemoveStudentFromClassDialog } from "@/components/students/remove-student-from-class-dialog";
 import { SetStudentPasswordDialog } from "@/components/students/set-student-password-dialog";
 import { EditStudentDialog } from "@/components/students/edit-student-dialog";
 import { DeleteStudentDialog } from "@/components/students/delete-student-dialog";
@@ -92,6 +94,7 @@ function mapApiToStudent(api: ApiStudent, language: Language): Student {
     lastName: api.lastName?.trim() ?? "",
     subject: "",
     classId: classes[0]?.id ?? null,
+    classes: classes.map((c) => ({ id: c.id, name: c.name, code: c.code })),
     classCode: classes.map((c) => c.code).join(", "),
     tutorName,
     studentId: api.userCode ?? "",
@@ -123,16 +126,33 @@ export default function StudentsPage() {
   const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState("");
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
-  // PUT/DELETE /students/:id are ADMIN-only on the gateway. TUTOR manages their own list: it can
-  // create students and set their passwords (PUT /students/:id/password), but not edit/delete.
+  // TUTOR manages their own list: it can create students, view their detail, edit a student's
+  // details (PUT /students/:id — BE checks ownership; address/parent fields stay locked in the
+  // dialog) and remove a student from one of its classes. Delete stays ADMIN-only.
   const role = useCurrentUserRole();
   const isAdmin = role === "ADMIN";
   const canManage = isAdmin || role === "TUTOR";
+  const [removingFromClass, setRemovingFromClass] = useState<Student | null>(
+    null,
+  );
+  // Cột "Gia sư" chỉ có ý nghĩa với ADMIN (xem mọi gia sư); TUTOR chỉ thấy học sinh của mình.
+  const columnHeaders = [
+    copy.list.tableHeaders.stt,
+    copy.list.tableHeaders.name,
+    // ADMIN sees the class code; TUTOR sees the class name.
+    isAdmin ? copy.list.tableHeaders.classCode : copy.list.tableHeaders.className,
+    ...(isAdmin ? [copy.list.tableHeaders.tutor] : []),
+    copy.list.tableHeaders.studentCode,
+    copy.list.tableHeaders.studentPhone,
+    copy.list.tableHeaders.parentName,
+    copy.list.tableHeaders.parentPhone,
+    ...(canManage ? [copy.list.tableHeaders.actions] : []),
+  ];
+  const columnCount = columnHeaders.length;
   const [passwordStudent, setPasswordStudent] = useState<Student | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterClassId, setFilterClassId] = useState("");
@@ -159,14 +179,6 @@ export default function StudentsPage() {
         code: string;
       }[],
     [filterClassesRaw],
-  );
-
-  const classTabs = useMemo(
-    () => [
-      { label: copy.list.tabs.all, value: "" },
-      ...classes.map((c) => ({ label: c.name, value: c.code })),
-    ],
-    [copy, classes],
   );
 
   const filterClassOptions = useMemo(
@@ -199,19 +211,11 @@ export default function StudentsPage() {
     Boolean,
   ).length;
 
-  const handleResetFilters = () => {
-    setFilterClassId("");
-    setFilterGender("");
-    setFilterActive("");
-    setPage(1);
-  };
-
   /* ── fetch students ── */
   const queryParams = {
     page,
     limit: PAGE_SIZE,
     search: search.trim() || undefined,
-    classCode: activeTab || undefined,
     classId: filterClassId || undefined,
     gender: filterGender || undefined,
     isActive: filterActive === "" ? undefined : filterActive === "true",
@@ -326,14 +330,14 @@ export default function StudentsPage() {
                   }
                 }}
                 placeholder={copy.list.searchPlaceholder}
-                className="h-9 w-56 rounded-lg pl-9"
+                className="h-10 w-56 rounded-lg pl-9"
               />
             </div>
             <Button
               type="button"
               variant="outline"
               onClick={handleSearchSubmit}
-              className="h-9! w-auto! gap-1.5 rounded-lg! border-[#E7EEEC]! bg-white text-sm text-[#16302b] hover:bg-[#F1FBF9]"
+              className="h-10! w-auto! gap-1.5 rounded-lg! border-[#E7EEEC]! bg-white text-sm text-[#16302b] hover:bg-[#F1FBF9]"
             >
               <Search className="size-3.5" />
               {common.actions.search}
@@ -342,35 +346,13 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      {/* ── Filter tabs ── */}
-      <div className="flex items-center justify-between">
-        {/* Tab lớp chỉ cho gia sư; admin lọc lớp qua nút "Bộ lọc". */}
-        {isAdmin ? (
-          <div />
-        ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            {classTabs.map((tab) => (
-              <Button
-                key={tab.value}
-                type="button"
-                variant={activeTab === tab.value ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setActiveTab(tab.value);
-                  setPage(1);
-                }}
-                className="rounded-full"
-              >
-                {tab.label}
-              </Button>
-            ))}
-          </div>
-        )}
+      {/* ── Filter button (lọc lớp qua popup "Bộ lọc") ── */}
+      <div className="flex items-center justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={() => setFilterOpen(true)}
-          className="h-9! w-auto! gap-1.5 rounded-lg! border-[#E7EEEC]! bg-white text-sm text-[#16302b] hover:bg-[#F1FBF9]"
+          className="h-10! w-auto! gap-1.5 rounded-lg! border-[#E7EEEC]! bg-white text-sm text-[#16302b] hover:bg-[#F1FBF9]"
         >
           <SlidersHorizontal className="size-3.5" />
           {common.actions.filter}
@@ -387,20 +369,10 @@ export default function StudentsPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30">
-              {[
-                  copy.list.tableHeaders.stt,
-                  copy.list.tableHeaders.name,
-                  copy.list.tableHeaders.classCode,
-                  copy.list.tableHeaders.tutor,
-                  copy.list.tableHeaders.studentCode,
-                  copy.list.tableHeaders.studentPhone,
-                  copy.list.tableHeaders.parentName,
-                  copy.list.tableHeaders.parentPhone,
-                  ...(canManage ? [copy.list.tableHeaders.actions] : []),
-                ].map((col, i) => (
+              {columnHeaders.map((col, i) => (
                   <TableHead
                     key={col}
-                    className={`${i === 0 ? "w-14" : ""} ${col === copy.list.tableHeaders.actions ? "text-center" : ""}`}
+                    className={`${i === 0 ? "w-14 text-center" : ""} ${col === copy.list.tableHeaders.actions ? "text-center" : ""}`}
                   >
                     {col}
                   </TableHead>
@@ -414,7 +386,7 @@ export default function StudentsPage() {
                   className="hover:bg-muted/30 transition-colors"
                 >
                   {/* STT */}
-                  <TableCell className="text-muted-foreground font-medium">
+                  <TableCell className="text-center text-muted-foreground font-medium">
                     {String((page - 1) * PAGE_SIZE + i + 1).padStart(2, "0")}
                   </TableCell>
 
@@ -441,19 +413,34 @@ export default function StudentsPage() {
                     </Link>
                   </TableCell>
 
-                  {/* Class code */}
+                  {/* Class code (ADMIN) / class name(s) (TUTOR) */}
                   <TableCell>
-                    {s.classCode && (
-                      <span className="rounded-md border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                        {s.classCode}
-                      </span>
+                    {isAdmin ? (
+                      s.classCode && (
+                        <span className="rounded-md border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                          {s.classCode}
+                        </span>
+                      )
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {s.classes.map((c) => (
+                          <span
+                            key={c.id}
+                            className="rounded-md border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary"
+                          >
+                            {c.name || c.code}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </TableCell>
 
-                  {/* Tutor */}
-                  <TableCell className="text-foreground">
-                    {s.tutorName || "—"}
-                  </TableCell>
+                  {/* Tutor (ADMIN only) */}
+                  {isAdmin && (
+                    <TableCell className="text-foreground">
+                      {s.tutorName || "—"}
+                    </TableCell>
+                  )}
 
                   {/* Student ID */}
                   <TableCell>
@@ -473,43 +460,76 @@ export default function StudentsPage() {
                     {s.parentPhone}
                   </TableCell>
 
-                  {/* Actions: password (ADMIN + TUTOR owner); edit/delete (ADMIN only) */}
+                  {/* Actions: TUTOR xem chi tiết + sửa + gỡ khỏi lớp; ADMIN đặt mật khẩu/sửa/xoá */}
                   {canManage && (
                     <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          title={copy.setPasswordDialog.actionTitle}
-                          aria-label={copy.setPasswordDialog.actionTitle}
-                          onClick={() => setPasswordStudent(s)}
-                        >
-                          <KeyRound className="size-3.5" />
-                        </Button>
-                        {isAdmin && (
-                          <>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              title={common.actions.edit}
-                              onClick={() => setEditingStudent(s)}
-                            >
-                              <Pencil className="size-3.5" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon-sm"
-                              title={common.actions.delete}
-                              onClick={() => setDeletingStudent(s)}
-                            >
-                              <DeleteIcon />
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                      {isAdmin ? (
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            title={copy.setPasswordDialog.actionTitle}
+                            aria-label={copy.setPasswordDialog.actionTitle}
+                            onClick={() => setPasswordStudent(s)}
+                          >
+                            <KeyRound className="size-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            title={common.actions.edit}
+                            onClick={() => setEditingStudent(s)}
+                          >
+                            <Pencil className="size-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon-sm"
+                            title={common.actions.delete}
+                            onClick={() => setDeletingStudent(s)}
+                          >
+                            <DeleteIcon />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="icon-sm"
+                            title={copy.rowActions.viewDetail}
+                            aria-label={copy.rowActions.viewDetail}
+                          >
+                            <Link href={`/students/${s.id}`}>
+                              <Eye className="size-3.5" />
+                            </Link>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            title={common.actions.edit}
+                            aria-label={common.actions.edit}
+                            onClick={() => setEditingStudent(s)}
+                          >
+                            <Pencil className="size-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon-sm"
+                            disabled={s.classes.length === 0}
+                            title={copy.rowActions.removeFromClass}
+                            aria-label={copy.rowActions.removeFromClass}
+                            onClick={() => setRemovingFromClass(s)}
+                          >
+                            <DeleteIcon />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   )}
                 </TableRow>
@@ -517,21 +537,21 @@ export default function StudentsPage() {
 
               {!isPending && students.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-14 text-center text-muted-foreground">
+                  <TableCell colSpan={columnCount} className="py-14 text-center text-muted-foreground">
                     {copy.list.emptyState}
                   </TableCell>
                 </TableRow>
               )}
               {isPending && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-14 text-center text-muted-foreground">
+                  <TableCell colSpan={columnCount} className="py-14 text-center text-muted-foreground">
                     <Loader2 className="mx-auto size-5 animate-spin" />
                   </TableCell>
                 </TableRow>
               )}
               {isError && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-14 text-center text-destructive">
+                  <TableCell colSpan={columnCount} className="py-14 text-center text-destructive">
                     {getErrorMessage(error, copy.list.loadError)}
                   </TableCell>
                 </TableRow>
@@ -560,6 +580,12 @@ export default function StudentsPage() {
         open={passwordStudent !== null}
         student={passwordStudent}
         onClose={() => setPasswordStudent(null)}
+      />
+
+      {/* ── Remove student from class dialog (TUTOR) ── */}
+      <RemoveStudentFromClassDialog
+        student={removingFromClass}
+        onClose={() => setRemovingFromClass(null)}
       />
 
       {/* ── Edit student dialog ── */}
@@ -632,15 +658,6 @@ export default function StudentsPage() {
           />
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleResetFilters}
-          disabled={activeFilterCount === 0}
-          className="w-full! rounded-lg! border-[#E7EEEC]! bg-white text-xs! font-medium text-[#16302b] hover:bg-[#F3F7F5]"
-        >
-          {copy.list.filterPopup.resetButton}
-        </Button>
       </Dialog>
 
       <UsageGuides

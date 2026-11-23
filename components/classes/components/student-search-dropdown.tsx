@@ -56,20 +56,44 @@ export function StudentSearchDropdown({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{
-    top: number;
+    top?: number;
+    bottom?: number;
     left: number;
     width: number;
+    maxHeight: number;
   } | null>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  /* Vị trí dropdown theo ô tìm kiếm; cập nhật khi cuộn (kể cả cuộn dialog) hoặc đổi kích thước. */
+  /* Vị trí dropdown theo ô tìm kiếm; tự mở lên trên khi phía dưới không đủ chỗ.
+   * Cập nhật khi cuộn (kể cả cuộn dialog) hoặc đổi kích thước. */
   useLayoutEffect(() => {
     if (!open) return;
     const update = () => {
       const rect = anchorRef.current?.getBoundingClientRect();
-      if (rect)
-        setPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      if (!rect) return;
+      const GAP = 4;
+      const DROPDOWN_MAX = 280; // = max-h mặc định của dropdown
+      const spaceBelow = window.innerHeight - rect.bottom - GAP;
+      const spaceAbove = rect.top - GAP;
+      const openUp = spaceBelow < DROPDOWN_MAX && spaceAbove > spaceBelow;
+      const available = openUp ? spaceAbove : spaceBelow;
+      const maxHeight = Math.max(120, Math.min(DROPDOWN_MAX, available));
+      setPos(
+        openUp
+          ? {
+              bottom: window.innerHeight - rect.top + GAP,
+              left: rect.left,
+              width: rect.width,
+              maxHeight,
+            }
+          : {
+              top: rect.bottom + GAP,
+              left: rect.left,
+              width: rect.width,
+              maxHeight,
+            },
+      );
     };
     update();
     window.addEventListener("scroll", update, true);
@@ -114,8 +138,14 @@ export function StudentSearchDropdown({
       ? createPortal(
           <div
             ref={dropdownRef}
-            style={{ top: pos.top, left: pos.left, width: pos.width }}
-            className="fixed z-[60] max-h-70 overflow-y-auto rounded-xl border border-border bg-popover shadow-lg"
+            style={{
+              top: pos.top,
+              bottom: pos.bottom,
+              left: pos.left,
+              width: pos.width,
+              maxHeight: pos.maxHeight,
+            }}
+            className="fixed z-[60] overflow-y-auto rounded-xl border border-border bg-popover shadow-lg"
           >
             {loading ? (
               <div className="flex items-center justify-center py-10">

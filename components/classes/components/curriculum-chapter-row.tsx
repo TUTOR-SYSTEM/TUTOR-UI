@@ -180,14 +180,14 @@ export const ChapterRow = ({
                   value={newLessonTitle}
                   onChange={(e) => setNewLessonTitle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleCreateLesson()}
-                  className="h-8! text-sm"
+                  className="h-10! text-sm"
                 />
                 <Input
                   type="text"
                   placeholder="Mô tả (tuỳ chọn)..."
                   value={newLessonDesc}
                   onChange={(e) => setNewLessonDesc(e.target.value)}
-                  className="h-8! text-sm"
+                  className="h-10! text-sm"
                 />
                 <div className="flex items-center gap-2">
                   <Button

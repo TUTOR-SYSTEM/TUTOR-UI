@@ -111,8 +111,14 @@ const MenuPopover = ({
         close();
       }
     };
-    /* Đóng khi cuộn (kể cả cuộn ngang bảng chứa trigger) thay vì reposition theo dõi realtime. */
-    const onScroll = () => close();
+    /* Đóng khi cuộn (kể cả cuộn ngang bảng chứa trigger) thay vì reposition theo dõi realtime.
+     * Cuộn bên trong chính nội dung menu (vd cột giờ/phút của TimePicker) thì không đóng. */
+    const onScroll = (e: Event) => {
+      if (e.target instanceof Node && contentRef.current?.contains(e.target)) {
+        return;
+      }
+      close();
+    };
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     window.addEventListener("scroll", onScroll, true);

@@ -28,7 +28,6 @@ import {
 import { Button } from "@/components/ui/button.ui";
 import { useSessionActions } from "@/lib/services/session.service";
 import { useExerciseActions } from "@/lib/services/exercise.service";
-import { useUserActions } from "@/lib/services/user.service";
 import { useClassActions } from "@/lib/services/class.service";
 import { useAttendanceActions } from "@/lib/services/attendance.service";
 import { axiosInstance, getErrorMessage } from "@/lib/axios";
@@ -169,22 +168,18 @@ export const ExerciseSubmitPage = ({
   }).list;
 
   const submission = useMemo<ExerciseDetail | null>(
-    () => exercises?.[0] ?? null,
+    // bản ASSIGNED (giao, chưa nộp) chưa phải bài đã nộp
+    () => exercises?.find((e) => e.status !== "ASSIGNED") ?? null,
     [exercises],
   );
 
   const tutorId = session?.tutorId ?? session?.class.tutorId ?? null;
 
-  /* ── Tutor name (GET /users/get-by-field) ── */
-  const { data: tutorRaw } = useUserActions({
-    byField: { field: "id", value: tutorId ?? "" },
-    byFieldOptions: { enabled: !!tutorId },
-    allGradesOptions: { enabled: false },
-    userGradesOptions: { enabled: false },
-  }).byField;
+  /* ── Tutor name: lấy từ chi tiết buổi (học sinh không gọi được GET /users/get-by-field) ── */
+  const sessionTutor = session?.tutor;
   const tutorName = useMemo(
-    () => (tutorRaw ? fullName(tutorRaw[0]) || "Gia sư" : "Gia sư"),
-    [tutorRaw],
+    () => (sessionTutor ? fullName(sessionTutor) || "Gia sư" : "Gia sư"),
+    [sessionTutor],
   );
 
   /* ── Class roster — used for "Sĩ số" in the hero ── */
@@ -305,7 +300,7 @@ export const ExerciseSubmitPage = ({
           {getErrorMessage(sessionError, "Không tìm thấy buổi học")}
         </div>
         <div className="mt-4 text-center">
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm" className="w-auto!">
             <Link href={`/classes/${classId}`}>Về lớp học</Link>
           </Button>
         </div>
@@ -367,7 +362,7 @@ export const ExerciseSubmitPage = ({
           </span>
         </div>
 
-        <h1 className="mt-3 text-2xl font-bold">
+        <h1 className="mt-3 text-2xl font-bold text-white">
           {session.title || `Buổi học ${session.sessionNumber}`}
         </h1>
         <p className="mt-1.5 max-w-2xl text-sm text-white/80">
@@ -589,7 +584,7 @@ export const ExerciseSubmitPage = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="mt-3"
+                          className="mt-3 w-auto!"
                           onClick={() => setResubmitOpen(true)}
                         >
                           <Upload className="size-4" /> Nộp lại bài
@@ -840,7 +835,7 @@ export const ExerciseSubmitPage = ({
           </Panel>
 
           <div className="rounded-2xl bg-emerald-900 px-6 py-6 text-white dark:bg-emerald-950">
-            <h3 className="text-base font-semibold">Có câu hỏi về buổi học?</h3>
+            <h3 className="text-base font-semibold text-white">Có câu hỏi về buổi học?</h3>
             <p className="mt-1 text-sm text-emerald-100">
               Nhắn trực tiếp cho gia sư
             </p>

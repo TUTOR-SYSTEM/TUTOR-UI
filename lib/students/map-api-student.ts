@@ -30,6 +30,7 @@ export function mapApiToStudent(api: ApiStudent, language: Language): Student {
     lastName: api.lastName?.trim() ?? "",
     subject: "",
     classId: classes[0]?.id ?? null,
+    classes: classes.map((c) => ({ id: c.id, name: c.name, code: c.code })),
     classCode: classes.map((c) => c.code).join(", "),
     studentId: api.userCode ?? "",
     phone: api.phone ?? "",

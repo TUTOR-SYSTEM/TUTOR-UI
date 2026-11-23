@@ -26,6 +26,9 @@ import { Button } from "@/components/ui/button.ui";
 import { Input } from "@/components/ui/input.ui";
 import { Checkbox } from "@/components/ui/checkbox.ui";
 import { Select } from "@/components/ui/select.ui";
+import { DatePicker } from "@/components/ui/date-picker.ui";
+import { ClassLocationHint } from "@/components/classes/components/class-location-hint";
+import { TimePicker } from "@/components/ui/time-picker.ui";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table.ui";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
 import { cn } from "@/lib/utils";
@@ -74,6 +77,8 @@ type SessionDetailDto = {
     code: string;
     subject: string;
     curriculumId: string | null;
+    location?: string | null;
+    format?: "ONLINE" | "OFFLINE";
   };
   lesson: { id: string; title: string; chapterTitle: string | null } | null;
 };
@@ -146,6 +151,19 @@ type SessionDetailPageProps = {
   sessionId: string;
 };
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** ISO start/end → `YYYY-MM-DD` + `HH:mm` (giờ local) cho DatePicker/TimePicker. */
+function splitDateTime(startAt: string, endAt: string) {
+  const s = new Date(startAt);
+  const e = new Date(endAt);
+  return {
+    date: `${s.getFullYear()}-${pad2(s.getMonth() + 1)}-${pad2(s.getDate())}`,
+    startTime: `${pad2(s.getHours())}:${pad2(s.getMinutes())}`,
+    endTime: `${pad2(e.getHours())}:${pad2(e.getMinutes())}`,
+  };
+}
+
 export const SessionDetailPage = ({
   classId,
   sessionId,
@@ -200,6 +218,10 @@ export const SessionDetailPage = ({
     description: "",
     note: "",
     lessonId: "" as string,
+    location: "",
+    date: "",
+    startTime: "",
+    endTime: "",
   });
   const [selectedChapterId, setSelectedChapterId] = useState("");
   const [formSessionKey, setFormSessionKey] = useState<string | null>(null);
@@ -283,6 +305,8 @@ export const SessionDetailPage = ({
       description: session.description ?? "",
       note: session.note ?? "",
       lessonId: session.lessonId ?? "",
+      location: session.location ?? session.class.location ?? "",
+      ...splitDateTime(session.startAt, session.endAt),
     });
     setSelectedChapterId("");
   }
@@ -315,6 +339,16 @@ export const SessionDetailPage = ({
   };
 
   const handleSave = async () => {
+    if (!form.date || !form.startTime || !form.endTime) {
+      toast.error("Vui lòng chọn ngày và giờ buổi học");
+      return;
+    }
+    const startAt = new Date(`${form.date}T${form.startTime}`);
+    const endAt = new Date(`${form.date}T${form.endTime}`);
+    if (endAt <= startAt) {
+      toast.error("Giờ kết thúc phải sau giờ bắt đầu");
+      return;
+    }
     setSaving(true);
     try {
       await axiosInstance.put(`/sessions/${sessionId}`, {
@@ -322,6 +356,12 @@ export const SessionDetailPage = ({
         description: form.description.trim() || undefined,
         note: form.note.trim() || undefined,
         lessonId: form.lessonId || null,
+        startAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
+        // chỉ gửi khi buổi đổi khác địa điểm hiện tại (giữ mặc định theo lớp nếu không đổi)
+        ...(form.location.trim() !== (session?.location ?? session?.class.location ?? "").trim()
+          ? { location: form.location.trim() || null }
+          : {}),
       });
       toast.success("Đã cập nhật nội dung buổi học");
       invalidateSession();
@@ -690,7 +730,7 @@ export const SessionDetailPage = ({
             </span>
           </div>
 
-          <h1 className="mt-3 text-2xl font-bold">
+          <h1 className="mt-3 text-2xl font-bold text-white">
             {form.title || `Buổi ${session.sessionNumber}`}
           </h1>
 
@@ -868,10 +908,48 @@ export const SessionDetailPage = ({
                 disabled={isCompleted || !isTutor}
               />
             </div>
+            {isTutor && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Ngày học
+                  </label>
+                  <DatePicker
+                    value={form.date}
+                    onValueChange={(v) => setForm((p) => ({ ...p, date: v }))}
+                    disabled={isCompleted}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Giờ bắt đầu
+                  </label>
+                  <TimePicker
+                    value={form.startTime}
+                    onValueChange={(v) =>
+                      setForm((p) => ({ ...p, startTime: v }))
+                    }
+                    disabled={isCompleted}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Giờ kết thúc
+                  </label>
+                  <TimePicker
+                    value={form.endTime}
+                    onValueChange={(v) =>
+                      setForm((p) => ({ ...p, endTime: v }))
+                    }
+                    disabled={isCompleted}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-1.5">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-1 flex-col space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">
                 Mô tả tóm tắt
               </label>
@@ -883,9 +961,32 @@ export const SessionDetailPage = ({
                 rows={3}
                 placeholder="Nội dung buổi học..."
                 disabled={isCompleted || !isTutor}
-                className="w-full resize-none rounded-md border bg-surface-container-lowest px-3 py-2.5 text-sm leading-relaxed outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+                className="min-h-24 w-full flex-1 resize-none rounded-md border bg-surface-container-lowest px-3 py-2.5 text-sm leading-relaxed outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
+            {isTutor && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Địa điểm / Link học
+                </label>
+                <Input
+                  value={form.location}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, location: e.target.value }))
+                  }
+                  placeholder="Link Zoom/Meet hoặc địa chỉ lớp học..."
+                  disabled={isCompleted}
+                  className="h-10 text-sm"
+                />
+                <ClassLocationHint
+                  classLocation={session.class.location}
+                  value={form.location}
+                  onUseClassLocation={() =>
+                    setForm((p) => ({ ...p, location: session.class.location ?? "" }))
+                  }
+                />
+              </div>
+            )}
             {isTutor && (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
@@ -897,7 +998,7 @@ export const SessionDetailPage = ({
                     setForm((p) => ({ ...p, note: e.target.value }))
                   }
                   placeholder="Ghi chú nội bộ..."
-                  className="h-9 text-sm"
+                  className="h-10 text-sm"
                 />
               </div>
             )}
@@ -906,7 +1007,7 @@ export const SessionDetailPage = ({
         {isTutor && (
           <div className="flex items-center justify-between gap-3 border-t px-5 py-3">
             <p className="text-xs text-muted-foreground">
-              Lưu để cập nhật tiêu đề, bài giảng, mô tả và ghi chú của buổi học.
+              Lưu để cập nhật ngày giờ, bài giảng, mô tả và ghi chú của buổi học.
             </p>
             <Button
               size="md"
@@ -1149,18 +1250,31 @@ export const SessionDetailPage = ({
 
               {isTutor && (
                 <div className="border-t px-4 py-3">
-                  <Button
-                    asChild
-                    variant="ghost"
-                    className="h-auto w-full gap-1.5 py-1 text-sm font-medium text-primary hover:bg-primary/5"
-                  >
-                    <Link
-                      href={`/classes/${classId}/sessions/${sessionId}/submissions`}
+                  {isCompleted ? (
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="h-auto w-full gap-1.5 py-1 text-sm font-medium text-primary hover:bg-primary/5"
+                    >
+                      <Link
+                        href={`/classes/${classId}/sessions/${sessionId}/submissions`}
+                      >
+                        <Eye className="size-3.5" />
+                        Xem chi tiết bài nộp
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled
+                      title="Kết thúc buổi học để xem bài nộp"
+                      className="h-auto w-full gap-1.5 py-1 text-sm font-medium"
                     >
                       <Eye className="size-3.5" />
                       Xem chi tiết bài nộp
-                    </Link>
-                  </Button>
+                    </Button>
+                  )}
                 </div>
               )}
             </div>

@@ -115,7 +115,8 @@ export const StudentSessionDetail = ({ sessionId }: { sessionId: string }) => {
 
   const submission = useMemo<ExerciseDetail | null>(() => {
     if (!exercisesRaw) return null;
-    return exercisesRaw[0] ?? null;
+    // bản ASSIGNED (giao, chưa nộp) chưa phải bài đã nộp
+    return exercisesRaw.find((e) => e.status !== "ASSIGNED") ?? null;
   }, [exercisesRaw]);
 
   const tutorId = session?.tutorId ?? session?.class.tutorId ?? null;
@@ -203,7 +204,7 @@ export const StudentSessionDetail = ({ sessionId }: { sessionId: string }) => {
           {getErrorMessage(sessionError, "Không tìm thấy buổi học")}
         </div>
         <div className="mt-4 text-center">
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm" className="w-auto!">
             <Link href="/sessions">
               <ArrowLeft className="size-4" /> Về danh sách
             </Link>
@@ -277,7 +278,7 @@ export const StudentSessionDetail = ({ sessionId }: { sessionId: string }) => {
 
         {isTutor && (
           <div className="mt-5">
-            <Button asChild size="sm">
+            <Button asChild size="sm" className="w-auto!">
               <Link href={`/classes/${session.classId}/sessions/${sessionId}`}>
                 <Settings2 className="size-4" /> Quản lý buổi học
               </Link>
@@ -411,7 +412,7 @@ export const StudentSessionDetail = ({ sessionId }: { sessionId: string }) => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="mt-3"
+                          className="mt-3 w-auto!"
                           onClick={() => setResubmitOpen(true)}
                         >
                           <Upload className="size-4" /> Nộp lại bài

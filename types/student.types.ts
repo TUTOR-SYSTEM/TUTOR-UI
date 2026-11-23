@@ -107,6 +107,8 @@ export type Student = {
   subject: string;
   /** Current class id (enrolled via class_students) — null if not enrolled in any class. */
   classId: string | null;
+  /** Mọi lớp học sinh đang học (dùng cho action "Xoá khỏi lớp"). */
+  classes: { id: string; name: string; code: string }[];
   classCode: string;
   studentId: string;
   phone: string;

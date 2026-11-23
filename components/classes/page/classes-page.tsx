@@ -527,7 +527,7 @@ export const ClassesPage = () => {
                   setPage(1);
                 }}
                 options={ALL_SUBJECTS}
-                className="h-9! w-44!"
+                className="h-10! w-44!"
               />
             </div>
 
@@ -543,7 +543,7 @@ export const ClassesPage = () => {
                   setPage(1);
                 }}
                 options={STATUS_FILTER_OPTIONS}
-                className="h-9! w-44!"
+                className="h-10! w-44!"
               />
             </div>
           </div>

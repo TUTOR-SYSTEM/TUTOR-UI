@@ -12,7 +12,7 @@ export type ParentChild = {
 /** Một dòng bài tập trong `GET /exercises` (BE đã enrich session/class/student). */
 export type ParentExerciseRow = {
   id: string;
-  status: "SUBMITTED" | "GRADED" | "RESUBMIT";
+  status: "ASSIGNED" | "SUBMITTED" | "GRADED" | "RESUBMIT";
   score: number | null;
   exerciseUrls: SessionFile[] | null;
   session: { id: string; sessionNumber: number; classId: string } | null;

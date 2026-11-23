@@ -17,3 +17,4 @@ export * from "./attendance.types";
 export * from "./parent.types";
 export * from "./flow-diagram.types";
 export * from "./jev.types";
+export * from "./tutor-settings.types";

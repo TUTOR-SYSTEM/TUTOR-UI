@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
 import { DatePicker } from "@/components/ui/date-picker.ui";
+import { TimePicker } from "@/components/ui/time-picker.ui";
 import { Select, type SelectOption } from "@/components/ui/select.ui";
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/axios";
@@ -84,6 +85,7 @@ export function ScheduleFormDialog({ open, onClose, session }: ScheduleFormDialo
   const {
     register,
     control,
+    getValues,
     handleSubmit,
     reset,
     formState: { errors },
@@ -250,26 +252,40 @@ export function ScheduleFormDialog({ open, onClose, session }: ScheduleFormDialo
         {/* Time range */}
         <div className="grid grid-cols-2 gap-4">
           <Field label={copy.form.startTimeLabel} required error={errors.startTime?.message}>
-            <Input
-              type="time"
-              {...register("startTime", { required: copy.form.errStartTimeRequired })}
-              invalid={!!errors.startTime}
+            <Controller
+              name="startTime"
+              control={control}
+              rules={{ required: copy.form.errStartTimeRequired }}
+              render={({ field }) => (
+                <TimePicker
+                  value={field.value ?? ""}
+                  onValueChange={field.onChange}
+                  invalid={!!errors.startTime}
+                />
+              )}
             />
           </Field>
           <Field label={copy.form.endTimeLabel} required error={errors.endTime?.message}>
-            <Input
-              type="time"
-              {...register("endTime", {
+            <Controller
+              name="endTime"
+              control={control}
+              rules={{
                 required: copy.form.errEndTimeRequired,
                 validate: (val) => {
-                  const startTime = (document.querySelector('[name="startTime"]') as HTMLInputElement)?.value;
+                  const startTime = getValues("startTime");
                   if (startTime && val && val <= startTime) {
                     return copy.form.errEndTimeAfterStart;
                   }
                   return true;
                 },
-              })}
-              invalid={!!errors.endTime}
+              }}
+              render={({ field }) => (
+                <TimePicker
+                  value={field.value ?? ""}
+                  onValueChange={field.onChange}
+                  invalid={!!errors.endTime}
+                />
+              )}
             />
           </Field>
         </div>

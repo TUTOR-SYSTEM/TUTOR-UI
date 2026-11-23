@@ -614,7 +614,7 @@ export default function SchedulePage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={copy.searchPlaceholder}
-                className="h-9 w-56 rounded-lg pl-9"
+                className="h-10 w-56 rounded-lg pl-9"
               />
             </div>
           </div>

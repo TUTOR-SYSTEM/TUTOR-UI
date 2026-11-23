@@ -70,6 +70,17 @@ export function useNotificationActions(args?: {
     },
   );
 
+  /** Số thông báo chưa đọc của người dùng hiện tại (cho badge menu). */
+  const unreadCount = useGet<ApiResponse<NotificationsApiPayload>, number>(
+    [...NOTIFICATIONS_QUERY_KEY, "unread-count"],
+    "/notifications",
+    {
+      params: { page: 1, limit: 1, isRead: false },
+      select: (raw) => normalizeNotificationsList(unwrapApiData(raw)).pagination.total,
+      refetchInterval: 30000,
+    },
+  );
+
   const detail = useGet<ApiResponse<ApiNotification>, ApiNotification>(
     [...NOTIFICATIONS_QUERY_KEY, "detail", args?.detailId],
     `/notifications/${args?.detailId ?? ""}`,
@@ -93,5 +104,5 @@ export function useNotificationActions(args?: {
     (id) => `/notifications/${id}`,
   );
 
-  return { list, detail, create, markRead, markAllRead, delete: del };
+  return { list, unreadCount, detail, create, markRead, markAllRead, delete: del };
 }

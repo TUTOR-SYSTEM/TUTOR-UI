@@ -15,7 +15,9 @@ import { cn } from "@/lib/utils";
 import { usePut } from "@/lib/axios/query";
 import { showFormApiError } from "@/lib/axios/form-error";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
-import { useClassActions } from "@/lib/services/class.service";
+import { useQueryClient } from "@tanstack/react-query";
+import { getErrorMessage } from "@/lib/axios/api-error";
+import { CLASSES_QUERY_KEY, useClassActions } from "@/lib/services/class.service";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import { useAdminTutors } from "@/hooks/useAdminUsers.hook";
 import { currentPersonName } from "@/lib/format/person-name";
@@ -250,10 +252,13 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
   const selectedTutorId = watch("tutorId") ?? "";
 
   /* classes for the class picker (admin: only the selected tutor's classes) */
-  const { data: classesRaw, isPending: classesPending } = useClassActions({
+  const queryClient = useQueryClient();
+  const classActions = useClassActions({
     list: { limit: 100, ...(isAdmin ? { tutorId: selectedTutorId } : {}) },
     listOptions: { enabled: open && (!isAdmin || !!selectedTutorId) },
-  }).list;
+  });
+  const { data: classesRaw, isPending: classesPending } = classActions.list;
+  const { enrollStudents, removeStudent } = classActions;
 
   const managedClasses = useMemo(
     () => (classesRaw?.classes ?? []) as ClassOption[],
@@ -296,9 +301,6 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
       address: values.address?.trim() || undefined,
       district: values.district?.trim() || undefined,
       province: values.province?.trim() || undefined,
-      // Always send classId — it directly reflects the picker's current state, and "" is a
-      // meaningful value (explicitly un-enroll), not "leave unchanged" like the fields above.
-      classId: values.classId ?? "",
       ...(otherParent
         ? { parentId: otherParent.id }
         : {
@@ -311,8 +313,29 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
     };
 
     updateStudent.mutate(payload, {
-      onSuccess: (raw) => {
+      onSuccess: async (raw) => {
         unwrapApiData(raw);
+        // `PUT /students/:id` does not touch class enrolment (it lives in tutor-service), so apply
+        // the picker's change with the class endpoints: enrol into the new class first (a failure —
+        // full class, another tutor's student — leaves the old enrolment intact), then drop the old.
+        const oldClassId = student.classId ?? "";
+        const newClassId = values.classId ?? "";
+        if (newClassId !== oldClassId) {
+          try {
+            if (newClassId) {
+              await enrollStudents.mutateAsync({ classId: newClassId, studentIds: [student.id] });
+            }
+            if (oldClassId) {
+              await removeStudent.mutateAsync({ classId: oldClassId, studentId: student.id });
+            }
+            void queryClient.invalidateQueries({ queryKey: CLASSES_QUERY_KEY });
+          } catch (error) {
+            // student details are saved; keep the dialog open so the class can be changed again
+            toast.error(getErrorMessage(error, copy.editDialog.toastErrorFallback));
+            onSaved();
+            return;
+          }
+        }
         toast.success(copy.editDialog.toastSuccess);
         onSaved();
         onClose();
@@ -328,7 +351,8 @@ export function EditStudentDialog({ student, onClose, onSaved }: Props) {
     });
   };
 
-  const isPending = updateStudent.isPending;
+  const isPending =
+    updateStudent.isPending || enrollStudents.isPending || removeStudent.isPending;
   const handleClose = () => {
     if (!isPending) onClose();
   };

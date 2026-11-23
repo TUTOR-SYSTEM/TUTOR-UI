@@ -191,7 +191,7 @@ export function TutorsPage() {
               }}
               placeholder={copy.page.searchPlaceholder}
               aria-label={copy.page.searchPlaceholder}
-              className="h-9! w-56 pl-9"
+              className="h-10! w-56 pl-9"
             />
           </div>
           <Button

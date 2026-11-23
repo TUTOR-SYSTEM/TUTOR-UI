@@ -18,6 +18,14 @@ import { axiosInstance, getErrorMessage } from "@/lib/axios";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { useCurriculumCopy } from "@/hooks/useCurriculumCopy.hook";
 import { ChapterSection } from "../components/chapter-section";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table.ui";
 import { CreateChapterDialog } from "../dialog/create-chapter-dialog";
 import type { CurriculumDetail, CurriculumChapter } from "@/types";
 
@@ -142,43 +150,51 @@ export const CurriculumDetailPage = ({ frameworkId }: Props) => {
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
-          <div className="grid grid-cols-[72px_1fr_180px_112px] border-b border-border bg-muted/30 px-4 py-2.5">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t.table.stt}
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t.table.lessonName}
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t.table.lessonCode}
-            </span>
-            <span className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t.table.actions}
-            </span>
-          </div>
+          <Table>
+            <colgroup>
+              <col style={{ width: 72 }} />
+              <col />
+              <col style={{ width: 180 }} />
+              <col style={{ width: 150 }} />
+            </colgroup>
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead>{t.table.stt}</TableHead>
+                <TableHead>{t.table.lessonName}</TableHead>
+                <TableHead>{t.table.lessonCode}</TableHead>
+                <TableHead className="text-right">{t.table.actions}</TableHead>
+              </TableRow>
+            </TableHeader>
 
-          {chapters.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <BookOpen className="size-10 text-muted-foreground/40" />
-              <p className="mt-3 text-sm font-medium text-muted-foreground">
-                {t.empty.title}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t.empty.hint}
-              </p>
-            </div>
-          ) : (
-            chapters.map((chapter, idx) => (
-              <ChapterSection
-                key={chapter.id}
-                chapter={chapter}
-                index={idx}
-                curriculumCode={framework?.code ?? ""}
-                onDelete={() => handleDeleteChapter(chapter.id)}
-                onRefetch={() => refetch()}
-              />
-            ))
-          )}
+            {chapters.length === 0 ? (
+              <TableBody>
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={4} className="py-16 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <BookOpen className="size-10 text-muted-foreground/40" />
+                      <p className="mt-3 text-sm font-medium text-muted-foreground">
+                        {t.empty.title}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t.empty.hint}
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            ) : (
+              chapters.map((chapter, idx) => (
+                <ChapterSection
+                  key={chapter.id}
+                  chapter={chapter}
+                  index={idx}
+                  curriculumCode={framework?.code ?? ""}
+                  onDelete={() => handleDeleteChapter(chapter.id)}
+                  onRefetch={() => refetch()}
+                />
+              ))
+            )}
+          </Table>
 
           <div className="border-t border-border/60">
             <Button

@@ -58,6 +58,11 @@ export const EXERCISE_STATUS_META: Record<
     className:
       "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300",
   },
+  ASSIGNED: {
+    label: "Chưa nộp",
+    className:
+      "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300",
+  },
   SUBMITTED: {
     label: "Đã nộp — chờ chấm",
     className:

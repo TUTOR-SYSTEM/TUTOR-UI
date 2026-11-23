@@ -149,9 +149,9 @@ export default function NotificationDetailPage() {
         )}
 
         {/* Action link */}
-        {safeRedirectHref(notification.redirectUrl) && (
+        {safeRedirectHref(notification.detailUrl ?? notification.redirectUrl) && (
           <a
-            href={safeRedirectHref(notification.redirectUrl) ?? undefined}
+            href={safeRedirectHref(notification.detailUrl ?? notification.redirectUrl) ?? undefined}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block rounded-lg border border-[#E7EEEC] px-4 py-2 text-sm font-medium text-[#0E9F8E] hover:bg-[#F1FBF9] transition-colors"

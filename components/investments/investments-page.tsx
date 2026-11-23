@@ -496,7 +496,7 @@ export const InvestmentsPage = () => {
         <div className="overflow-x-auto rounded-xl border border-border/70">
           <Table className="w-full min-w-[760px] text-sm">
             <TableHeader>
-              <TableRow className="h-10 border-b border-border/70">
+              <TableRow className="border-b border-border/70">
                 <TableHead className="px-3">
                   <span className="inline-flex items-center gap-1">
                     Asset <ChevronsUpDown className="size-3" />

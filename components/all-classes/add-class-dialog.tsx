@@ -285,7 +285,7 @@ export function AddClassDialog({ open, onClose, onSaved, tutorOptions }: Props) 
                       {...register(opt.field)}
                       placeholder={opt.placeholder}
                       disabled={loading}
-                      className="h-9"
+                      className="h-10"
                     />
                   </div>
                 </div>
