@@ -46,6 +46,22 @@ export function buildTutorCreateSchema(m: TutorValidationMessages) {
   });
 }
 
+/** Admin đặt mật khẩu mới cho gia sư: cùng rule 8–20 với BE, kèm ô nhập lại khớp. */
+export function buildTutorPasswordSchema(
+  m: TutorValidationMessages,
+  mismatchMessage: string,
+) {
+  return z
+    .object({
+      password: passwordField(m),
+      confirm: z.string(),
+    })
+    .refine((v) => v.password === v.confirm, {
+      message: mismatchMessage,
+      path: ["confirm"],
+    });
+}
+
 /** Edit-tutor form (no password; gender is not editable here). */
 export function buildTutorEditSchema(m: TutorValidationMessages) {
   return z.object({
