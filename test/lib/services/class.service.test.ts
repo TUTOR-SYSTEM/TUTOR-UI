@@ -118,7 +118,7 @@ describe("class.service", () => {
     it("exposes every action under the expected key", () => {
       const result = useClassActions() as unknown as Record<string, Mutation>;
       expect(Object.keys(result).sort()).toEqual(
-        ["create", "delete", "detail", "enrollStudents", "generateCode", "list", "students", "update"].sort(),
+        ["create", "delete", "detail", "enrollStudents", "generateCode", "list", "removeStudent", "students", "update"].sort(),
       );
     });
   });

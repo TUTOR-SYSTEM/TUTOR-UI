@@ -32,11 +32,16 @@ import {
 import { ClassStatusMenu } from "../components/class-status-menu";
 import { EnrollStudentsDialog } from "../dialog/enroll-students-dialog";
 import { AddStudentDialog } from "@/components/students/add-student-dialog";
-import { UserPlus } from "lucide-react";
+import { Pencil, UserPlus } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
+import { EditStudentDialog } from "@/components/students/edit-student-dialog";
+import { STUDENTS_QUERY_KEY, useStudentActions } from "@/lib/services/student.service";
+import { mapApiToStudent } from "@/lib/students/map-api-student";
+import { useLocale } from "@/hooks/useLocale.hook";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 import type { CurriculumDetail } from "@/types";
 import { useClassActions } from "@/lib/services/class.service";
 import { useClassesCopy } from "@/hooks/useClassesCopy.hook";
-import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import type { ClassesDictionary } from "@/lib/i18n/classes.dictionary";
 import Image from "next/image";
@@ -118,7 +123,6 @@ type ClassDetailPageProps = {
 const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
   const queryClient = useQueryClient();
   const { detail } = useClassesCopy();
-  const { actions } = useCommonCopy();
   const [studentSearch, setStudentSearch] = useState("");
   const [selectedUpcoming, setSelectedUpcoming] = useState<Set<string>>(
     new Set(),
@@ -126,6 +130,38 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
   const [selectedPast, setSelectedPast] = useState<Set<string>>(new Set());
   const [sessionBusy, setSessionBusy] = useState(false);
   const [createSessionOpen, setCreateSessionOpen] = useState(false);
+  const [removingStudentItem, setRemovingStudentItem] = useState<ClassStudentDto | null>(null);
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const { language } = useLocale();
+  const { data: editingApiStudent } = useStudentActions({
+    detailId: editingStudentId ?? undefined,
+    detailOptions: { enabled: !!editingStudentId },
+    // only the edit dialog needs this record — don't fetch a new student code
+    generateCodeOptions: { enabled: false },
+  }).detail;
+  const editingStudent = useMemo(
+    () =>
+      editingApiStudent ? mapApiToStudent(editingApiStudent, language) : null,
+    [editingApiStudent, language],
+  );
+  const { mutate: removeStudent, isPending: removingStudent } =
+    useClassActions().removeStudent;
+
+  const handleRemoveStudent = () => {
+    if (!removingStudentItem) return;
+    const copy = detail.students.removeStudent;
+    removeStudent(
+      { classId, studentId: removingStudentItem.id },
+      {
+        onSuccess: () => {
+          toast.success(copy.success);
+          setRemovingStudentItem(null);
+          void refetchStudents();
+        },
+        onError: (err) => toast.error(getErrorMessage(err, copy.error)),
+      },
+    );
+  };
 
   const { mutate: updateSessionStatus } = useSessionActions().update;
   const { mutate: updateClass, isPending: classStatusUpdating } =
@@ -269,7 +305,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
         key: "stt",
         header: detail.students.columns.stt,
         headerClassName: "w-16 px-5",
-        cellClassName: "px-5 text-muted-foreground",
+        cellClassName: "px-5",
         render: (student, idx) => String(idx + 1).padStart(2, "0"),
       },
       {
@@ -301,7 +337,12 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
                   {initials}
                 </div>
               )}
-              <span className="font-medium">{name}</span>
+              <Link
+                href={`/students/${student.id}`}
+                className="font-medium hover:text-primary hover:underline"
+              >
+                {name}
+              </Link>
             </div>
           );
         },
@@ -310,21 +351,21 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
         key: "code",
         header: detail.students.columns.studentCode,
         headerClassName: "px-3",
-        cellClassName: "px-3 text-muted-foreground",
+        cellClassName: "px-3",
         render: (student) => student.userCode || "—",
       },
       {
         key: "phone",
         header: detail.students.columns.studentPhone,
         headerClassName: "px-3",
-        cellClassName: "px-3 text-muted-foreground",
+        cellClassName: "px-3",
         render: (student) => student.phone || "—",
       },
       {
         key: "parent",
         header: detail.students.columns.parent,
         headerClassName: "px-3",
-        cellClassName: "px-3 text-muted-foreground",
+        cellClassName: "px-3",
         render: (student) =>
           student.parent
             ? currentPersonName(
@@ -337,28 +378,43 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
         key: "parentPhone",
         header: detail.students.columns.parentPhone,
         headerClassName: "px-3",
-        cellClassName: "px-3 text-muted-foreground",
+        cellClassName: "px-3",
         render: (student) => student.parent?.phone || "—",
       },
       {
-        key: "add",
+        key: "actions",
         align: "center" as const,
-        header: "",
-        headerClassName: "w-12 px-3",
+        header: detail.students.columns.actions,
+        headerClassName: "w-28 px-3",
         cellClassName: "px-3",
-        render: () => (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            aria-label={actions.add}
-          >
-            <Plus className="size-3.5" />
-          </Button>
+        render: (student: ClassStudentDto) => (
+          <div className="flex items-center justify-center gap-1.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={detail.students.removeStudent.editAria}
+              title={detail.students.removeStudent.editAria}
+              onClick={() => setEditingStudentId(student.id)}
+            >
+              <Pencil className="size-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={detail.students.removeStudent.removeAria}
+              title={detail.students.removeStudent.removeAria}
+              onClick={() => setRemovingStudentItem(student)}
+              className="rounded-md text-[#8AA09B] hover:bg-red-50 hover:text-red-500"
+            >
+              <DeleteIcon />
+            </Button>
+          </div>
         ),
       },
     ],
-    [detail, actions],
+    [detail],
   );
 
   const statusSelectOptions = useMemo(
@@ -675,6 +731,40 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
         onClose={() => setEnrollOpen(false)}
 
         onEnrolled={() => void refetchStudents()}
+      />
+
+      <EditStudentDialog
+        student={editingStudent}
+        onClose={() => setEditingStudentId(null)}
+        onSaved={() => {
+          void queryClient.invalidateQueries({ queryKey: STUDENTS_QUERY_KEY });
+          void refetchStudents();
+        }}
+      />
+
+      <ConfirmDialog
+        open={removingStudentItem !== null}
+        onClose={() => setRemovingStudentItem(null)}
+        onConfirm={handleRemoveStudent}
+        loading={removingStudent}
+        title={detail.students.removeStudent.title}
+        description={
+          <>
+            <p>
+              {detail.students.removeStudent.confirmPrefix}{" "}
+              <span className="font-semibold text-foreground">
+                {removingStudentItem
+                  ? currentPersonName(
+                      removingStudentItem.firstName,
+                      removingStudentItem.lastName,
+                    )
+                  : "—"}
+              </span>{" "}
+              {detail.students.removeStudent.confirmSuffix}
+            </p>
+            <p className="mt-1">{detail.students.removeStudent.warning}</p>
+          </>
+        }
       />
 
       <CreateSessionDialog
