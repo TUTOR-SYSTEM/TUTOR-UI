@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Calendar, Layers, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, Calendar, Layers, Pencil, Plus, Search} from "lucide-react";
 
 import { useGet } from "@/lib/axios/query";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
@@ -24,6 +24,7 @@ import { useCurriculumCopy } from "@/hooks/useCurriculumCopy.hook";
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/axios";
 import { CURRICULUM_QUERY_KEY } from "@/lib/services/curriculum.service";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 /* ─── Icon color presets ─────────────────────────────────── */
 
@@ -244,7 +245,7 @@ export const CurriculumListPage = () => {
             onClick={() => setDeleteTarget(fw)}
             className="rounded-md text-muted-foreground hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
           >
-            <Trash2 className="size-3.5" />
+            <DeleteIcon />
           </Button>
         </div>
       ),

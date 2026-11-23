@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, Plus} from "lucide-react";
 import { toast } from "sonner";
 
 import { useGet } from "@/lib/axios/query";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input.ui";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
 import { TableRow, TableCell } from "@/components/ui/table.ui";
 import { LessonRow, type Lesson } from "./curriculum-lesson-row";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 /** Row of `GET /chapters?curriculumId=` (gateway `chapter.getAll` → `{ chapters, pagination }`). */
 export type Chapter = {
@@ -137,7 +138,7 @@ export const ChapterRow = ({
             aria-label="Xóa chương"
             className="rounded-md! border! border-rose-200! bg-rose-50! text-rose-500! hover:bg-rose-100! dark:border-rose-800/50! dark:bg-rose-950/30! dark:text-rose-400!"
           >
-            <Trash2 className="size-3.5" />
+            <DeleteIcon />
           </Button>
         </TableCell>
       </TableRow>

@@ -3,8 +3,7 @@ import {
   ArrowUpRight,
   CalendarDays,
   Pencil,
-  Trash2,
-} from "lucide-react";
+  } from "lucide-react";
 
 import { useAccountsCopy } from "@/hooks/useAccountsCopy.hook";
 import {
@@ -15,6 +14,7 @@ import {
   type ApiTransaction,
   type WalletApiType,
 } from "./accounts.data";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 type AccountDetailCardProps = {
   account: Account;
@@ -87,7 +87,7 @@ export const AccountDetailCard = ({
               onClick={() => onDelete(account)}
               className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
             >
-              <Trash2 className="size-3.5" />
+              <DeleteIcon />
             </button>
           </div>
         </div>

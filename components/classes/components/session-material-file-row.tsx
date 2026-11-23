@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, Image, Loader2, Trash2 } from "lucide-react";
+import { Download, FileText, Image, Loader2} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button.ui";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { ImagePreview } from "@/components/common/image-preview";
 import type { SessionFile } from "@/types";
 import { downloadStoredFile } from "@/lib/download-file";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 /** Downloads via the backend proxy (auth-gated R2 objects can't be linked to directly). */
 const downloadFile = (key: string, name: string) => downloadStoredFile(key, name);
@@ -119,7 +120,7 @@ export const SessionMaterialFileRow = ({
               {deleting ? (
                 <Loader2 className="size-3.5 animate-spin" />
               ) : (
-                <Trash2 className="size-3.5" />
+                <DeleteIcon />
               )}
             </Button>
           )}

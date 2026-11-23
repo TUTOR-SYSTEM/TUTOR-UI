@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Pencil, Plus, Search, ShieldOff, Trash2 } from "lucide-react";
+import { Pencil, Plus, Search, ShieldOff} from "lucide-react";
 
 import { CreateUserDialog } from "./create-user-dialog";
 import { EditUserDialog, type ManagedUser } from "./edit-user-dialog";
@@ -28,6 +28,7 @@ import type {
   ManagedUserRole,
   ManagedUsersApiPayload,
 } from "@/types";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 function initials(firstName: string, lastName: string): string {
   const f = firstName.trim().charAt(0);
@@ -288,7 +289,7 @@ export function UsersPage() {
             disabled={u.id === currentUserId}
             className="rounded-md text-[#8AA09B] hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#8AA09B]"
           >
-            <Trash2 className="size-3.5" />
+            <DeleteIcon />
           </Button>
         </div>
       ),

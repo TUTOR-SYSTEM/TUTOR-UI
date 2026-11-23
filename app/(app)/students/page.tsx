@@ -11,8 +11,7 @@ import {
   Plus,
   Search,
   SlidersHorizontal,
-  Trash2,
-} from "lucide-react";
+  } from "lucide-react";
 
 import { AddStudentDialog } from "@/components/students/add-student-dialog";
 import { SetStudentPasswordDialog } from "@/components/students/set-student-password-dialog";
@@ -47,6 +46,7 @@ import UsageGuides, {
   type UsageGuideStep,
 } from "@/components/ui/usage-guide.ui";
 import { Pagination } from "@/components/ui/pagination.ui";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 /* ─── avatar colour by subject prefix ─── */
 const SUBJECT_COLORS: Record<string, string> = {
@@ -505,7 +505,7 @@ export default function StudentsPage() {
                               title={common.actions.delete}
                               onClick={() => setDeletingStudent(s)}
                             >
-                              <Trash2 className="size-3.5" />
+                              <DeleteIcon />
                             </Button>
                           </>
                         )}

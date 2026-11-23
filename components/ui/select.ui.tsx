@@ -95,7 +95,7 @@ export const Select = ({
         <div
           data-testid="select-options"
           role="listbox"
-          className="absolute left-0 top-[calc(100%+4px)] z-50 w-full rounded-lg border border-border bg-popover p-1 shadow-lg"
+          className="absolute left-0 top-[calc(100%+4px)] z-50 max-h-[calc(5*2.25rem+0.5rem)] w-full overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
         >
           {options.map((option) => {
             const isSelected = option.value === value;
