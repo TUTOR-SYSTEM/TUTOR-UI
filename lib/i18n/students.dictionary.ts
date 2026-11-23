@@ -135,6 +135,8 @@ export type StudentsDictionary = {
     noResults: string;
     matchedGroup: string;
     similarGroup: string;
+    /** Shown once an existing parent is picked: siblings share that parent. */
+    linkedHint: string;
   };
   validation: StudentValidationMessages;
   addDialog: {
@@ -386,6 +388,8 @@ const vi: StudentsDictionary = {
     noResults: "Không tìm thấy phụ huynh. Nhập thông tin bên dưới để tạo phụ huynh mới.",
     matchedGroup: "Phụ huynh trùng tên",
     similarGroup: "Phụ huynh gần giống",
+    linkedHint:
+      "Đã chọn phụ huynh có sẵn: học sinh này sẽ dùng chung phụ huynh với các anh/chị/em khác. Sửa tên để tạo phụ huynh mới.",
   },
   validation: {
     required: "Vui lòng nhập thông tin này",
@@ -653,6 +657,8 @@ const en: StudentsDictionary = {
     noResults: "No parent found. Enter the details below to create a new parent.",
     matchedGroup: "Name matches",
     similarGroup: "Similar names",
+    linkedHint:
+      "Existing parent selected: this student will share the parent with their siblings. Edit the name to create a new parent instead.",
   },
   validation: {
     required: "This field is required",

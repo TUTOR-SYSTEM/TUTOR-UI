@@ -189,6 +189,17 @@ export type ApiStudent = {
   updatedAt?: string;
 };
 
+/** GET /students/parents — PARENT accounts a student can be linked to (siblings share one). */
+export type ParentsApiPayload = {
+  parents: import("./user.types").ApiManagedUser[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+};
+
 export type StudentsApiPayload = {
   students: ApiStudent[];
   pagination: {
