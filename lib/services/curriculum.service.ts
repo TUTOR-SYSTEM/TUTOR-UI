@@ -28,6 +28,8 @@ export function useCurriculumActions(args?: {
     UseQueryOptions<ApiResponse<CurriculumDetail>, Error, CurriculumDetail>,
     "queryKey" | "queryFn"
   >;
+  /** Subject name (VN) → code `PREFIX-NNN` from BE; query runs only when set. */
+  generateCodeSubject?: string;
   generateCodeOptions?: Omit<
     UseQueryOptions<ApiResponse<string>, Error, string>,
     "queryKey" | "queryFn"
@@ -55,11 +57,19 @@ export function useCurriculumActions(args?: {
     },
   );
 
-  /** `GET /curriculum/generate-code` returns a plain string. */
+  /**
+   * `GET /curriculum/generate-code?subject=` returns a plain string, e.g. `MAT-463`.
+   * A fresh code is wanted on every call, so no caching and no refetch on focus.
+   */
   const generateCode = useGet<ApiResponse<string>, string>(
-    [...CURRICULUM_QUERY_KEY, "generate-code"],
+    [...CURRICULUM_QUERY_KEY, "generate-code", args?.generateCodeSubject],
     "/curriculum/generate-code",
     {
+      params: { subject: args?.generateCodeSubject },
+      enabled: !!args?.generateCodeSubject,
+      staleTime: 0,
+      gcTime: 0,
+      refetchOnWindowFocus: false,
       select: (raw) => unwrapApiData<string>(raw) ?? "",
       ...args?.generateCodeOptions,
     },

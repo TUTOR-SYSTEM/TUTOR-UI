@@ -10,7 +10,6 @@ import {
   Pencil,
   Plus,
   Search,
-  Trash2,
   Video,
   CalendarDays,
   BookOpen,
@@ -30,6 +29,7 @@ import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
 import UsageGuides, { type UsageGuideStep } from "@/components/ui/usage-guide.ui";
 import { ScheduleFormDialog, DeleteScheduleDialog } from "@/components/schedule";
 import type { StudentSessionListItem, SessionStatus, ViewMode } from "@/types";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 /* ─── Constants ─── */
 const SUBJECT_COLORS: { bg: string; text: string; ring: string }[] = [
@@ -367,7 +367,7 @@ function SessionPopover({
                   onClick={(e) => { e.stopPropagation(); onDelete(s); }}
                   className="text-muted-foreground hover:text-destructive"
                 >
-                  <Trash2 className="size-3" />
+                  <DeleteIcon className="size-5" />
                 </Button>
               )}
             </div>

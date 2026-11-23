@@ -104,6 +104,11 @@ export function useClassActions(args?: {
     ApiResponse<ClassStudentDto[]>,
     { classId: string; studentIds: string[] }
   >((payload) => `/classes/${payload.classId}/students`);
+  /** `DELETE /classes/:id/students/:studentId` — removes one student from the class. */
+  const removeStudent = useDelete<
+    ApiResponse<{ classId: string; studentId: string; removed: boolean }>,
+    { classId: string; studentId: string }
+  >((payload) => `/classes/${payload.classId}/students/${payload.studentId}`);
 
   return {
     list,
@@ -114,5 +119,6 @@ export function useClassActions(args?: {
     update,
     delete: del,
     enrollStudents,
+    removeStudent,
   };
 }

@@ -7,7 +7,6 @@ import {
   GraduationCap,
   Pencil,
   Plus,
-  Trash2,
   Users,
   Wallet,
 } from "lucide-react";
@@ -39,6 +38,7 @@ import type {
   ApiClassRow,
   ApiClassSchedule,
 } from "@/types";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 const STATUS_STYLES: Record<
   ClassDisplayStatus,
@@ -473,7 +473,7 @@ export const ClassesPage = () => {
                     }
                     className="text-[#8AA09B] hover:bg-red-50 hover:text-red-500"
                   >
-                    <Trash2 className="size-3.5" />
+                    <DeleteIcon />
                   </Button>
                 </div>
               ),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Loader2, Trash2, Upload } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { axiosInstance, getErrorMessage } from "@/lib/axios";
@@ -11,6 +11,7 @@ import { TableRow, TableCell } from "@/components/ui/table.ui";
 import { FileChip, type LessonFile } from "./curriculum-file-chip";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import { canUploadFiles } from "@/lib/upload-policy";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 export type Lesson = {
   id: string;
@@ -108,7 +109,7 @@ export const LessonRow = ({
             aria-label="Xóa bài"
             className="rounded-md! border! border-rose-200! bg-rose-50! text-rose-500! hover:bg-rose-100! dark:border-rose-800/50! dark:bg-rose-950/30! dark:text-rose-400!"
           >
-            <Trash2 className="size-3.5" />
+            <DeleteIcon />
           </Button>
         </TableCell>
       </TableRow>

@@ -1,6 +1,7 @@
-import { Check, Trash2 } from "lucide-react";
+import { Check} from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 export type MarkerType = "wrong" | "correct";
 
@@ -78,7 +79,7 @@ export const AnnotationMarker = ({
             onClick={onDelete}
             className="shrink-0 rounded-full p-1 text-rose-500 hover:bg-rose-50"
           >
-            <Trash2 className="size-3.5" />
+            <DeleteIcon />
           </button>
         </div>
       ) : (

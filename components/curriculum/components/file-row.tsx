@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CornerDownRight, Download, FileText, Image, Loader2, Trash2 } from "lucide-react";
+import { CornerDownRight, Download, FileText, Image, Loader2} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button.ui";
@@ -12,6 +12,7 @@ import { isImageFile } from "@/lib/file-utils";
 import { cn } from "@/lib/utils";
 import { useCurriculumCopy } from "@/hooks/useCurriculumCopy.hook";
 import type { CurriculumLessonFile } from "@/types";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 const downloadFile = async (key: string, name: string) => {
   saveBlob(await fetchStoredFileBlob(key), name);
@@ -111,7 +112,7 @@ export function FileRow({ file, code, onRemove, removing }: FileRowProps) {
           {removing ? (
             <Loader2 className="size-3.5 animate-spin" />
           ) : (
-            <Trash2 className="size-3.5" />
+            <DeleteIcon />
           )}
         </Button>
       </div>

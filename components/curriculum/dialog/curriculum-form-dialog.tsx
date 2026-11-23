@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,14 +12,18 @@ import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Button } from "@/components/ui/button.ui";
 import { Input } from "@/components/ui/input.ui";
 import { Label } from "@/components/ui/label.ui";
-import { useGet, usePost, usePut } from "@/lib/axios/query";
+import { Select } from "@/components/ui/select.ui";
+import { SUBJECT_OPTIONS } from "@/lib/subjects";
+import { usePost, usePut } from "@/lib/axios/query";
 import { handleFormApiError } from "@/lib/axios/form-error";
-import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { cn } from "@/lib/utils";
 import { useCurriculumCopy } from "@/hooks/useCurriculumCopy.hook";
 import type { CurriculumDictionary } from "@/lib/i18n/curriculum.dictionary";
 import type { CurriculumFramework } from "@/types";
-import { CURRICULUM_QUERY_KEY } from "@/lib/services/curriculum.service";
+import {
+  CURRICULUM_QUERY_KEY,
+  useCurriculumActions,
+} from "@/lib/services/curriculum.service";
 
 /* ─── props ─── */
 type Props = {
@@ -60,6 +64,12 @@ function buildYearOptions() {
 }
 
 const formatYear = (y: string) => y.replace("-", " – ");
+
+const SUBJECT_CHOICES = SUBJECT_OPTIONS.map((s) => ({ label: s, value: s }));
+const GRADE_CHOICES = Array.from({ length: 12 }, (_, i) => {
+  const grade = String(i + 1);
+  return { label: `Khối ${grade}`, value: grade };
+});
 
 function getDefaultValues(
   initial: CurriculumFramework | null | undefined,
@@ -133,6 +143,7 @@ export function CurriculumFormDialog({ open, initial, onClose }: Props) {
 
   const {
     register,
+    control,
     watch,
     setValue,
     handleSubmit,
@@ -151,21 +162,22 @@ export function CurriculumFormDialog({ open, initial, onClose }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial, reset]);
 
-  /* auto-generated subject code — only fetched when creating (edit reuses initial.code) */
-  const { data: generatedCode, isLoading: codeLoading } = useGet<
-    unknown,
-    string | undefined
-  >(["curriculum-generate-code"], "/curriculum/generate-code", {
-    enabled: open && !isEdit,
-    staleTime: 0,
-    select: (raw) => unwrapApiData<string>(raw),
+  const subjectVal = watch("subject");
+  const courseTimeVal = watch("courseTime");
+
+  /* subjectCode follows the subject name when creating: BE returns `PREFIX-NNN`
+   * (checked against DB). Edit keeps initial.code. */
+  const { generateCode } = useCurriculumActions({
+    generateCodeSubject: open && !isEdit ? subjectVal : undefined,
   });
+  const generatedCode = generateCode.data;
+  const codeLoading = generateCode.isFetching;
 
   useEffect(() => {
     if (open && !isEdit && generatedCode) {
       setValue("code", generatedCode, { shouldValidate: true });
     }
-  }, [open, isEdit, generatedCode, setValue]);
+  }, [open, isEdit, generatedCode, generateCode.dataUpdatedAt, setValue]);
 
   const invalidateList = () =>
     queryClient.invalidateQueries({ queryKey: CURRICULUM_QUERY_KEY });
@@ -221,9 +233,6 @@ export function CurriculumFormDialog({ open, initial, onClose }: Props) {
     }
   });
 
-  const subjectVal = watch("subject");
-  const courseTimeVal = watch("courseTime");
-
   return (
     <Dialog
       isOpen={open}
@@ -267,20 +276,37 @@ export function CurriculumFormDialog({ open, initial, onClose }: Props) {
               required
               error={errors.subject?.message}
             >
-              <Input
-                {...register("subject")}
-                autoFocus
-                placeholder={t.subjectPlaceholder}
-                invalid={!!errors.subject}
-                disabled={isPending}
+              <Controller
+                control={control}
+                name="subject"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(v) =>
+                      field.onChange(v)
+                    }
+                    options={SUBJECT_CHOICES}
+                    placeholder={t.subjectPlaceholder}
+                    invalid={!!errors.subject}
+                    disabled={isPending}
+                  />
+                )}
               />
             </FormField>
             <FormField label={t.gradeLabel} required error={errors.grade?.message}>
-              <Input
-                {...register("grade")}
-                placeholder={t.gradePlaceholder}
-                invalid={!!errors.grade}
-                disabled={isPending}
+              <Controller
+                control={control}
+                name="grade"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(v) => field.onChange(v)}
+                    options={GRADE_CHOICES}
+                    placeholder={t.gradePlaceholder}
+                    invalid={!!errors.grade}
+                    disabled={isPending}
+                  />
+                )}
               />
             </FormField>
           </div>

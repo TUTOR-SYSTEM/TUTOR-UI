@@ -76,6 +76,19 @@ export function useUpdateTutorById(
   });
 }
 
+/** Admin đặt mật khẩu gia sư — `PUT /admin/tutors/:id/password`. Mật khẩu không bao giờ trả về. */
+export function useSetTutorPassword(
+  options?: MutationOptions<unknown, { id: string; password: string }>,
+) {
+  return useMutation<unknown, Error, { id: string; password: string }>({
+    mutationFn: ({ id, password }) =>
+      apiPut<unknown, { password: string }>(`/admin/tutors/${id}/password`, {
+        password,
+      }),
+    ...options,
+  });
+}
+
 export function useDeleteTutor(options?: MutationOptions<unknown, string>) {
   return useDelete<unknown, string>((id) => `/admin/tutors/${id}`, options);
 }

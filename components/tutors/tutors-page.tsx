@@ -1,17 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Pencil, Plus, Search, ShieldOff, Trash2 } from "lucide-react";
+import {
+  Loader2,
+  Pencil,
+  Plus,
+  KeyRound,
+  RefreshCw,
+  Search,
+  ShieldOff,
+  } from "lucide-react";
 
 import { getErrorMessage } from "@/lib/axios";
 import { cn } from "@/lib/utils";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
-import { useAdminTutors, useDeleteTutor } from "@/hooks/useAdminUsers.hook";
+import {
+  useAdminTutors,
+  useDeleteTutor,
+  useUpdateTutorById,
+} from "@/hooks/useAdminUsers.hook";
 import { useLocale } from "@/hooks/useLocale.hook";
 import { useTutorsCopy } from "@/hooks/useTutorsCopy.hook";
-import { useUserActions } from "@/lib/services/user.service";
 import { formatPersonName } from "@/lib/format/person-name";
 import { Button } from "@/components/ui/button.ui";
 import { Input } from "@/components/ui/input.ui";
@@ -26,17 +37,37 @@ import {
 } from "@/components/ui/table.ui";
 import { AddTutorDialog } from "@/components/tutors/add-tutor-dialog";
 import { EditTutorDialog } from "@/components/tutors/edit-tutor-dialog";
+import { SetTutorPasswordDialog } from "@/components/tutors/set-tutor-password-dialog";
 import { DeleteTutorDialog } from "@/components/tutors/delete-tutor-dialog";
+import { ToggleTutorStatusDialog } from "@/components/tutors/toggle-tutor-status-dialog";
 import UsageGuides from "@/components/ui/usage-guide.ui";
-import type { ApiManagedUser } from "@/types";
+import { HoverCard } from "@/components/ui/hover-card.ui";
+import type { ApiManagedUser, TutorStudentSummary } from "@/types";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 const PAGE_SIZE = 10;
+/** Số môn / học sinh hiển thị trực tiếp trong ô; đầy đủ danh sách xem trong popover khi hover. */
+const VISIBLE_LIMIT = 3;
 const TUTORS_QUERY_KEY = ["admin", "tutors"] as const;
 
 function initials(firstName?: string | null, lastName?: string | null): string {
   const f = firstName?.trim().charAt(0) ?? "";
   const l = lastName?.trim().charAt(0) ?? "";
   return (f + l).toUpperCase() || "G";
+}
+
+/** Ô có popover chi tiết khi `when`; ngược lại chỉ hiện trigger. */
+function HoverCardIf({
+  when,
+  trigger,
+  children,
+}: {
+  when: boolean;
+  trigger: ReactNode;
+  children: ReactNode;
+}) {
+  if (!when) return <>{trigger}</>;
+  return <HoverCard trigger={trigger}>{children}</HoverCard>;
 }
 
 export function TutorsPage() {
@@ -49,11 +80,15 @@ export function TutorsPage() {
   const [deletingTutor, setDeletingTutor] = useState<ApiManagedUser | null>(
     null,
   );
+  const [statusTutor, setStatusTutor] = useState<ApiManagedUser | null>(null);
+  const [passwordTutor, setPasswordTutor] = useState<ApiManagedUser | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   const fullName = (t: ApiManagedUser) =>
     formatPersonName(t.firstName, t.lastName, language) || copy.unnamed;
+  const personName = (p: TutorStudentSummary) =>
+    formatPersonName(p.firstName, p.lastName, language) || copy.unnamed;
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: TUTORS_QUERY_KEY });
@@ -69,18 +104,18 @@ export function TutorsPage() {
     role === "ADMIN",
   );
 
-  const { toggleStatus } = useUserActions();
+  // PUT /admin/tutors/:id — BE giới hạn role TUTOR và thu hồi session khi khoá.
+  const updateTutor = useUpdateTutorById();
   const deleteTutor = useDeleteTutor();
 
-  const handleToggleStatus = (tutor: ApiManagedUser) => {
-    if (tutor.isActive && !window.confirm(copy.status.lockConfirm(fullName(tutor)))) {
-      return;
-    }
-    toggleStatus.mutate(
-      { id: tutor.id, isActive: !tutor.isActive },
+  // Mở popup xác nhận trước; việc gọi API chỉ diễn ra khi người dùng bấm xác nhận.
+  const handleConfirmStatus = (id: string, isActive: boolean) => {
+    updateTutor.mutate(
+      { id, isActive },
       {
         onSuccess: () => {
           invalidate();
+          setStatusTutor(null);
           toast.success(copy.toast.statusUpdated);
         },
         onError: (err) =>
@@ -180,10 +215,22 @@ export function TutorsPage() {
         }}
       />
 
+      <SetTutorPasswordDialog
+        tutor={passwordTutor}
+        onClose={() => setPasswordTutor(null)}
+      />
+
       <EditTutorDialog
         tutor={editingTutor}
         onClose={() => setEditingTutor(null)}
         onSaved={invalidate}
+      />
+
+      <ToggleTutorStatusDialog
+        tutor={statusTutor}
+        loading={updateTutor.isPending}
+        onClose={() => setStatusTutor(null)}
+        onConfirm={handleConfirmStatus}
       />
 
       <DeleteTutorDialog
@@ -250,17 +297,36 @@ export function TutorsPage() {
                 </TableCell>
 
                 <TableCell className="px-4 py-3.5">
-                  {t.subjects && t.subjects.length ? (
-                    <div className="flex flex-wrap gap-1">
-                      {t.subjects.map((s) => (
-                        <span
-                          key={s}
-                          className="rounded-md bg-[#E4F6EF] px-2 py-0.5 text-xs font-medium text-[#0B7A6D]"
-                        >
-                          {s}
-                        </span>
-                      ))}
-                    </div>
+                  {(t.subjects ?? []).length ? (
+                    <HoverCardIf
+                      when={(t.subjects ?? []).length > VISIBLE_LIMIT}
+                      trigger={
+                        <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+                          {(t.subjects ?? []).slice(0, VISIBLE_LIMIT).map((s) => (
+                            <span
+                              key={s}
+                              className="max-w-24 shrink-0 truncate rounded-md bg-[#E4F6EF] px-2 py-0.5 text-xs font-medium text-[#0B7A6D]"
+                            >
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      }
+                    >
+                      <p className="mb-2 font-semibold text-[#16302b]">
+                        {copy.page.subjectsDetail((t.subjects ?? []).length)}
+                      </p>
+                      <div className="flex max-w-xs flex-wrap gap-1">
+                        {(t.subjects ?? []).map((s) => (
+                          <span
+                            key={s}
+                            className="rounded-md bg-[#E4F6EF] px-2 py-0.5 text-xs font-medium text-[#0B7A6D]"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </HoverCardIf>
                   ) : (
                     <span className="text-[#9AAEA9]">—</span>
                   )}
@@ -274,8 +340,37 @@ export function TutorsPage() {
                   {t.classCount ?? "—"}
                 </TableCell>
 
-                <TableCell className="px-4 py-3.5 text-[#16302b]">
-                  {t.studentCount ?? "—"}
+                <TableCell className="px-4 py-3.5">
+                  {(t.studentCount ?? 0) > 0 ? (
+                    <HoverCardIf
+                      when={(t.studentCount ?? 0) > VISIBLE_LIMIT}
+                      trigger={
+                        <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+                          {(t.students ?? []).slice(0, VISIBLE_LIMIT).map((s) => (
+                            <span
+                              key={s.id}
+                              className="max-w-28 shrink-0 truncate rounded-md bg-[#E4F6EF] px-2 py-0.5 text-xs font-semibold text-[#0B7A6D]"
+                            >
+                              {personName(s)}
+                            </span>
+                          ))}
+                        </div>
+                      }
+                    >
+                      <p className="mb-2 font-semibold text-[#16302b]">
+                        {copy.page.studentsDetail(t.studentCount ?? 0)}
+                      </p>
+                      <ul className="flex max-w-xs flex-col gap-1">
+                        {(t.students ?? []).map((s) => (
+                          <li key={s.id} className="text-[#16302b]">
+                            {personName(s)}
+                          </li>
+                        ))}
+                      </ul>
+                    </HoverCardIf>
+                  ) : (
+                    <span className="text-[#9AAEA9]">0</span>
+                  )}
                 </TableCell>
 
                 <TableCell className="px-4 py-3.5 text-center">
@@ -283,8 +378,8 @@ export function TutorsPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleToggleStatus(t)}
-                    disabled={toggleStatus.isPending}
+                    onClick={() => setStatusTutor(t)}
+                    disabled={updateTutor.isPending}
                     title={copy.status.toggleTitle}
                     className={cn(
                       "h-auto! w-auto! rounded-md px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60",
@@ -299,6 +394,37 @@ export function TutorsPage() {
 
                 <TableCell className="px-4 py-3.5 text-center">
                   <div className="flex items-center justify-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      title={
+                        t.isActive
+                          ? copy.rowActions.lock
+                          : copy.rowActions.unlock
+                      }
+                      aria-label={
+                        t.isActive
+                          ? copy.rowActions.lock
+                          : copy.rowActions.unlock
+                      }
+                      disabled={updateTutor.isPending}
+                      onClick={() => setStatusTutor(t)}
+                      className="rounded-md text-[#8AA09B] hover:bg-red-50 hover:text-red-500"
+                    >
+                      <RefreshCw className="size-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      title={copy.rowActions.password}
+                      aria-label={copy.rowActions.password}
+                      onClick={() => setPasswordTutor(t)}
+                      className="rounded-md text-[#8AA09B] hover:bg-[#E4F6EF] hover:text-[#0E9F8E]"
+                    >
+                      <KeyRound className="size-3.5" />
+                    </Button>
                     <Button
                       type="button"
                       variant="ghost"
@@ -319,7 +445,7 @@ export function TutorsPage() {
                       onClick={() => setDeletingTutor(t)}
                       className="rounded-md text-[#8AA09B] hover:bg-red-50 hover:text-red-500"
                     >
-                      <Trash2 className="size-3.5" />
+                      <DeleteIcon />
                     </Button>
                   </div>
                 </TableCell>

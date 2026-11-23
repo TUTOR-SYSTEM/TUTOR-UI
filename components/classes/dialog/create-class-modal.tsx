@@ -12,7 +12,6 @@ import {
   MapPin,
   Plus,
   Search,
-  Trash2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +33,7 @@ import { useCurrentUserId } from "@/hooks/useCurrentUserId";
 import { CreateClassStepper } from "../components/create-class-stepper";
 import { FieldError } from "../components/field-error";
 import type { CurriculumFramework } from "@/types";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 /* ─── Types ─── */
 
@@ -820,7 +820,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                               onClick={() => removeSchedule(idx)}
                               className="flex size-6 items-center justify-center rounded text-[#9AAEA9] hover:bg-red-50 hover:text-red-500 transition-colors"
                             >
-                              <Trash2 className="size-3.5" />
+                              <DeleteIcon />
                             </button>
                           )}
                         </div>

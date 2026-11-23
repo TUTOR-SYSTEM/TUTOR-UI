@@ -68,8 +68,17 @@ export type ApiManagedUser = {
   subjects?: string[] | null;
   school?: string | null;
   classCount?: number;
+  /** Tổng số học sinh do gia sư quản lý (`users.tutor_id`). */
   studentCount?: number;
+  /** Toàn bộ học sinh của gia sư (theo tên) — chỉ có ở danh sách `/admin/tutors`. */
+  students?: TutorStudentSummary[];
   createdAt?: string;
+};
+
+export type TutorStudentSummary = {
+  id: string;
+  firstName: string;
+  lastName: string;
 };
 
 export type ManagedUsersApiPayload = {
@@ -151,6 +160,12 @@ export type UpdateAdminUserPayload = {
   description?: string | null;
   avatar?: string | null;
   isActive?: boolean;
+};
+
+/** Admin đặt mật khẩu gia sư (`components/tutors/set-tutor-password-dialog.tsx`). */
+export type TutorPasswordFormValues = {
+  password: string;
+  confirm: string;
 };
 
 /** Create-tutor form values (`components/tutors/add-tutor-dialog.tsx`). */

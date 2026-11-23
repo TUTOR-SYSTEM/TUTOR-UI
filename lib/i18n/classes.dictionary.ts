@@ -86,9 +86,20 @@ export type ClassesDictionary = {
         studentPhone: string;
         parent: string;
         parentPhone: string;
+        actions: string;
       };
       noMatch: string;
       viewAll: (n: number) => string;
+      removeStudent: {
+        editAria: string;
+        removeAria: string;
+        title: string;
+        confirmPrefix: string;
+        confirmSuffix: string;
+        warning: string;
+        success: string;
+        error: string;
+      };
     };
     sessions: {
       selectAllAria: string;
@@ -252,9 +263,20 @@ const vi: ClassesDictionary = {
         studentPhone: "SĐT học sinh",
         parent: "Phụ huynh",
         parentPhone: "SĐT phụ huynh",
+        actions: "Thao tác",
       },
       noMatch: "Không tìm thấy học sinh phù hợp",
       viewAll: (n) => `Xem tất cả ${n} học sinh →`,
+      removeStudent: {
+        editAria: "Sửa học sinh",
+        removeAria: "Xoá khỏi lớp",
+        title: "Xoá học sinh khỏi lớp",
+        confirmPrefix: "Bạn có chắc muốn xoá",
+        confirmSuffix: "khỏi lớp này?",
+        warning: "Học sinh vẫn còn trong hệ thống, chỉ bị gỡ khỏi lớp này.",
+        success: "Đã xoá học sinh khỏi lớp",
+        error: "Xoá học sinh khỏi lớp thất bại",
+      },
     },
     sessions: {
       selectAllAria: "Chọn tất cả",
@@ -432,9 +454,20 @@ const en: ClassesDictionary = {
         studentPhone: "Student phone",
         parent: "Parent",
         parentPhone: "Parent phone",
+        actions: "Actions",
       },
       noMatch: "No matching students found",
       viewAll: (n) => `View all ${n} students →`,
+      removeStudent: {
+        editAria: "Edit student",
+        removeAria: "Remove from class",
+        title: "Remove student from class",
+        confirmPrefix: "Are you sure you want to remove",
+        confirmSuffix: "from this class?",
+        warning: "The student stays in the system; only this class enrollment is removed.",
+        success: "Student removed from class",
+        error: "Failed to remove student from class",
+      },
     },
     sessions: {
       selectAllAria: "Select all",

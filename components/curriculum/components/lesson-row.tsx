@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { ChevronDown, ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, Plus} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button.ui";
@@ -9,7 +9,14 @@ import { Input } from "@/components/ui/input.ui";
 import { MaterialGroup } from "./material-group";
 import { axiosInstance, getErrorMessage } from "@/lib/axios";
 import { useCurriculumCopy } from "@/hooks/useCurriculumCopy.hook";
-import type { CurriculumLesson } from "@/types";
+import type {
+  ApiResponse,
+  CurriculumLesson,
+  CurriculumLessonFile,
+  UploadResult,
+} from "@/types";
+import { unwrapApiData } from "@/lib/axios/api-unwrap";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 type LessonRowProps = {
   lesson: CurriculumLesson;
@@ -33,17 +40,26 @@ export function LessonRow({
   );
   const [removing, setRemoving] = useState<string | null>(null);
 
+  /* Files live on the lesson row: upload to /upload, then PUT the full list back
+   * to /curriculum/lessons/:id (`theoryUrls` / `exerciseUrls`). */
   const uploadFile = useCallback(
     async (type: "theory" | "exercise", file: File) => {
       setUploading(type);
       try {
         const fd = new FormData();
         fd.append("file", file);
-        await axiosInstance.put(
-          `/curriculum/lessons/${lesson.id}/${type === "theory" ? "add-theory" : "exercises"}`,
+        const uploadRes = await axiosInstance.post<ApiResponse<UploadResult>>(
+          "/upload",
           fd,
           { headers: { "Content-Type": "multipart/form-data" } },
         );
+        const uploaded = unwrapApiData<UploadResult>(uploadRes.data);
+        const key = type === "theory" ? "theoryUrls" : "exerciseUrls";
+        const next: CurriculumLessonFile[] = [
+          ...lesson[key],
+          { name: file.name, url: uploaded.url, key: uploaded.key },
+        ];
+        await axiosInstance.put(`/curriculum/lessons/${lesson.id}`, { [key]: next });
         onRefetch();
         toast.success(t.lesson.uploadSuccess);
       } catch (err) {
@@ -52,17 +68,16 @@ export function LessonRow({
         setUploading(null);
       }
     },
-    [lesson.id, onRefetch, t],
+    [lesson, onRefetch, t],
   );
 
   const removeFile = useCallback(
     async (type: "theory" | "exercise", url: string) => {
       setRemoving(url);
       try {
-        await axiosInstance.delete(
-          `/curriculum/lessons/${lesson.id}/${type === "theory" ? "add-theory" : "exercises"}`,
-          { data: { url } },
-        );
+        const key = type === "theory" ? "theoryUrls" : "exerciseUrls";
+        const next = lesson[key].filter((f) => f.url !== url);
+        await axiosInstance.put(`/curriculum/lessons/${lesson.id}`, { [key]: next });
         onRefetch();
         toast.success(t.lesson.removeFileSuccess);
       } catch (err) {
@@ -71,7 +86,7 @@ export function LessonRow({
         setRemoving(null);
       }
     },
-    [lesson.id, onRefetch, t],
+    [lesson, onRefetch, t],
   );
 
   return (
@@ -119,7 +134,7 @@ export function LessonRow({
             aria-label={t.lesson.deleteAriaLabel}
             className="rounded-lg border border-rose-200 bg-rose-50 text-rose-500 hover:bg-rose-100 dark:border-rose-800/50 dark:bg-rose-950/30 dark:text-rose-400"
           >
-            <Trash2 className="size-3.5" />
+            <DeleteIcon />
           </Button>
         </div>
       </div>

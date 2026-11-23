@@ -25,6 +25,8 @@ export type TutorsDictionary = {
     noAccessDescription: string;
     empty: string;
     loadError: string;
+    subjectsDetail: (count: number) => string;
+    studentsDetail: (count: number) => string;
   };
   columns: {
     index: string;
@@ -41,11 +43,33 @@ export type TutorsDictionary = {
     active: string;
     locked: string;
     toggleTitle: string;
-    lockConfirm: (name: string) => string;
+  };
+  statusDialog: {
+    lockTitle: string;
+    lockDescription: (name: string) => string;
+    lockConfirm: string;
+    unlockTitle: string;
+    unlockDescription: (name: string) => string;
+    unlockConfirm: string;
+    cancel: string;
   };
   rowActions: {
     edit: string;
     delete: string;
+    lock: string;
+    unlock: string;
+    password: string;
+  };
+  passwordDialog: {
+    title: string;
+    subtitle: string;
+    submit: string;
+    cancel: string;
+    passwordLabel: string;
+    confirmLabel: string;
+    mismatch: string;
+    toastSuccess: string;
+    toastError: string;
   };
   toast: {
     created: string;
@@ -113,13 +137,15 @@ export const tutorsDictionary: Record<Language, TutorsDictionary> = {
         "Chỉ quản trị viên mới có thể xem và quản lý danh sách gia sư.",
       empty: "Chưa có gia sư phù hợp.",
       loadError: "Không thể tải danh sách gia sư.",
+      subjectsDetail: (count) => `${count} môn dạy`,
+      studentsDetail: (count) => `${count} học sinh`,
     },
     columns: {
       index: "Thứ tự",
       tutor: "Gia sư",
       subjects: "Môn dạy",
       phone: "Số điện thoại",
-      classCount: "Sĩ số lớp",
+      classCount: "Số lớp đang quản lý",
       studentCount: "Học sinh",
       status: "Trạng thái",
       actions: "Thao tác",
@@ -129,12 +155,35 @@ export const tutorsDictionary: Record<Language, TutorsDictionary> = {
       active: "Hoạt động",
       locked: "Đã khoá",
       toggleTitle: "Bấm để đổi trạng thái",
-      lockConfirm: (name) =>
-        `Khóa tài khoản của ${name}? Gia sư này sẽ không thể đăng nhập.`,
+    },
+    statusDialog: {
+      lockTitle: "Xác nhận khoá tài khoản",
+      lockDescription: (name) =>
+        `Bạn có chắc muốn khoá tài khoản gia sư ${name}? Gia sư này sẽ không thể đăng nhập cho tới khi được mở khoá.`,
+      lockConfirm: "Khoá",
+      unlockTitle: "Xác nhận mở khoá tài khoản",
+      unlockDescription: (name) =>
+        `Bạn có chắc muốn mở khoá tài khoản gia sư ${name}? Gia sư này sẽ có thể đăng nhập trở lại.`,
+      unlockConfirm: "Mở khoá",
+      cancel: "Hủy",
     },
     rowActions: {
       edit: "Chỉnh sửa",
       delete: "Xóa",
+      lock: "Khoá tài khoản",
+      unlock: "Mở khoá tài khoản",
+      password: "Đặt mật khẩu",
+    },
+    passwordDialog: {
+      title: "Đặt mật khẩu cho gia sư",
+      subtitle: "Gia sư đăng nhập bằng email và mật khẩu mới này.",
+      submit: "Lưu mật khẩu",
+      cancel: "Hủy",
+      passwordLabel: "Mật khẩu mới",
+      confirmLabel: "Nhập lại mật khẩu",
+      mismatch: "Mật khẩu nhập lại không khớp",
+      toastSuccess: "Đặt mật khẩu thành công!",
+      toastError: "Đặt mật khẩu thất bại",
     },
     toast: {
       created: "Thêm gia sư thành công!",
@@ -238,13 +287,15 @@ export const tutorsDictionary: Record<Language, TutorsDictionary> = {
       noAccessDescription: "Only administrators can view and manage tutors.",
       empty: "No matching tutors.",
       loadError: "Could not load tutors.",
+      subjectsDetail: (count) => `${count} subjects`,
+      studentsDetail: (count) => `${count} students`,
     },
     columns: {
       index: "No.",
       tutor: "Tutor",
       subjects: "Subjects",
       phone: "Phone",
-      classCount: "Class size",
+      classCount: "Classes managed",
       studentCount: "Students",
       status: "Status",
       actions: "Actions",
@@ -254,12 +305,35 @@ export const tutorsDictionary: Record<Language, TutorsDictionary> = {
       active: "Active",
       locked: "Locked",
       toggleTitle: "Click to change status",
-      lockConfirm: (name) =>
-        `Lock ${name}'s account? This tutor will no longer be able to sign in.`,
+    },
+    statusDialog: {
+      lockTitle: "Confirm account lock",
+      lockDescription: (name) =>
+        `Are you sure you want to lock the account of tutor ${name}? This tutor will not be able to sign in until the account is unlocked.`,
+      lockConfirm: "Lock",
+      unlockTitle: "Confirm account unlock",
+      unlockDescription: (name) =>
+        `Are you sure you want to unlock the account of tutor ${name}? This tutor will be able to sign in again.`,
+      unlockConfirm: "Unlock",
+      cancel: "Cancel",
     },
     rowActions: {
       edit: "Edit",
       delete: "Delete",
+      lock: "Lock account",
+      unlock: "Unlock account",
+      password: "Set password",
+    },
+    passwordDialog: {
+      title: "Set tutor password",
+      subtitle: "The tutor signs in with their email and this new password.",
+      submit: "Save password",
+      cancel: "Cancel",
+      passwordLabel: "New password",
+      confirmLabel: "Confirm password",
+      mismatch: "Passwords do not match",
+      toastSuccess: "Password set successfully!",
+      toastError: "Failed to set password",
     },
     toast: {
       created: "Tutor added successfully!",

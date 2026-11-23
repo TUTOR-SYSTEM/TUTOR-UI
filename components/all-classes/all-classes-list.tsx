@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, RefreshCw, Search, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Pencil, Plus, RefreshCw, Search, SlidersHorizontal} from "lucide-react";
 import { toast } from "sonner";
 
 import { getErrorMessage } from "@/lib/axios";
@@ -14,6 +14,7 @@ import { currentPersonName } from "@/lib/format/person-name";
 import { cn } from "@/lib/utils";
 import { AddClassDialog } from "@/components/all-classes/add-class-dialog";
 import { ClassStatusMenu } from "@/components/classes/components/class-status-menu";
+import { ClassStudentBadges } from "@/components/classes/components/class-student-badges";
 import { DeleteClassDialog } from "@/components/classes/dialog/delete-class-dialog";
 import { EditClassDialog } from "@/components/classes/dialog/edit-class-dialog";
 import { Button } from "@/components/ui/button.ui";
@@ -25,6 +26,7 @@ import { Pagination } from "@/components/ui/pagination.ui";
 import { Select } from "@/components/ui/select.ui";
 import UsageGuides from "@/components/ui/usage-guide.ui";
 import type { ApiClassRow, ClassesProps, ClassStatus } from "@/types";
+import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 
 const PAGE_SIZE = 10;
 const HEAD = "px-4";
@@ -172,7 +174,7 @@ export function AllClassesList() {
       header: copy.columns.students,
       headerClassName: `${HEAD}`,
       cellClassName: `${CELL}`,
-      render: (row) => row.students?.length ?? 0,
+      render: (row) => <ClassStudentBadges students={row.students ?? []} />,
     },
     {
       key: "status",
@@ -248,7 +250,7 @@ export function AllClassesList() {
             onClick={() => setDeletingClass({ id: row.id, name: row.name })}
             className="text-muted-foreground hover:text-destructive"
           >
-            <Trash2 className="size-3.5" />
+            <DeleteIcon />
           </Button>
         </div>
       ),
