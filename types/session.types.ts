@@ -67,6 +67,8 @@ export type StudentSessionDetail = Omit<StudentSessionListItem, "class"> & {
   actualEndAt: string | null;
   class: SessionClassInfo;
   lesson: { id: string; title: string; chapterTitle: string | null } | null;
+  /** Gia sư phụ trách buổi (chỉ trường công khai). */
+  tutor?: { id: string; firstName: string | null; lastName: string | null; avatar: string | null } | null;
 };
 
 export type Pagination = {
@@ -122,7 +124,7 @@ export type BulkSessionPayload = {
 
 /* ─── Bài tập / bài làm (exercise) ─── */
 
-export type ExerciseStatus = "SUBMITTED" | "GRADED" | "RESUBMIT";
+export type ExerciseStatus = "ASSIGNED" | "SUBMITTED" | "GRADED" | "RESUBMIT";
 
 export type ExerciseDetail = {
   id: string;
@@ -161,6 +163,11 @@ export type CreateExercisePayload = {
 /** Khớp `submitExerciseSchema` ở BE: nộp lại cần ít nhất một file bài làm. */
 export type ResubmitExercisePayload = {
   exerciseUrls: SessionFile[];
+};
+
+/** `PATCH /exercises/:id/request-resubmit` — gia sư yêu cầu học sinh nộp lại. */
+export type RequestResubmitPayload = {
+  comment?: string | null;
 };
 
 export type GradeExercisePayload = {

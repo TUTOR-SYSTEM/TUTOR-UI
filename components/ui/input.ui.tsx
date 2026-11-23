@@ -30,7 +30,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
       data-slot="input"
       aria-invalid={mergedAriaInvalid}
       className={cn(
-        "h-11 w-full min-w-0 rounded-md border border-solid border-input bg-surface-container-lowest px-3 py-2.5 text-base transition-[color,background-color,border-color,box-shadow] outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-muted/50 disabled:opacity-50 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80",
+        "h-10 w-full min-w-0 rounded-md border border-solid border-input bg-surface-container-lowest px-3 py-2.5 text-base transition-[color,background-color,border-color,box-shadow] outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-muted/50 disabled:opacity-50 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80",
         !outlinedSlot && inputInvalidChrome,
         className,
       )}

@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
 import { DatePicker } from "@/components/ui/date-picker.ui";
+import { TimePicker } from "@/components/ui/time-picker.ui";
 import { Label } from "@/components/ui/label.ui";
 import { Select } from "@/components/ui/select.ui";
 import { getErrorMessage } from "@/lib/axios";
@@ -666,7 +667,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                                 ? copy.common.onlineLocationPlaceholder
                                 : copy.common.offlineLocationPlaceholder
                             }
-                            className="h-9"
+                            className="h-10"
                           />
                         </div>
                       </div>
@@ -853,13 +854,12 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                             <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9AAEA9]">
                               {copy.create.step3.startTimeLabel}
                             </p>
-                            <Input
-                              type="time"
+                            <TimePicker
                               value={slot.startTime}
-                              onChange={(e) =>
-                                updateSchedule(idx, "startTime", e.target.value)
+                              onValueChange={(v) =>
+                                updateSchedule(idx, "startTime", v)
                               }
-                              className="h-9"
+                              className="h-10!"
                             />
                           </div>
                           <div className="flex-1 space-y-1">
@@ -872,7 +872,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                                 updateSchedule(idx, "duration", v)
                               }
                               options={DURATION_OPTIONS}
-                              className="[&>button]:h-9"
+                              className="[&>button]:h-10"
                             />
                           </div>
                         </div>

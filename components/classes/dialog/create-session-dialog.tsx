@@ -8,11 +8,15 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { Input } from "@/components/ui/input.ui";
 import { DatePicker } from "@/components/ui/date-picker.ui";
+import { TimePicker } from "@/components/ui/time-picker.ui";
 import { Label } from "@/components/ui/label.ui";
 import { Select } from "@/components/ui/select.ui";
-import { usePost } from "@/lib/axios/query";
+import { useGet, usePost } from "@/lib/axios/query";
+import { unwrapApiData } from "@/lib/axios/api-unwrap";
+import type { ApiResponse, CurriculumLesson } from "@/types";
 import { getErrorMessage } from "@/lib/axios";
 import { FieldError } from "../components/field-error";
+import { ClassLocationHint } from "../components/class-location-hint";
 
 /* ─── Helpers ─── */
 
@@ -28,6 +32,8 @@ type CreateSessionDialogProps = {
   classId: string;
   lessons: LessonOption[];
   nextSessionNumber: number;
+  /** Địa điểm/link mặc định của lớp, điền sẵn vào buổi học. */
+  classLocation?: string | null;
 };
 
 type FormState = {
@@ -40,13 +46,13 @@ type FormState = {
   note: string;
 };
 
-const getInitialState = (): FormState => ({
+const getInitialState = (classLocation?: string | null): FormState => ({
   title: "",
   lessonId: "",
   date: todayInput(),
   startTime: "18:00",
   endTime: "20:00",
-  location: "",
+  location: classLocation?.trim() ?? "",
   note: "",
 });
 
@@ -58,11 +64,24 @@ export function CreateSessionDialog({
   classId,
   lessons,
   nextSessionNumber,
+  classLocation,
 }: CreateSessionDialogProps) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<FormState>(getInitialState());
+  const [form, setForm] = useState<FormState>(getInitialState(classLocation));
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const prevOpenRef = useRef(open);
+
+  /* Bài giảng đã chọn: lấy toàn bộ tài liệu bài giảng + bài tập để tự thêm vào buổi học. */
+  const lessonQuery = useGet<ApiResponse<CurriculumLesson>, CurriculumLesson>(
+    ["curriculum-lesson", form.lessonId],
+    `/curriculum/lessons/${form.lessonId}`,
+    {
+      enabled: open && !!form.lessonId,
+      select: (raw) => unwrapApiData<CurriculumLesson>(raw),
+    },
+  );
+  const lessonTheory = form.lessonId ? (lessonQuery.data?.theoryUrls ?? []) : [];
+  const lessonExercise = form.lessonId ? (lessonQuery.data?.exerciseUrls ?? []) : [];
 
   const update = <K extends keyof FormState>(field: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -70,7 +89,7 @@ export function CreateSessionDialog({
   /* reset when opened */
   useEffect(() => {
     if (open && open !== prevOpenRef.current) {
-      setForm(getInitialState());
+      setForm(getInitialState(classLocation));
       setErrors({});
     }
     prevOpenRef.current = open;
@@ -122,6 +141,10 @@ export function CreateSessionDialog({
 
   const handleSubmit = () => {
     if (!validate()) return;
+    if (form.lessonId && lessonQuery.isLoading) {
+      toast.error("Đang tải tài liệu bài giảng, vui lòng thử lại");
+      return;
+    }
     mutate({
       classId,
       lessonId: form.lessonId || undefined,
@@ -134,6 +157,8 @@ export function CreateSessionDialog({
       endAt: new Date(`${form.date}T${form.endTime}`).toISOString(),
       location: form.location.trim() || undefined,
       note: form.note.trim() || undefined,
+      theoryUrls: lessonTheory,
+      exerciseUrls: lessonExercise,
     });
   };
 
@@ -175,6 +200,13 @@ export function CreateSessionDialog({
           onValueChange={(v) => update("lessonId", v)}
           options={lessonOptions}
         />
+        {form.lessonId && (
+          <p className="text-xs text-muted-foreground">
+            {lessonQuery.isLoading
+              ? "Đang tải tài liệu bài giảng..."
+              : `Sẽ tự thêm ${lessonTheory.length} tài liệu bài giảng và ${lessonExercise.length} bài tập.`}
+          </p>
+        )}
       </div>
 
       {/* Date */}
@@ -199,11 +231,10 @@ export function CreateSessionDialog({
           <Label>
             Giờ bắt đầu <span className="text-red-400">*</span>
           </Label>
-          <Input
-            type="time"
+          <TimePicker
             value={form.startTime}
-            onChange={(e) => {
-              update("startTime", e.target.value);
+            onValueChange={(v) => {
+              update("startTime", v);
               setErrors((p) => ({ ...p, startTime: "", endTime: "" }));
             }}
             invalid={!!errors.startTime}
@@ -214,11 +245,10 @@ export function CreateSessionDialog({
           <Label>
             Giờ kết thúc <span className="text-red-400">*</span>
           </Label>
-          <Input
-            type="time"
+          <TimePicker
             value={form.endTime}
-            onChange={(e) => {
-              update("endTime", e.target.value);
+            onValueChange={(v) => {
+              update("endTime", v);
               setErrors((p) => ({ ...p, endTime: "" }));
             }}
             invalid={!!errors.endTime}
@@ -234,6 +264,13 @@ export function CreateSessionDialog({
           value={form.location}
           onChange={(e) => update("location", e.target.value)}
           placeholder="Link Zoom/Meet hoặc địa chỉ lớp học..."
+        />
+        <ClassLocationHint
+          classLocation={classLocation}
+          value={form.location}
+          onUseClassLocation={() =>
+            update("location", classLocation?.trim() ?? "")
+          }
         />
       </div>
 

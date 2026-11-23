@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Award,
   BookOpen,
@@ -65,7 +66,7 @@ type ApiStudent = {
 
 type SessionLite = { id: string; sessionNumber?: number };
 
-type ExerciseStatus = "SUBMITTED" | "GRADED" | "RESUBMIT";
+type ExerciseStatus = "ASSIGNED" | "SUBMITTED" | "GRADED" | "RESUBMIT";
 
 type ExerciseLite = {
   id: string;
@@ -582,8 +583,11 @@ const GradeCard = ({ grade }: { grade: Grade }) => {
 
 type ExerciseFilter = "all" | ExerciseStatus;
 
+/* ─── Constants moved below ─── */
+
 const EXERCISE_TABS: { value: ExerciseFilter; label: string }[] = [
   { value: "all", label: "Tất cả" },
+  { value: "ASSIGNED", label: "Chưa nộp" },
   { value: "SUBMITTED", label: "Chờ chấm" },
   { value: "GRADED", label: "Đã chấm" },
   { value: "RESUBMIT", label: "Cần nộp lại" },
@@ -593,12 +597,14 @@ const EXERCISE_STATUS_BADGE: Record<
   ExerciseStatus,
   { label: string; className: string }
 > = {
+  ASSIGNED: { label: "Chưa nộp", className: "bg-slate-100 text-slate-600" },
   SUBMITTED: { label: "Chờ chấm", className: "bg-amber-50 text-amber-700" },
   GRADED: { label: "Đã chấm", className: "bg-emerald-50 text-emerald-700" },
   RESUBMIT: { label: "Cần nộp lại", className: "bg-rose-50 text-rose-700" },
 };
 
 const AllExercisesList = () => {
+  const router = useRouter();
   const tutorId = useCurrentUserId();
   const [filter, setFilter] = useState<ExerciseFilter>("all");
 
@@ -619,6 +625,7 @@ const AllExercisesList = () => {
   const counts = useMemo(
     () => ({
       all: exercises.length,
+      ASSIGNED: exercises.filter((e) => e.status === "ASSIGNED").length,
       SUBMITTED: exercises.filter((e) => e.status === "SUBMITTED").length,
       GRADED: exercises.filter((e) => e.status === "GRADED").length,
       RESUBMIT: exercises.filter((e) => e.status === "RESUBMIT").length,
@@ -710,13 +717,17 @@ const AllExercisesList = () => {
                 );
                 const badge = EXERCISE_STATUS_BADGE[ex.status];
                 const gradeHref =
-                  ex.class && ex.session
+                  ex.status !== "ASSIGNED" && ex.class && ex.session
                     ? `/classes/${ex.class.id}/sessions/${ex.session.id}/submissions/${ex.id}`
                     : null;
                 return (
                   <TableRow
                     key={ex.id}
-                    className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F9FDFB] transition-colors"
+                    onClick={gradeHref ? () => router.push(gradeHref) : undefined}
+                    className={cn(
+                      "border-b border-[#EEF3F1] last:border-0 hover:bg-[#F9FDFB] transition-colors",
+                      gradeHref && "cursor-pointer",
+                    )}
                   >
                     <TableCell className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -777,6 +788,7 @@ const AllExercisesList = () => {
           </Table>
         </div>
       )}
+
     </div>
   );
 };
@@ -871,7 +883,7 @@ const TutorGradesPage = () => {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold text-[#16302b]">
-              Điểm số & Khối lớp
+              Bài tập về nhà
             </h1>
             {hasGrades && (
               <span className="rounded-full bg-[#E4F6EF] px-3 py-0.5 text-sm font-semibold text-[#0E9F8E]">

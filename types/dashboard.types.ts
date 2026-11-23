@@ -8,6 +8,7 @@ export type DashboardNotification = {
   content: string;
   subContent?: string | null;
   redirectUrl?: string | null;
+  detailUrl?: string | null;
   actionLabel?: string | null;
   isRead: boolean;
   createdAt: string;

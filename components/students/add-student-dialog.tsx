@@ -14,7 +14,9 @@ import { Select } from "@/components/ui/select.ui";
 import { useGet, usePost } from "@/lib/axios/query";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { showFormApiError } from "@/lib/axios/form-error";
-import { useClassActions } from "@/lib/services/class.service";
+import { useQueryClient } from "@tanstack/react-query";
+import { getErrorMessage } from "@/lib/axios/api-error";
+import { CLASSES_QUERY_KEY, useClassActions } from "@/lib/services/class.service";
 import { useStudentsCopy } from "@/hooks/useStudentsCopy.hook";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import { useAdminTutors } from "@/hooks/useAdminUsers.hook";
@@ -134,11 +136,14 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
     if (code) setValue("userCode", code);
   }, [open, studentCodeRaw, setValue]);
 
-  /* classes for the class picker */
-  const { data: classesRaw } = useClassActions({
+  /* classes for the class picker; `enrollStudents` puts the new student into the picked class */
+  const queryClient = useQueryClient();
+  const classActions = useClassActions({
     list: { limit: 100 },
     listOptions: { enabled: open },
-  }).list;
+  });
+  const { data: classesRaw } = classActions.list;
+  const enrollStudents = classActions.enrollStudents;
 
   const classOptions = useMemo(() => {
     const classes = (classesRaw?.classes ?? []) as ClassOption[];
@@ -168,7 +173,6 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
       tutorId: isAdmin ? values.tutorId : undefined,
       studentName: values.studentName.trim(),
       userCode: values.userCode?.trim() || undefined,
-      classCode: values.classCode?.trim() || undefined,
       gender: values.gender,
       studentPhone: values.studentPhone?.trim() || undefined,
       school: values.school?.trim() || undefined,
@@ -177,8 +181,19 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
     };
 
     createStudent.mutate(payload, {
-      onSuccess: (raw) => {
-        unwrapApiData(raw);
+      onSuccess: async (raw) => {
+        const created = unwrapApiData<{ id?: string } | null>(raw);
+        // `POST /students` does not enrol into a class (that lives in tutor-service), so put the
+        // new student into the picked class with a second call.
+        const classId = values.classCode?.trim();
+        if (classId && created?.id) {
+          try {
+            await enrollStudents.mutateAsync({ classId, studentIds: [created.id] });
+            void queryClient.invalidateQueries({ queryKey: CLASSES_QUERY_KEY });
+          } catch (error) {
+            toast.error(getErrorMessage(error, copy.addDialog.toastError));
+          }
+        }
         toast.success(copy.addDialog.toastSuccess);
         onAdd({
           name: values.studentName.trim(),

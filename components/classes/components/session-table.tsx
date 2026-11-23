@@ -242,7 +242,6 @@ export const SessionTable = ({
         rowKey={(session) => session.id}
         isLoading={loading}
         emptyMessage={emptyText}
-        rowClassName="h-16"
         className="min-w-180"
       />
     </div>

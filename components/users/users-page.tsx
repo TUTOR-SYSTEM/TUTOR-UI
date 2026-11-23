@@ -333,7 +333,7 @@ export function UsersPage() {
                 setPage(1);
               }}
               placeholder="Tìm theo tên, email..."
-              className="h-9! w-56 rounded-lg border-[#E7EEEC] bg-white pl-9 pr-3 text-sm text-[#16302b] placeholder:text-[#9AAEA9] focus-visible:border-[#0E9F8E] focus-visible:ring-2 focus-visible:ring-[#0E9F8E]/30"
+              className="h-10! w-56 rounded-lg border-[#E7EEEC] bg-white pl-9 pr-3 text-sm text-[#16302b] placeholder:text-[#9AAEA9] focus-visible:border-[#0E9F8E] focus-visible:ring-2 focus-visible:ring-[#0E9F8E]/30"
             />
           </div>
           <Button

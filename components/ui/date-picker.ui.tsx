@@ -117,8 +117,8 @@ export function DatePicker({
           disabled={disabled}
           aria-invalid={invalid || undefined}
           className={cn(
-            // Khớp Input (h-11) và Select (h-10): cùng viền, nền, padding và chữ.
-            "h-11! w-full! justify-between! rounded-md! border-input! bg-surface-container-lowest! px-3! text-sm! font-normal shadow-none!",
+            // Khớp Input, Select và Button (h-10): cùng viền, nền, padding và chữ.
+            "h-10! w-full! justify-between! rounded-md! border-input! bg-surface-container-lowest! px-3! text-sm! font-normal shadow-none!",
             "focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary",
             invalid &&
               "border-destructive! ring-2 ring-destructive/35 focus-visible:border-destructive focus-visible:ring-destructive/40",

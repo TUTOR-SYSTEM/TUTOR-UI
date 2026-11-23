@@ -10,6 +10,8 @@ export type ApiNotification = {
   subContent?: string | null;
   isRead: boolean;
   redirectUrl?: string | null;
+  /** URL trang chi tiết của thông báo (BE tính theo loại/đối tượng). */
+  detailUrl?: string | null;
   actionLabel?: string | null;
   actionType?: string | null;
   createdAt: string;

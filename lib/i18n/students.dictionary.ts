@@ -27,6 +27,7 @@ export type StudentsDictionary = {
       stt: string;
       name: string;
       classCode: string;
+      className: string;
       tutor: string;
       studentCode: string;
       studentPhone: string;
@@ -51,7 +52,6 @@ export type StudentsDictionary = {
       statusPlaceholder: string;
       statusActive: string;
       statusInactive: string;
-      resetButton: string;
       applyButton: string;
     };
     guide: {
@@ -246,6 +246,19 @@ export type StudentsDictionary = {
     descriptionPrefix: string;
     warningText: string;
   };
+  rowActions: {
+    viewDetail: string;
+    removeFromClass: string;
+  };
+  removeFromClassDialog: {
+    title: string;
+    descriptionPrefix: string;
+    descriptionSuffix: string;
+    classLabel: string;
+    warningText: string;
+    toastSuccess: string;
+    toastError: string;
+  };
 };
 
 const vi: StudentsDictionary = {
@@ -261,6 +274,7 @@ const vi: StudentsDictionary = {
       stt: "Thứ tự",
       name: "Họ tên",
       classCode: "Mã lớp",
+      className: "Tên lớp",
       tutor: "Gia sư",
       studentCode: "Mã học sinh",
       studentPhone: "SĐT học sinh",
@@ -285,7 +299,6 @@ const vi: StudentsDictionary = {
       statusPlaceholder: "Tất cả trạng thái",
       statusActive: "Đang hoạt động",
       statusInactive: "Ngừng hoạt động",
-      resetButton: "Đặt lại bộ lọc",
       applyButton: "Áp dụng",
     },
     guide: {
@@ -498,6 +511,20 @@ const vi: StudentsDictionary = {
     warningText:
       "Toàn bộ điểm số và lịch sử buổi học liên quan cũng sẽ bị gỡ. Hành động này không thể hoàn tác.",
   },
+  rowActions: {
+    viewDetail: "Xem chi tiết",
+    removeFromClass: "Xoá khỏi lớp",
+  },
+  removeFromClassDialog: {
+    title: "Xoá học sinh khỏi lớp",
+    descriptionPrefix: "Bạn có chắc muốn xoá",
+    descriptionSuffix: "khỏi lớp",
+    classLabel: "Chọn lớp",
+    warningText:
+      "Học sinh vẫn còn trong hệ thống, chỉ bị gỡ khỏi lớp đã chọn.",
+    toastSuccess: "Đã xoá học sinh khỏi lớp",
+    toastError: "Xoá học sinh khỏi lớp thất bại",
+  },
 };
 
 const en: StudentsDictionary = {
@@ -513,6 +540,7 @@ const en: StudentsDictionary = {
       stt: "No.",
       name: "Full name",
       classCode: "Class code",
+      className: "Class name",
       tutor: "Tutor",
       studentCode: "Student code",
       studentPhone: "Student phone",
@@ -537,7 +565,6 @@ const en: StudentsDictionary = {
       statusPlaceholder: "All statuses",
       statusActive: "Active",
       statusInactive: "Inactive",
-      resetButton: "Reset filters",
       applyButton: "Apply",
     },
     guide: {
@@ -750,6 +777,20 @@ const en: StudentsDictionary = {
     descriptionPrefix: "Are you sure you want to delete student",
     warningText:
       "All related scores and session history will also be removed. This action cannot be undone.",
+  },
+  rowActions: {
+    viewDetail: "View details",
+    removeFromClass: "Remove from class",
+  },
+  removeFromClassDialog: {
+    title: "Remove student from class",
+    descriptionPrefix: "Are you sure you want to remove",
+    descriptionSuffix: "from class",
+    classLabel: "Select class",
+    warningText:
+      "The student stays in the system; only the selected class enrollment is removed.",
+    toastSuccess: "Student removed from class",
+    toastError: "Failed to remove student from class",
   },
 };
 

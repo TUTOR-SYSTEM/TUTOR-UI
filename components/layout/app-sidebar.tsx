@@ -26,6 +26,7 @@ import { useAuthStore } from "@/zustand/auth.store";
 import { useCurrentUserRole, type UserRole } from "@/hooks/useCurrentUserRole";
 import { useAuth } from "@/components/providers/auth.provider";
 import { useAuthActions } from "@/lib/services/auth.service";
+import { useNotificationActions } from "@/lib/services/notification.service";
 import { useAppShellCopy } from "@/hooks/useAppShellCopy.hook";
 import type { AppShellDictionary } from "@/lib/i18n/app-shell.dictionary";
 import MenuPopover from "@/components/ui/menu-popover.ui";
@@ -46,7 +47,6 @@ const NAV = {
     key: "notifications",
     url: "/notifications",
     icon: Bell,
-    badge: 5,
   },
   classes: { key: "classes", url: "/classes", icon: BookOpen },
   curriculum: { key: "curriculum", url: "/curriculum", icon: BookText },
@@ -155,9 +155,12 @@ const AppSidebar = () => {
   const { brand, nav, roleLabels, userMenu } = useAppShellCopy();
 
   const mainItems: NavItem[] = roleNav[role];
+  /* Badge thông báo = số thông báo chưa đọc của người dùng hiện tại. */
+  const unreadCount = useNotificationActions().unreadCount.data ?? 0;
 
   const renderNavItem = (item: NavItem) => {
     const active = isItemActive(item.url, pathname);
+    const badgeCount = item.key === "notifications" ? unreadCount : (item.badge ?? 0);
     return (
       <Link
         key={item.url}
@@ -170,9 +173,9 @@ const AppSidebar = () => {
       >
         <item.icon className="size-4.5 shrink-0" strokeWidth={1.8} />
         {nav[item.key]}
-        {"badge" in item && item.badge ? (
+        {badgeCount > 0 ? (
           <span className="ml-auto rounded-[9px] bg-[#ff7a45] px-1.75 py-px text-[11px] font-bold text-white">
-            {item.badge}
+            {badgeCount > 99 ? "99+" : badgeCount}
           </span>
         ) : null}
       </Link>

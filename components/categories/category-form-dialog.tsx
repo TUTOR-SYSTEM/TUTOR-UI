@@ -229,7 +229,7 @@ export const CategoryFormDialog = ({
             onChange={(event) =>
               update("parent", event.target.value || undefined)
             }
-            className="h-11 w-full rounded-md border border-input bg-surface-container-lowest px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary disabled:opacity-50 dark:bg-input/30"
+            className="h-10 w-full rounded-md border border-input bg-surface-container-lowest px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary disabled:opacity-50 dark:bg-input/30"
             disabled={availableParents.length === 0}
           >
             <option value="">None (top-level)</option>

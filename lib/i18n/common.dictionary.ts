@@ -55,6 +55,11 @@ export type CommonDictionary = {
     prevMonth: string;
     nextMonth: string;
   };
+  timePicker: {
+    placeholder: string;
+    clear: string;
+    done: string;
+  };
 };
 
 const vi: CommonDictionary = {
@@ -111,6 +116,11 @@ const vi: CommonDictionary = {
     prevMonth: "Tháng trước",
     nextMonth: "Tháng sau",
   },
+  timePicker: {
+    placeholder: "Chọn giờ",
+    clear: "Xóa",
+    done: "Xong",
+  },
 };
 
 const en: CommonDictionary = {
@@ -166,6 +176,11 @@ const en: CommonDictionary = {
     clear: "Clear",
     prevMonth: "Previous month",
     nextMonth: "Next month",
+  },
+  timePicker: {
+    placeholder: "Pick a time",
+    clear: "Clear",
+    done: "Done",
   },
 };
 

@@ -8,6 +8,7 @@ import type {
   CreateExercisePayload,
   ResubmitExercisePayload,
   GradeExercisePayload,
+  RequestResubmitPayload,
 } from "@/types";
 
 // ─── Query keys ──────────────────────────────────────────────────────────────
@@ -71,6 +72,10 @@ export function useExerciseActions(args?: {
     ApiResponse<ExerciseDetail>,
     { id: string } & GradeExercisePayload
   >((payload) => `/exercises/${payload.id}/grade`);
+  const requestResubmit = usePatch<
+    ApiResponse<ExerciseDetail>,
+    { id: string } & RequestResubmitPayload
+  >((payload) => `/exercises/${payload.id}/request-resubmit`);
 
-  return { list, detail, create, resubmit, grade };
+  return { list, detail, create, resubmit, grade, requestResubmit };
 }

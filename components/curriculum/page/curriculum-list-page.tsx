@@ -149,7 +149,7 @@ export const CurriculumListPage = () => {
       key: "stt",
       header: copy.table.stt,
       headerClassName:
-        "w-14 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        "w-14 px-4 py-3 text-left text-xs font-semibold text-muted-foreground",
       cellClassName: "px-4 py-3.5 font-medium text-muted-foreground",
       render: (_fw, i) =>
         String((page - 1) * pageSize + i + 1).padStart(2, "0"),
@@ -158,7 +158,7 @@ export const CurriculumListPage = () => {
       key: "subject",
       header: copy.table.program,
       headerClassName:
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        "px-4 py-3 text-left text-xs font-semibold text-muted-foreground",
       cellClassName: "px-4 py-3.5",
       render: (fw, i) => (
         <div className="flex items-center gap-3">
@@ -172,7 +172,7 @@ export const CurriculumListPage = () => {
           </span>
           <div className="min-w-0">
             <p
-              className="truncate font-semibold leading-tight cursor-pointer"
+              className="truncate font-semibold leading-tight cursor-pointer transition-colors hover:text-primary"
               onClick={() => router.push(`/curriculum/${fw.id}`)}
             >
               {fw.subject}
@@ -189,7 +189,7 @@ export const CurriculumListPage = () => {
       key: "courseTime",
       header: copy.table.courseTime,
       headerClassName:
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        "px-4 py-3 text-left text-xs font-semibold text-muted-foreground",
       cellClassName: "px-4 py-3.5",
       render: (fw) => (
         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
@@ -202,7 +202,7 @@ export const CurriculumListPage = () => {
       key: "summary",
       header: copy.table.summaryHeader,
       headerClassName:
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        "px-4 py-3 text-left text-xs font-semibold text-muted-foreground",
       cellClassName: "px-4 py-3.5",
       render: (fw) => (
         <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
@@ -215,7 +215,7 @@ export const CurriculumListPage = () => {
       key: "createdAt",
       header: copy.table.createdAt,
       headerClassName:
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        "px-4 py-3 text-left text-xs font-semibold text-muted-foreground",
       cellClassName: "px-4 py-3.5 text-foreground",
       render: (fw) => formatDate(fw.createdAt),
     },
@@ -223,7 +223,7 @@ export const CurriculumListPage = () => {
       key: "actions",
       header: copy.table.actions,
       headerClassName:
-        "px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+        "px-4 py-3 text-right text-xs font-semibold text-muted-foreground",
       cellClassName: "px-4 py-3.5",
       render: (fw) => (
         <div className="flex items-center justify-end gap-1.5">
@@ -273,14 +273,14 @@ export const CurriculumListPage = () => {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="h-9! w-56 pl-9 pr-3 text-sm"
+              className="h-10! w-56 pl-9 pr-3 text-sm"
             />
           </div>
           <Button
             type="button"
             variant="outline"
             onClick={handleSearch}
-            className="h-9! w-auto! gap-1.5 px-3 text-sm font-medium"
+            className="h-10! w-auto! gap-1.5 px-3 text-sm font-medium"
           >
             <Search className="size-3.5" />
             {copy.header.searchButton}

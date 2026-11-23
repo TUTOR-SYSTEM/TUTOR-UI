@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import Link from "next/link";
 import { Clock, Loader2, X } from "lucide-react";
 
 import { Search } from "lucide-react";
@@ -12,6 +13,7 @@ import {
   NOTIFICATIONS_QUERY_KEY,
 } from "@/lib/services/notification.service";
 import { getErrorMessage } from "@/lib/axios";
+import { safeRedirectHref } from "@/lib/notification-redirect";
 import type { NotificationType, ApiNotification } from "@/types";
 import UsageGuides, {
   type UsageGuideStep,
@@ -167,6 +169,15 @@ function DetailPanel({
           </p>
         )}
 
+        {safeRedirectHref(notification.detailUrl ?? notification.redirectUrl) && (
+          <Link
+            href={safeRedirectHref(notification.detailUrl ?? notification.redirectUrl) ?? "/notifications"}
+            className="mt-1 w-full rounded-lg border border-[#0E9F8E] py-2 text-center text-sm font-semibold text-[#0E9F8E] hover:bg-[#F1FBF9] transition-colors"
+          >
+            {notification.actionLabel ?? "Xem chi tiết"}
+          </Link>
+        )}
+
         {!notification.isRead && (
           <button
             type="button"
@@ -261,7 +272,7 @@ export default function NotificationsPage() {
               setPage(1);
             }}
             placeholder="Tìm theo tiêu đề..."
-            className="h-9 w-56 rounded-lg border border-[#E7EEEC] bg-white pl-9 pr-3 text-sm text-[#16302b] placeholder:text-[#9AAEA9] focus:outline-none focus:ring-2 focus:ring-[#0E9F8E]/30 focus:border-[#0E9F8E] transition-colors"
+            className="h-10 w-56 rounded-lg border border-[#E7EEEC] bg-white pl-9 pr-3 text-sm text-[#16302b] placeholder:text-[#9AAEA9] focus:outline-none focus:ring-2 focus:ring-[#0E9F8E]/30 focus:border-[#0E9F8E] transition-colors"
           />
         </div>
       </div>

@@ -197,6 +197,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
       status: statusMap[d.status] ?? "active",
       rawStatus: d.status,
       description: d.description ?? "",
+      location: d.location ?? "",
       totalSessions: d.sessionCount,
       totalStudents: d.studentCount,
       curriculumId: d.curriculumId,
@@ -617,7 +618,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
                 value={studentSearch}
                 onChange={(e) => setStudentSearch(e.target.value)}
                 placeholder={detail.students.searchPlaceholder}
-                className="h-9 w-full pl-8 text-sm sm:w-52"
+                className="h-10 w-full pl-8 text-sm sm:w-52"
               />
             </div>
             <Button
@@ -655,7 +656,6 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
               ? detail.students.empty
               : detail.students.noMatch
           }
-          rowClassName="h-16"
           className="min-w-180"
         />
         {!studentsLoading && students.length > 0 && (
@@ -773,6 +773,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
         classId={cls.id}
         lessons={lessons.map((l) => ({ id: l.id, title: l.title }))}
         nextSessionNumber={sessions.length + 1}
+        classLocation={cls.location}
       />
     </div>
   );

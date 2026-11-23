@@ -249,7 +249,7 @@ export const TuitionsBoard = ({
                 setPage(1);
               }}
               placeholder="Tìm học sinh, lớp..."
-              className="h-9 w-56 pl-9 text-sm"
+              className="h-10 w-56 pl-9 text-sm"
             />
           </div>
           {canCreate && (
@@ -389,7 +389,7 @@ export const TuitionsBoard = ({
 
           <span className="flex items-center gap-1.5 rounded-lg border border-[#E7EEEC] px-3 py-1.5 text-sm text-[#16302b]">
             <Calendar className="size-3.5 text-[#9AAEA9]" />
-            Tháng {month} · {year}
+            {month === 0 ? "Tất cả tháng" : `Tháng ${month} · ${year}`}
           </span>
         </div>
 

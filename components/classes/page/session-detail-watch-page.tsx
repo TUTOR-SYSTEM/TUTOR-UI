@@ -136,7 +136,8 @@ export const SessionDetailWatchPage = ({
 
   const submission = useMemo<ExerciseDetail | null>(() => {
     if (!exercisesRaw) return null;
-    return exercisesRaw[0] ?? null;
+    // bản ASSIGNED (giao, chưa nộp) chưa phải bài đã nộp
+    return exercisesRaw.find((e) => e.status !== "ASSIGNED") ?? null;
   }, [exercisesRaw]);
 
   const tutorId = session?.tutorId ?? session?.class.tutorId ?? null;
@@ -453,7 +454,7 @@ export const SessionDetailWatchPage = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="mt-3"
+                        className="mt-3 w-auto!"
                         onClick={() => setResubmitOpen(true)}
                       >
                         <Upload className="size-4" /> Nộp lại bài

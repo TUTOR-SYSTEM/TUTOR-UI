@@ -15,6 +15,7 @@ import {
   Image as ImageIcon,
   Loader2,
   PenLine,
+  RotateCcw,
   SkipForward,
   Upload,
   X,
@@ -74,6 +75,11 @@ const GRADE_BADGE: Record<
   ExerciseStatus,
   { label: string; dot: string; className: string }
 > = {
+  ASSIGNED: {
+    label: "Chưa nộp",
+    dot: "bg-slate-400",
+    className: "bg-slate-50 text-slate-600 border-slate-200",
+  },
   SUBMITTED: {
     label: "Chờ chấm",
     dot: "bg-amber-500",
@@ -236,6 +242,25 @@ export const GradeWorkspace = ({
   };
 
   const gradeMutation = useExerciseActions().grade;
+  const requestResubmitMutation = useExerciseActions().requestResubmit;
+  const [resubmitOpen, setResubmitOpen] = useState(false);
+  const [resubmitNote, setResubmitNote] = useState("");
+
+  const doRequestResubmit = async () => {
+    try {
+      await requestResubmitMutation.mutateAsync({
+        id: exercise.id,
+        comment: resubmitNote.trim() || null,
+      });
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Yêu cầu nộp lại thất bại"));
+      return;
+    }
+    toast.success("Đã gửi yêu cầu nộp lại cho học sinh");
+    setResubmitOpen(false);
+    setResubmitNote("");
+    queryClient.invalidateQueries({ queryKey: exercisesKey });
+  };
 
   const doSave = async (after: "list" | "next") => {
     const parsed = Number(score);
@@ -618,6 +643,43 @@ export const GradeWorkspace = ({
           </div>
 
           <div className="space-y-2 border-t pt-3">
+            {!resubmitOpen ? (
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={requestResubmitMutation.isPending}
+                onClick={() => setResubmitOpen(true)}
+              >
+                <RotateCcw className="size-4" /> Yêu cầu nộp lại
+              </Button>
+            ) : (
+              <div className="space-y-2 rounded-lg border p-3">
+                <textarea
+                  value={resubmitNote}
+                  onChange={(e) => setResubmitNote(e.target.value)}
+                  rows={2}
+                  maxLength={2000}
+                  placeholder="Nhận xét cho học sinh (không bắt buộc)"
+                  className="w-full resize-none rounded-md border bg-surface-container-lowest px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    className="flex-1"
+                    loading={requestResubmitMutation.isPending}
+                    onClick={doRequestResubmit}
+                  >
+                    Gửi yêu cầu
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={requestResubmitMutation.isPending}
+                    onClick={() => setResubmitOpen(false)}
+                  >
+                    Hủy
+                  </Button>
+                </div>
+              </div>
+            )}
             <Button
               className="w-full"
               loading={gradeMutation.isPending}

@@ -513,7 +513,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                           ? copy.common.onlineLocationPlaceholder
                           : copy.common.offlineLocationPlaceholder
                       }
-                      className="h-9"
+                      className="h-10"
                     />
                   </div>
                 </div>

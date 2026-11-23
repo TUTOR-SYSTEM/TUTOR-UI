@@ -125,6 +125,9 @@ export type SettingsDictionary = {
     copyAccount: string;
     copied: string;
     copyFailed: string;
+    notConfigured: string;
+    loading: string;
+    required: string;
     switches: { label: string; desc: string }[];
   };
 };
@@ -319,6 +322,9 @@ const vi: SettingsDictionary = {
     copyAccount: "Sao chép số TK",
     copied: "Đã sao chép số tài khoản",
     copyFailed: "Sao chép thất bại",
+    notConfigured: "Chưa có tài khoản nhận tiền",
+    loading: "Đang tải...",
+    required: "Vui lòng nhập đầy đủ tên ngân hàng, chủ tài khoản và số tài khoản",
     switches: [
       { label: "Gửi nhắc thanh toán tự động", desc: "Nhắn phụ huynh khi học phí đến hạn." },
       { label: "Gửi biên lai điện tử", desc: "Tự động gửi biên lai sau mỗi lần nhận tiền." },
@@ -516,6 +522,9 @@ const en: SettingsDictionary = {
     copyAccount: "Copy account no.",
     copied: "Account number copied",
     copyFailed: "Copy failed",
+    notConfigured: "No receiving account yet",
+    loading: "Loading...",
+    required: "Please fill in the bank name, account holder and account number",
     switches: [
       { label: "Send automatic payment reminders", desc: "Message parents when tuition is due." },
       { label: "Send e-receipts", desc: "Automatically send a receipt after each payment." },

@@ -18,7 +18,6 @@ import type { LucideIcon } from "lucide-react";
 import { useGet } from "@/lib/axios/query";
 import { getErrorMessage } from "@/lib/axios";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
-import { useUserActions } from "@/lib/services/user.service";
 import { useTuitionActions } from "@/lib/services/tuition.service";
 import { useNotificationActions } from "@/lib/services/notification.service";
 import { useCurrentUserId } from "@/hooks/useCurrentUserId";
@@ -72,6 +71,8 @@ type WatchScheduleSlot = {
 
 type ClassWatchResponse = {
   class: ClassWatchDto;
+  /** Gia sư phụ trách (chỉ trường công khai). */
+  tutor?: { id: string; firstName: string | null; lastName: string | null; avatar: string | null } | null;
   recentSession: RecentSessionDto | null;
   schedules: WatchScheduleSlot[];
   students: ClassStudentDto[];
@@ -299,16 +300,8 @@ export const ClassDetailWatchPage = ({
   const schedules = useMemo(() => watch?.schedules ?? [], [watch]);
   const students = useMemo(() => watch?.students ?? [], [watch]);
 
-  const { data: tutorRaw } = useUserActions({
-    byField: { field: "id", value: cls?.tutorId ?? "" },
-    byFieldOptions: { enabled: !!cls?.tutorId },
-    allGradesOptions: { enabled: false },
-    userGradesOptions: { enabled: false },
-  }).byField;
-  const tutor = useMemo(() => {
-    if (!tutorRaw) return null;
-    return tutorRaw[0] ?? null;
-  }, [tutorRaw]);
+  /* Gia sư lấy từ /watches (học sinh không gọi được GET /users/get-by-field). */
+  const tutor = watch?.tutor ?? null;
 
   const { data: materialsRaw } = useGet(
     ["class-materials", classId],
@@ -475,7 +468,7 @@ export const ClassDetailWatchPage = ({
           </span>
         </div>
 
-        <h1 className="mt-3 text-2xl font-bold">{cls.name}</h1>
+        <h1 className="mt-3 text-2xl font-bold text-white">{cls.name}</h1>
 
         <div className="mt-5 flex items-center gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-base font-bold">

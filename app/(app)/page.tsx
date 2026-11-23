@@ -396,7 +396,7 @@ export default function HomePage() {
                       {n.title}
                       {" · "}
                       <Link
-                        href={safeRedirectHref(n.redirectUrl) ?? "/notifications"}
+                        href={safeRedirectHref(n.detailUrl ?? n.redirectUrl) ?? "/notifications"}
                         className="font-medium text-[#0E9F8E] hover:underline"
                       >
                         {n.actionLabel || copy.notifications.detail}
