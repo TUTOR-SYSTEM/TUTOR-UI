@@ -265,6 +265,7 @@ export function ProfilePanel() {
         <FormRow label={copy.lastName}>
           <Input
             value={form.lastName}
+            readOnly={isNameLocked}
             onChange={
               isNameLocked
                 ? undefined
@@ -280,6 +281,7 @@ export function ProfilePanel() {
         <FormRow label={copy.firstName}>
           <Input
             value={form.firstName}
+            readOnly={isNameLocked}
             onChange={
               isNameLocked
                 ? undefined

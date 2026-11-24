@@ -34,9 +34,9 @@ const CELL = "px-4 py-3.5";
 
 /** Pill colors per class status (same palette as the class list legend). */
 const STATUS_BADGE: Record<ClassStatus, string> = {
-  OPEN: "bg-[#E4F6EF] text-[#0B7A6D]",
-  UPCOMING: "bg-[#F3F4F6] text-[#4B5563]",
-  CLOSED: "bg-[#FEE2E2] text-[#DC2626]",
+  OPEN: "bg-[#E4F6EF] dark:bg-primary-light text-[#0B7A6D] dark:text-[#5EEAD4]",
+  UPCOMING: "bg-[#F3F4F6] dark:bg-muted text-[#4B5563] dark:text-muted-foreground",
+  CLOSED: "bg-[#FEE2E2] dark:bg-[#ef4444]/15 text-[#DC2626] dark:text-red-400",
 };
 
 export function AllClassesList() {

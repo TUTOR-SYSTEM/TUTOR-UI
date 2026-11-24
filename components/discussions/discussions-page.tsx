@@ -156,7 +156,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Dùng ô tìm kiếm để tìm cuộc trò chuyện với{" "}
-        <span className="font-semibold text-[#16302b]">
+        <span className="font-semibold text-[#16302b] dark:text-foreground">
           giáo viên, học sinh, phụ huynh
         </span>
         .
@@ -169,7 +169,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Nhấn một thẻ để mở khung chat bên phải; số tin{" "}
-        <span className="font-semibold text-[#16302b]">chưa đọc</span> tự
+        <span className="font-semibold text-[#16302b] dark:text-foreground">chưa đọc</span> tự
         động về 0.
       </>
     ),
@@ -180,8 +180,8 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Nhập nội dung rồi nhấn{" "}
-        <span className="font-semibold text-[#0E9F8E]">Enter</span> để gửi;{" "}
-        <span className="font-semibold text-[#16302b]">Shift+Enter</span> để
+        <span className="font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">Enter</span> để gửi;{" "}
+        <span className="font-semibold text-[#16302b] dark:text-foreground">Shift+Enter</span> để
         xuống dòng.
       </>
     ),
@@ -191,12 +191,12 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     title: "Phân quyền chat",
     body: (
       <>
-        <span className="font-semibold text-[#16302b]">Admin</span> chat được
-        với mọi người. <span className="font-semibold text-[#16302b]">
+        <span className="font-semibold text-[#16302b] dark:text-foreground">Admin</span> chat được
+        với mọi người. <span className="font-semibold text-[#16302b] dark:text-foreground">
           Giáo viên
         </span>{" "}
         chat với học sinh/phụ huynh trong lớp.{" "}
-        <span className="font-semibold text-[#16302b]">Học sinh</span> chat
+        <span className="font-semibold text-[#16302b] dark:text-foreground">Học sinh</span> chat
         với bạn cùng lớp.
       </>
     ),

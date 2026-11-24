@@ -5,6 +5,7 @@ import { Download, QrCode, Wallet } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog-form.ui";
 import { BANK_INFO } from "@/lib/bank-info";
 import type { TuitionRecord } from "@/types";
+import { currentPersonName } from "@/lib/format/person-name";
 
 const fmtDate = (iso: string | null) => {
   if (!iso) return "—";
@@ -60,7 +61,7 @@ export const TuitionPayDialog = ({
 }) => {
   const unpaid = tuition.status !== "PAID";
   const studentName =
-    `${tuition.student.firstName} ${tuition.student.lastName}`.trim();
+    currentPersonName(tuition.student.firstName, tuition.student.lastName);
   const amount = Number(tuition.amount) || 0;
 
   const qrNote =
@@ -84,7 +85,7 @@ export const TuitionPayDialog = ({
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs text-muted-foreground">Số tiền</p>
-          <p className="mt-1 text-3xl font-extrabold text-[#0E9F8E]">
+          <p className="mt-1 text-3xl font-extrabold text-[#0E9F8E] dark:text-[#2DD4BF]">
             {money(amount)}
           </p>
         </div>
@@ -102,7 +103,7 @@ export const TuitionPayDialog = ({
       {/* QR card — only meaningful while there's still something to pay */}
       {unpaid && (
         <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-5 text-center">
-          <p className="flex items-center justify-center gap-1.5 text-sm font-semibold text-[#0E9F8E]">
+          <p className="flex items-center justify-center gap-1.5 text-sm font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">
             <QrCode className="size-4" />
             Quét mã để chuyển khoản
           </p>
@@ -111,7 +112,7 @@ export const TuitionPayDialog = ({
             <img
               src={qrUrl}
               alt="Mã QR chuyển khoản"
-              className="size-44 rounded-md border border-border/60 bg-white p-1"
+              className="size-44 rounded-md border border-border/60 bg-white dark:bg-card p-1"
             />
           </div>
         </div>
@@ -123,7 +124,7 @@ export const TuitionPayDialog = ({
         <Row
           label="Hạn đóng"
           value={fmtDate(tuition.dueDate)}
-          valueClass={unpaid ? "text-[#E85D24]" : "text-foreground"}
+          valueClass={unpaid ? "text-[#E85D24] dark:text-[#FF9A6C]" : "text-foreground"}
         />
         {tuition.status === "PAID" && (
           <Row label="Ngày đóng" value={fmtDate(tuition.paidDate)} />
@@ -133,7 +134,7 @@ export const TuitionPayDialog = ({
 
       {/* Bank details */}
       {unpaid && (
-        <div className="rounded-xl border border-[#0E9F8E]/25 bg-[#E4F6EF]/50 px-4 py-3">
+        <div className="rounded-xl border border-[#0E9F8E]/25 bg-[#E4F6EF]/50 dark:bg-primary-light/50 px-4 py-3">
           <Row label="Ngân hàng" value={BANK_INFO.displayName} />
           <Row label="Số tài khoản" value={BANK_INFO.accountNo} />
           <Row label="Chủ tài khoản" value={BANK_INFO.accountName} />

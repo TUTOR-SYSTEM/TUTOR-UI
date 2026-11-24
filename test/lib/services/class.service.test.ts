@@ -11,7 +11,8 @@ vi.mock("@/lib/axios/query", () => ({
   useDelete: vi.fn((url: unknown, options?: Record<string, unknown>) => ({ url, options })),
 }));
 
-import { useDelete, usePost, usePut } from "@/lib/axios/query";
+import { useDelete, useGet, usePost, usePut } from "@/lib/axios/query";
+import { ApiError } from "@/types";
 import { CLASSES_QUERY_KEY, useClassActions } from "@/lib/services/class.service";
 
 type Captured = {
@@ -40,6 +41,54 @@ describe("class.service", () => {
       const list = useClassActions({ list: { limit: 20, page: 3 } }).list as unknown as Captured;
       expect(list.options.params).toEqual({ limit: 20, page: 3 });
       expect(list.queryKey).toEqual([...CLASSES_QUERY_KEY, { limit: 20, page: 3 }]);
+    });
+
+    it("treats a 404 from the list as an empty list, not an error", () => {
+      vi.mocked(useGet).mockReturnValueOnce({
+        data: undefined,
+        error: new ApiError("Not found", 404),
+        isError: true,
+        isPending: false,
+        isLoading: false,
+        isSuccess: false,
+        status: "error",
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof useGet>);
+
+      const list = useClassActions({ list: { page: 2, limit: 5 } }).list as unknown as {
+        data: { classes: unknown[]; pagination: Record<string, number> };
+        isError: boolean;
+        error: unknown;
+      };
+      expect(list.isError).toBe(false);
+      expect(list.error).toBeNull();
+      expect(list.data).toEqual({
+        classes: [],
+        pagination: { total: 0, page: 2, limit: 5, totalPages: 0 },
+      });
+    });
+
+    it("keeps non-404 list errors visible", () => {
+      const err = new ApiError("Server error", 500);
+      vi.mocked(useGet).mockReturnValueOnce({
+        data: undefined,
+        error: err,
+        isError: true,
+        status: "error",
+      } as unknown as ReturnType<typeof useGet>);
+
+      const list = useClassActions().list as unknown as { isError: boolean; error: unknown };
+      expect(list.isError).toBe(true);
+      expect(list.error).toBe(err);
+    });
+
+    it("does not retry a 404 list request but retries other errors", () => {
+      const list = useClassActions().list as unknown as {
+        options: { retry: (count: number, error: unknown) => boolean };
+      };
+      expect(list.options.retry(0, new ApiError("Not found", 404))).toBe(false);
+      expect(list.options.retry(0, new ApiError("Server error", 500))).toBe(true);
+      expect(list.options.retry(3, new ApiError("Server error", 500))).toBe(false);
     });
 
     it("merges listOptions over the defaults", () => {

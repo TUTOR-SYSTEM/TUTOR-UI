@@ -106,6 +106,20 @@ export type AuthDictionary = {
     successSubtitle: string;
     loginNow: string;
   };
+  verifyOtp: {
+    heading: string;
+    subtitle: string;
+    emailLabel: string;
+    emailPlaceholder: string;
+    otpLabel: string;
+    otpHint: string;
+    otpIncomplete: string;
+    resendCode: string;
+    resendIn: string;
+    codeResent: string;
+    submit: string;
+    errorFallback: string;
+  };
   verifyEmail: {
     heading: string;
     verifyingTitle: string;
@@ -213,7 +227,7 @@ const vi: AuthDictionary = {
   },
   resetPassword: {
     heading: "Đặt mật khẩu mới",
-    subtitle: "Nhập mã 6 số trong email và chọn mật khẩu mạnh.",
+    subtitle: "Chọn một mật khẩu mạnh cho tài khoản của bạn.",
     emailLabel: "Email",
     emailPlaceholder: "name@example.com",
     otpLabel: "Mã xác nhận",
@@ -234,6 +248,20 @@ const vi: AuthDictionary = {
     successTitle: "Đổi mật khẩu thành công",
     successSubtitle: "Mật khẩu của bạn đã được cập nhật. Hãy đăng nhập lại.",
     loginNow: "Đăng nhập ngay",
+  },
+  verifyOtp: {
+    heading: "Xác nhận mã",
+    subtitle: "Nhập mã 6 số đã gửi tới email của bạn.",
+    emailLabel: "Email",
+    emailPlaceholder: "name@example.com",
+    otpLabel: "Mã xác nhận",
+    otpHint: "Nhập 6 chữ số trong email (hiệu lực 5 phút)",
+    otpIncomplete: "Vui lòng nhập đủ 6 chữ số",
+    resendCode: "Gửi lại mã",
+    resendIn: "Gửi lại sau {s}s",
+    codeResent: "Đã gửi mã mới tới email của bạn",
+    submit: "Tiếp tục",
+    errorFallback: "Gửi lại mã thất bại",
   },
   verifyEmail: {
     heading: "Xác minh email",
@@ -367,6 +395,20 @@ const en: AuthDictionary = {
     successTitle: "Password changed successfully",
     successSubtitle: "Your password has been updated. Please sign in again.",
     loginNow: "Sign in now",
+  },
+  verifyOtp: {
+    heading: "Enter your code",
+    subtitle: "Enter the 6-digit code we emailed you.",
+    emailLabel: "Email",
+    emailPlaceholder: "name@example.com",
+    otpLabel: "Verification code",
+    otpHint: "Enter the 6 digits from the email (valid for 5 minutes)",
+    otpIncomplete: "Please enter all 6 digits",
+    resendCode: "Resend code",
+    resendIn: "Resend in {s}s",
+    codeResent: "A new code has been sent to your email",
+    submit: "Continue",
+    errorFallback: "Could not resend the code",
   },
   verifyEmail: {
     heading: "Verify email",

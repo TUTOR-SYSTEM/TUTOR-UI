@@ -24,7 +24,7 @@ const FAMILY_USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     title: "Nhận biết trạng thái",
     body: (
       <>
-        Thẻ <span className="font-semibold text-[#0E9F8E]">Đã đóng</span>,{" "}
+        Thẻ <span className="font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">Đã đóng</span>,{" "}
         <span className="font-semibold text-[#F97316]">Chưa đóng</span>,{" "}
         <span className="font-semibold text-red-500">Quá hạn</span> trên mỗi
         dòng cho biết tình trạng thanh toán.
@@ -88,9 +88,9 @@ export function FamilyFeesPage() {
 
   if (isParent && !studentsLoading && childIds.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-[#E7EEEC] bg-white py-16 text-center">
-        <Info className="size-8 text-[#C5D5D1]" />
-        <p className="text-sm text-[#9AAEA9]">
+      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card py-16 text-center">
+        <Info className="size-8 text-[#C5D5D1] dark:text-muted-foreground" />
+        <p className="text-sm text-[#9AAEA9] dark:text-muted-foreground">
           Chức năng xem học phí của học sinh liên kết hiện chưa khả dụng.
         </p>
       </div>

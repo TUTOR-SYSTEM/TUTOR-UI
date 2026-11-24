@@ -29,21 +29,21 @@ const TutorCard = ({ a }: { a: TutorAssignment }) => {
   const done = a.state === "done";
 
   return (
-    <div className="rounded-xl border border-[#E7EEEC] bg-white p-4 shadow-sm">
+    <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F1F0FE] text-[#6366F1]">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F1F0FE] dark:bg-[#6366F1]/15 text-[#6366F1] dark:text-[#A5B4FC]">
           <ClipboardCheck className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="font-bold text-[#16302b]">{a.title}</h3>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#9AAEA9]">
+          <h3 className="font-bold text-[#16302b] dark:text-foreground">{a.title}</h3>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#9AAEA9] dark:text-muted-foreground">
             <span>Hạn: {a.dueLabel}</span>
             <span
               className={cn(
                 "rounded-full px-2 py-0.5 font-semibold",
                 a.dueBadge.tone === "soon"
-                  ? "bg-[#FFF0E6] text-[#E85D24]"
-                  : "bg-[#F3F7F5] text-[#9AAEA9]",
+                  ? "bg-[#FFF0E6] dark:bg-[#E85D24]/15 text-[#E85D24] dark:text-[#FF9A6C]"
+                  : "bg-[#F3F7F5] dark:bg-muted text-[#9AAEA9] dark:text-muted-foreground",
               )}
             >
               {a.dueBadge.text}
@@ -55,12 +55,12 @@ const TutorCard = ({ a }: { a: TutorAssignment }) => {
       {/* Progress */}
       <div className="mt-3">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-[#5c726d]">Đã nộp</span>
-          <span className="font-bold text-[#16302b]">
+          <span className="text-[#5c726d] dark:text-muted-foreground">Đã nộp</span>
+          <span className="font-bold text-[#16302b] dark:text-foreground">
             {a.submitted}/{a.total}
           </span>
         </div>
-        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#EEF3F1]">
+        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#EEF3F1] dark:bg-muted">
           <div
             className="h-full rounded-full bg-[#0E9F8E] transition-all"
             style={{ width: `${pct}%` }}
@@ -69,8 +69,8 @@ const TutorCard = ({ a }: { a: TutorAssignment }) => {
       </div>
 
       {/* Footer */}
-      <div className="mt-3 flex items-center justify-between border-t border-[#EEF3F1] pt-3">
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5c726d]">
+      <div className="mt-3 flex items-center justify-between border-t border-[#EEF3F1] dark:border-border-light pt-3">
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5c726d] dark:text-muted-foreground">
           <span
             className={cn(
               "size-1.5 rounded-full",
@@ -81,7 +81,7 @@ const TutorCard = ({ a }: { a: TutorAssignment }) => {
         </span>
         <button
           type="button"
-          className="flex items-center gap-1 text-sm font-semibold text-[#0E9F8E] transition-colors hover:text-[#0B7A6D]"
+          className="flex items-center gap-1 text-sm font-semibold text-[#0E9F8E] dark:text-[#2DD4BF] transition-colors hover:text-[#0B7A6D] hover:dark:text-[#5EEAD4]"
         >
           {done ? "Xem lại" : "Xem & chấm"}
           <ChevronRight className="size-4" />
@@ -105,8 +105,8 @@ export const TutorAssignmentsView = () => {
   return (
     <div className="flex flex-col gap-5 pb-8">
       <div>
-        <h1 className="text-2xl font-bold text-[#16302b]">Bài tập đã giao</h1>
-        <p className="mt-1 text-sm text-[#9AAEA9]">
+        <h1 className="text-2xl font-bold text-[#16302b] dark:text-foreground">Bài tập đã giao</h1>
+        <p className="mt-1 text-sm text-[#9AAEA9] dark:text-muted-foreground">
           {MOCK_CLASS.name} · {MOCK_CLASS.studentCount} học sinh · Theo dõi tiến
           độ nộp và chấm bài sau mỗi buổi học.
         </p>
@@ -119,19 +119,19 @@ export const TutorAssignmentsView = () => {
           label="Chờ chấm"
           value={3}
           icon={Hourglass}
-          iconClass="bg-[#FFF0E6] text-[#F59E0B]"
+          iconClass="bg-[#FFF0E6] dark:bg-[#E85D24]/15 text-[#F59E0B]"
         />
         <StatTile
           label="Đã chấm"
           value={3}
           icon={ClipboardCheck}
-          iconClass="bg-[#E4F6EF] text-[#0E9F8E]"
+          iconClass="bg-[#E4F6EF] dark:bg-primary-light text-[#0E9F8E] dark:text-[#2DD4BF]"
         />
         <StatTile
           label="Điểm TB lớp"
           value={MOCK_CLASS.avgScore.toFixed(1)}
           icon={Star}
-          iconClass="bg-[#F1F0FE] text-[#6366F1]"
+          iconClass="bg-[#F1F0FE] dark:bg-[#6366F1]/15 text-[#6366F1] dark:text-[#A5B4FC]"
         />
       </div>
 
@@ -139,10 +139,10 @@ export const TutorAssignmentsView = () => {
       {groups.map(([sessionNumber, list]) => (
         <div key={sessionNumber} className="flex flex-col gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="rounded-md bg-[#E4F6EF] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#0B7A6D]">
+            <span className="rounded-md bg-[#E4F6EF] dark:bg-primary-light px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#0B7A6D] dark:text-[#5EEAD4]">
               Buổi {sessionNumber}
             </span>
-            <span className="text-xs text-[#9AAEA9]">
+            <span className="text-xs text-[#9AAEA9] dark:text-muted-foreground">
               {list[0].sessionDate}
             </span>
           </div>

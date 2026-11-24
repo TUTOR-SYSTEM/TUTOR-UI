@@ -36,8 +36,8 @@ function Pagination({
       className={cn("flex items-center justify-between gap-3", className)}
     >
       {onPageSizeChange ? (
-        <div className="flex items-center gap-2 text-sm text-[#16302b]">
-          <span className="whitespace-nowrap text-[#8AA09B]">
+        <div className="flex items-center gap-2 text-sm text-[#16302b] dark:text-foreground">
+          <span className="whitespace-nowrap text-[#8AA09B] dark:text-muted-foreground">
             {paginationCopy.rowsPerPage}
           </span>
           <Select
@@ -62,7 +62,7 @@ function Pagination({
           onClick={() => onPageChange(Math.max(1, page - 1))}
           disabled={page === 1}
           aria-label={paginationCopy.previous}
-          className="size-8! rounded-lg text-[#16302b] hover:bg-[#F3F7F5] disabled:cursor-not-allowed disabled:opacity-40"
+          className="size-8! rounded-lg text-[#16302b] dark:text-foreground hover:bg-[#F3F7F5] dark:hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft className="size-4" />
         </Button>
@@ -74,10 +74,10 @@ function Pagination({
             size="icon-sm"
             onClick={() => onPageChange(p)}
             className={cn(
-              "size-8! rounded-lg text-sm font-medium hover:bg-[#F3F7F5]",
+              "size-8! rounded-lg text-sm font-medium hover:bg-[#F3F7F5] dark:hover:bg-muted",
               p === page
                 ? "bg-[#0E9F8E]! text-white hover:bg-[#0E9F8E]!"
-                : "text-[#16302b]",
+                : "text-[#16302b] dark:text-foreground",
             )}
           >
             {p}
@@ -90,7 +90,7 @@ function Pagination({
           onClick={() => onPageChange(Math.min(totalPages, page + 1))}
           disabled={page === totalPages}
           aria-label={paginationCopy.next}
-          className="size-8! rounded-lg text-[#16302b] hover:bg-[#F3F7F5] disabled:cursor-not-allowed disabled:opacity-40"
+          className="size-8! rounded-lg text-[#16302b] dark:text-foreground hover:bg-[#F3F7F5] dark:hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronRight className="size-4" />
         </Button>

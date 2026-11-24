@@ -6,6 +6,7 @@ import type {
   DeleteResult,
   ApiStudent,
   StudentsApiPayload,
+  ParentsApiPayload,
   CreateStudentPayload,
   UpdateStudentPayload,
   UploadResult,
@@ -55,6 +56,12 @@ export function useStudentActions(args?: {
     UseQueryOptions<ApiResponse<StudentsApiPayload>, Error, StudentsApiPayload>,
     "queryKey" | "queryFn"
   >;
+  /** Search existing PARENT accounts (parent picker) so several students can share one parent. */
+  parents?: { page?: number; limit?: number; search?: string };
+  parentsOptions?: Omit<
+    UseQueryOptions<ApiResponse<ParentsApiPayload>, Error, ParentsApiPayload>,
+    "queryKey" | "queryFn"
+  >;
   detailId?: string;
   detailOptions?: Omit<
     UseQueryOptions<ApiResponse<ApiStudent>, Error, ApiStudent>,
@@ -73,6 +80,17 @@ export function useStudentActions(args?: {
       enabled: !!args?.list,
       select: (raw) => unwrapApiData<StudentsApiPayload>(raw),
       ...args?.listOptions,
+    },
+  );
+
+  const parents = useGet<ApiResponse<ParentsApiPayload>, ParentsApiPayload>(
+    [...STUDENTS_QUERY_KEY, "parents", args?.parents],
+    "/students/parents",
+    {
+      params: args?.parents,
+      enabled: !!args?.parents,
+      select: (raw) => unwrapApiData<ParentsApiPayload>(raw),
+      ...args?.parentsOptions,
     },
   );
 
@@ -111,6 +129,7 @@ export function useStudentActions(args?: {
 
   return {
     list,
+    parents,
     detail,
     generateCode,
     create,

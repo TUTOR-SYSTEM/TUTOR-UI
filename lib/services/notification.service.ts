@@ -66,6 +66,8 @@ export function useNotificationActions(args?: {
       },
       enabled: !!args?.list,
       select: (raw) => normalizeNotificationsList(unwrapApiData(raw)),
+      // Làm mới cùng nhịp với badge để danh sách và số đếm không lệch nhau.
+      refetchInterval: 30000,
       ...args?.listOptions,
     },
   );
@@ -105,4 +107,47 @@ export function useNotificationActions(args?: {
   );
 
   return { list, unreadCount, detail, create, markRead, markAllRead, delete: del };
+}
+
+// ─── Counts ──────────────────────────────────────────────────────────────────
+
+/** Tổng số thông báo theo từng nhóm từ server (không đếm theo trang hiện tại). */
+export function useNotificationCounts() {
+  const countOf = (type?: string) => ({
+    params: { page: 1, limit: 1, ...(type ? { type } : {}) },
+    select: (raw: unknown) => normalizeNotificationsList(unwrapApiData(raw)).pagination.total,
+    refetchInterval: 30000,
+  });
+  const all = useGet<ApiResponse<NotificationsApiPayload>, number>(
+    [...NOTIFICATIONS_QUERY_KEY, "count", "all"],
+    "/notifications",
+    countOf(),
+  );
+  const system = useGet<ApiResponse<NotificationsApiPayload>, number>(
+    [...NOTIFICATIONS_QUERY_KEY, "count", "SYSTEM"],
+    "/notifications",
+    countOf("SYSTEM"),
+  );
+  const tuition = useGet<ApiResponse<NotificationsApiPayload>, number>(
+    [...NOTIFICATIONS_QUERY_KEY, "count", "TUITION"],
+    "/notifications",
+    countOf("TUITION"),
+  );
+  const student = useGet<ApiResponse<NotificationsApiPayload>, number>(
+    [...NOTIFICATIONS_QUERY_KEY, "count", "STUDENT"],
+    "/notifications",
+    countOf("STUDENT"),
+  );
+  const tutor = useGet<ApiResponse<NotificationsApiPayload>, number>(
+    [...NOTIFICATIONS_QUERY_KEY, "count", "TUTOR"],
+    "/notifications",
+    countOf("TUTOR"),
+  );
+  return {
+    total: all.data ?? 0,
+    SYSTEM: system.data ?? 0,
+    TUITION: tuition.data ?? 0,
+    STUDENT: student.data ?? 0,
+    TUTOR: tutor.data ?? 0,
+  };
 }

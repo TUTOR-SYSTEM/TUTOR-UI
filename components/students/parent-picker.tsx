@@ -6,7 +6,7 @@ import { FormField } from "@/components/ui/form-field.ui";
 import { useDebounce } from "@/hooks/useDebounce.hook";
 import { useStudentsCopy } from "@/hooks/useStudentsCopy.hook";
 import { longestWord, matchParentName, type ParentMatch } from "@/lib/parent-match";
-import { useUserActions } from "@/lib/services/user.service";
+import { useStudentActions } from "@/lib/services/student.service";
 import { useLocale } from "@/hooks/useLocale.hook";
 import { formatPersonName } from "@/lib/format/person-name";
 import type { ApiManagedUser, Language, ParentOption } from "@/types";
@@ -90,20 +90,23 @@ export function ParentPicker({
   const hasSearch = search.length > 0;
   const enabled = hasSearch && !disabled && !hideSuggestions;
 
-  // Full term: finds names containing the typed text.
-  const byTerm = useUserActions({
-    list: { page: 1, limit: 20, search, role: "PARENT" },
-    listOptions: { enabled },
-  }).list;
+  // Full term: finds names containing the typed text. Goes through /students/parents, which TUTORs
+  // may call too (they only see their own parents); `generateCode` is switched off, it is not needed here.
+  const byTerm = useStudentActions({
+    parents: { page: 1, limit: 20, search },
+    parentsOptions: { enabled },
+    generateCodeOptions: { enabled: false },
+  }).parents;
   // Longest word: finds similar names the full term misses (e.g. "Nguyen" in "Nguyễn Văn A").
   const word = longestWord(search);
-  const byWord = useUserActions({
-    list: { page: 1, limit: 20, search: word, role: "PARENT" },
-    listOptions: { enabled: enabled && word.length >= 2 && word !== search },
-  }).list;
+  const byWord = useStudentActions({
+    parents: { page: 1, limit: 20, search: word },
+    parentsOptions: { enabled: enabled && word.length >= 2 && word !== search },
+    generateCodeOptions: { enabled: false },
+  }).parents;
 
   const pool = new Map<string, ApiManagedUser>();
-  for (const user of [...(byTerm.data?.users ?? []), ...(byWord.data?.users ?? [])]) {
+  for (const user of [...(byTerm.data?.parents ?? []), ...(byWord.data?.parents ?? [])]) {
     pool.set(user.id, user);
   }
   const ranked: Suggestion[] = [];
@@ -195,6 +198,10 @@ export function ParentPicker({
             autoComplete="off"
           />
         </FormField>
+      )}
+
+      {linked && !showSuggestions && (
+        <p className="text-xs text-muted-foreground">{copy.parentPicker.linkedHint}</p>
       )}
 
       {showSuggestions && (

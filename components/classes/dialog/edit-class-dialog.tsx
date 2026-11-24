@@ -435,7 +435,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
         {/* Format */}
         <div className="space-y-2">
           <Label>{copy.create.step2.formatLabel}</Label>
-          <p className="text-xs text-[#9AAEA9]">{copy.edit.formatHint}</p>
+          <p className="text-xs text-[#9AAEA9] dark:text-muted-foreground">{copy.edit.formatHint}</p>
           <div className="grid grid-cols-2 gap-3">
             {(
               [
@@ -467,8 +467,8 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                   className={cn(
                     "rounded-xl border-2 p-4 transition-all",
                     selected
-                      ? "border-[#0E9F8E] bg-[#E4F6EF]"
-                      : "border-[#E7EEEC] bg-white hover:border-[#0E9F8E]/40",
+                      ? "border-[#0E9F8E] bg-[#E4F6EF] dark:bg-primary-light"
+                      : "border-[#E7EEEC] dark:border-border bg-white dark:bg-card hover:border-[#0E9F8E]/40",
                   )}
                 >
                   <button
@@ -487,14 +487,14 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                       >
                         {opt.title}
                       </span>
-                      <span className="mt-0.5 block text-xs text-[#9AAEA9]">
+                      <span className="mt-0.5 block text-xs text-[#9AAEA9] dark:text-muted-foreground">
                         {opt.desc}
                       </span>
                     </div>
                   </button>
 
                   <div className="mt-3 space-y-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9AAEA9] dark:text-muted-foreground">
                       {isOnline
                         ? copy.common.onlineLocationLabel
                         : copy.common.offlineLocationLabel}
@@ -526,12 +526,12 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
         {role !== "ADMIN" && (
           <div className="space-y-2">
             <Label>{copy.common.curriculumLabel}</Label>
-            <p className="text-xs text-[#9AAEA9]">
+            <p className="text-xs text-[#9AAEA9] dark:text-muted-foreground">
               {copy.common.curriculumHint}
             </p>
 
             {selectedFramework ? (
-              <div className="flex items-center gap-3 rounded-xl border border-[#0E9F8E] bg-[#E4F6EF] px-4 py-3">
+              <div className="flex items-center gap-3 rounded-xl border border-[#0E9F8E] bg-[#E4F6EF] dark:bg-primary-light px-4 py-3">
                 <span
                   className="flex size-9 shrink-0 items-center justify-center rounded-full text-white"
                   style={{ background: BRAND }}
@@ -539,7 +539,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                   <BookOpen className="size-4" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-[#16302b]">
+                  <span className="block truncate text-sm font-medium text-[#16302b] dark:text-foreground">
                     {selectedFramework.subject}
                     {selectedFramework.grade
                       ? copy.common.curriculumGradeSuffix(
@@ -547,7 +547,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                         )
                       : ""}
                   </span>
-                  <span className="block truncate text-xs text-[#9AAEA9]">
+                  <span className="block truncate text-xs text-[#9AAEA9] dark:text-muted-foreground">
                     {copy.common.curriculumCodeLine(
                       selectedFramework.code,
                       selectedFramework.courseTime,
@@ -561,7 +561,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                     setCurriculumSearch("");
                   }}
                   aria-label={copy.common.curriculumDeselectAriaLabel}
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-[#9AAEA9] transition-colors hover:bg-white hover:text-red-500"
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-[#9AAEA9] dark:text-muted-foreground transition-colors hover:bg-white dark:hover:bg-card hover:text-red-500"
                 >
                   <X className="size-4" />
                 </button>
@@ -569,7 +569,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
             ) : (
               <>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9AAEA9]" />
+                  <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9AAEA9] dark:text-muted-foreground" />
                   <Input
                     value={curriculumSearch}
                     onChange={(e) => setCurriculumSearch(e.target.value)}
@@ -579,17 +579,17 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                 </div>
 
                 {curriculumSearch.trim() && (
-                  <div className="scrollbar-thin max-h-50 overflow-y-auto rounded-xl border border-[#E7EEEC]">
+                  <div className="scrollbar-thin max-h-50 overflow-y-auto rounded-xl border border-[#E7EEEC] dark:border-border">
                     {frameworksLoading ? (
                       <div className="flex items-center justify-center py-8">
-                        <Loader2 className="size-5 animate-spin text-[#9AAEA9]" />
+                        <Loader2 className="size-5 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
                       </div>
                     ) : filteredFrameworks.length === 0 ? (
-                      <div className="py-6 text-center text-sm text-[#9AAEA9]">
+                      <div className="py-6 text-center text-sm text-[#9AAEA9] dark:text-muted-foreground">
                         {copy.common.curriculumNoResults}
                       </div>
                     ) : (
-                      <div className="divide-y divide-[#E7EEEC]">
+                      <div className="divide-y divide-[#E7EEEC] dark:divide-border">
                         {filteredFrameworks.map((fw) => (
                           <button
                             key={fw.id}
@@ -598,7 +598,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                               update("curriculumId", fw.id);
                               setCurriculumSearch("");
                             }}
-                            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#F3F7F5]"
+                            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#F3F7F5] dark:hover:bg-muted"
                           >
                             <span
                               className="flex size-9 shrink-0 items-center justify-center rounded-full text-white"
@@ -607,13 +607,13 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                               <BookOpen className="size-4" />
                             </span>
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate text-sm font-medium text-[#16302b]">
+                              <span className="block truncate text-sm font-medium text-[#16302b] dark:text-foreground">
                                 {fw.subject}
                                 {fw.grade
                                   ? copy.common.curriculumGradeSuffix(fw.grade)
                                   : ""}
                               </span>
-                              <span className="block truncate text-xs text-[#9AAEA9]">
+                              <span className="block truncate text-xs text-[#9AAEA9] dark:text-muted-foreground">
                                 {copy.common.curriculumCodeLine(
                                   fw.code,
                                   fw.courseTime,
@@ -680,7 +680,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                 className="pr-8"
                 invalid={!!errors.feePerSession}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#9AAEA9]">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#9AAEA9] dark:text-muted-foreground">
                 {copy.common.feeCurrencySuffix}
               </span>
             </div>
@@ -705,7 +705,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
             onChange={(e) => update("description", e.target.value)}
             rows={3}
             placeholder={copy.common.descriptionPlaceholder}
-            className="w-full resize-none rounded-lg border border-[#E7EEEC] bg-white px-3 py-2.5 text-sm text-[#16302b] outline-none placeholder:text-[#9AAEA9] focus:border-[#0E9F8E] focus:ring-2 focus:ring-[#0E9F8E]/30 transition-colors"
+            className="w-full resize-none rounded-lg border border-[#E7EEEC] dark:border-border bg-white dark:bg-card px-3 py-2.5 text-sm text-[#16302b] dark:text-foreground outline-none placeholder:text-[#9AAEA9] focus:border-[#0E9F8E] focus:ring-2 focus:ring-[#0E9F8E]/30 transition-colors"
           />
         </div>
 
@@ -716,7 +716,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
               <Users className="size-4" style={{ color: BRAND }} />
               <Label>{copy.edit.studentsLabel}</Label>
             </div>
-            <p className="mt-0.5 text-xs text-[#9AAEA9]">
+            <p className="mt-0.5 text-xs text-[#9AAEA9] dark:text-muted-foreground">
               {teachingType === "1-1"
                 ? copy.common.studentsHintSingle
                 : copy.common.studentsHintGroup(
@@ -749,8 +749,8 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                 className={cn(
                   "flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all",
                   teachingType === opt.value
-                    ? "border-[#0E9F8E] bg-[#E4F6EF]"
-                    : "border-[#E7EEEC] bg-white hover:border-[#0E9F8E]/40",
+                    ? "border-[#0E9F8E] bg-[#E4F6EF] dark:bg-primary-light"
+                    : "border-[#E7EEEC] dark:border-border bg-white dark:bg-card hover:border-[#0E9F8E]/40",
                 )}
               >
                 <span
@@ -761,7 +761,7 @@ export function EditClassDialog({ classItem, onClose }: ClassesProps) {
                 >
                   {opt.title}
                 </span>
-                <span className="mt-0.5 text-xs text-[#9AAEA9]">
+                <span className="mt-0.5 text-xs text-[#9AAEA9] dark:text-muted-foreground">
                   {opt.desc}
                 </span>
               </button>

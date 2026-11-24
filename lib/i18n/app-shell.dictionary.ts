@@ -20,6 +20,7 @@ export type AppShellDictionary = {
     grades: string;
     sessions: string;
     tutors: string;
+    parents: string;
     allClasses: string;
   };
   nav: {
@@ -31,6 +32,7 @@ export type AppShellDictionary = {
     curriculum: string;
     grades: string;
     tutors: string;
+    parents: string;
     allClasses: string;
     students: string;
     fees: string;
@@ -90,6 +92,7 @@ const vi: AppShellDictionary = {
     grades: "Bài tập về nhà",
     sessions: "Buổi học",
     tutors: "Gia sư",
+    parents: "Phụ huynh",
     allClasses: "Tất cả lớp học",
   },
   nav: {
@@ -101,6 +104,7 @@ const vi: AppShellDictionary = {
     curriculum: "Chương trình",
     grades: "Bài tập về nhà",
     tutors: "Gia sư",
+    parents: "Phụ huynh",
     allClasses: "Tất cả lớp học",
     students: "Học sinh",
     fees: "Học phí",
@@ -160,6 +164,7 @@ const en: AppShellDictionary = {
     grades: "Homework",
     sessions: "Sessions",
     tutors: "Tutors",
+    parents: "Parents",
     allClasses: "All classes",
   },
   nav: {
@@ -171,6 +176,7 @@ const en: AppShellDictionary = {
     curriculum: "Curriculum",
     grades: "Homework",
     tutors: "Tutors",
+    parents: "Parents",
     allClasses: "All classes",
     students: "Students",
     fees: "Tuition",

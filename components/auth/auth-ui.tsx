@@ -40,7 +40,7 @@ function AuthHeroPanel() {
 
       {/* Logo */}
       <div className="relative z-10 flex items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-xl bg-white font-black text-lg text-[#0d3d2f]">
+        <div className="flex size-10 items-center justify-center rounded-xl bg-white dark:bg-card font-black text-lg text-[#0d3d2f]">
           G
         </div>
         <div>

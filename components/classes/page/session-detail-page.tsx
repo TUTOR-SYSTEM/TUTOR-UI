@@ -46,6 +46,7 @@ import type {
   CurriculumDetail,
   CurriculumLesson,
 } from "@/types";
+import { currentPersonName } from "@/lib/format/person-name";
 
 /* ─── Types ─── */
 type SessionStatus =
@@ -584,7 +585,7 @@ export const SessionDetailPage = ({
       header: "Tên học sinh",
       cellClassName: "px-5",
       render: (student, idx) => {
-        const name = `${student.firstName} ${student.lastName}`.trim();
+        const name = currentPersonName(student.firstName, student.lastName);
         return (
           <div className="flex items-center gap-3">
             <div
@@ -627,7 +628,7 @@ export const SessionDetailPage = ({
             </span>
           );
         }
-        const name = `${student.firstName} ${student.lastName}`.trim();
+        const name = currentPersonName(student.firstName, student.lastName);
         const isCommitted = committed[student.studentId] ?? false;
         return (
           <Checkbox
@@ -675,7 +676,7 @@ export const SessionDetailPage = ({
             header: "Xác nhận",
             headerClassName: "w-20",
             render: (student) => {
-              const name = `${student.firstName} ${student.lastName}`.trim();
+              const name = currentPersonName(student.firstName, student.lastName);
               const isCommitted = committed[student.studentId] ?? false;
               const isSaving = savingAttendanceId === student.studentId;
               return (
@@ -1234,10 +1235,16 @@ export const SessionDetailPage = ({
                         e.target.value = "";
                       }}
                     />
+                    {/* Bài tập chỉ thêm sau khi buổi học kết thúc (học sinh nộp sau đó). */}
+                    {!isCompleted && (
+                      <p className="text-center text-xs text-muted-foreground">
+                        Thêm bài tập sau khi buổi học kết thúc
+                      </p>
+                    )}
                     <Button
                       variant="outline"
                       onClick={() => exerciseFileInputRef.current?.click()}
-                      disabled={isCompleted || uploadingType !== null}
+                      disabled={!isCompleted || uploadingType !== null}
                       loading={uploadingType === "exercise"}
                       className="h-auto w-full gap-1.5 border-dashed py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary"
                     >

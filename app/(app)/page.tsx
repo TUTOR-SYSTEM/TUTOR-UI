@@ -57,8 +57,8 @@ function formatMode(format: string, labels: DashboardDictionary["schedule"]) {
 
 const modeBadge = (format: string) =>
   format === "ONLINE"
-    ? "bg-[#E4F6EF] text-[#0B7A6D]"
-    : "bg-[#FFF0E6] text-[#E85D24]";
+    ? "bg-[#E4F6EF] text-[#0B7A6D] dark:bg-[#0E9F8E]/15 dark:text-[#5EEAD4]"
+    : "bg-[#FFF0E6] text-[#E85D24] dark:bg-[#E85D24]/15 dark:text-[#FF9A6C]";
 
 type StatCard = {
   label: string;
@@ -161,19 +161,19 @@ export default function HomePage() {
   > = {
     SYSTEM: {
       label: copy.notifications.types.system,
-      className: "bg-[#EEF2FF] text-[#2563EB]",
+      className: "bg-[#EEF2FF] text-[#2563EB] dark:bg-[#2563EB]/15 dark:text-[#93B4FF]",
     },
     TUITION: {
       label: copy.notifications.types.tuition,
-      className: "bg-[#FFF0E6] text-[#E85D24]",
+      className: "bg-[#FFF0E6] text-[#E85D24] dark:bg-[#E85D24]/15 dark:text-[#FF9A6C]",
     },
     STUDENT: {
       label: copy.notifications.types.student,
-      className: "bg-[#E4F6EF] text-[#0B7A6D]",
+      className: "bg-[#E4F6EF] text-[#0B7A6D] dark:bg-[#0E9F8E]/15 dark:text-[#5EEAD4]",
     },
     TUTOR: {
       label: copy.notifications.types.tutor,
-      className: "bg-[#F5F3FF] text-[#7C3AED]",
+      className: "bg-[#F5F3FF] text-[#7C3AED] dark:bg-[#7C3AED]/15 dark:text-[#C4B5FD]",
     },
   };
 
@@ -212,7 +212,7 @@ export default function HomePage() {
       </div>
 
       {isError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-600">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-600 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">
           {copy.overviewError}
         </div>
       )}
@@ -223,7 +223,7 @@ export default function HomePage() {
           ? Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="h-26 animate-pulse rounded-xl border border-[#E7EEEC] bg-[#F3F7F5]"
+                className="h-26 animate-pulse rounded-xl border border-border bg-muted"
               />
             ))
           : stats.map((s) => (
@@ -231,19 +231,19 @@ export default function HomePage() {
                 key={s.label}
                 className={`rounded-xl border p-5 shadow-sm ${
                   s.accent
-                    ? "border-[#0E9F8E]/20 bg-[#FFF0E6]"
-                    : "border-[#E7EEEC] bg-white"
+                    ? "border-[#0E9F8E]/20 bg-[#FFF0E6] dark:border-[#0E9F8E]/30 dark:bg-[#E85D24]/10"
+                    : "border-border bg-card"
                 }`}
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm text-[#8AA09B]">{s.label}</span>
+                  <span className="text-sm text-muted-foreground">{s.label}</span>
                   <s.icon
-                    className={`size-4 ${s.accent ? "text-[#E85D24]" : "text-[#9AAEA9]"}`}
+                    className={`size-4 ${s.accent ? "text-[#E85D24] dark:text-[#FF9A6C]" : "text-muted-foreground"}`}
                   />
                 </div>
                 <p
                   className={`text-2xl font-bold tracking-tight ${
-                    s.accent ? "text-[#E85D24]" : "text-[#16302b]"
+                    s.accent ? "text-[#E85D24] dark:text-[#FF9A6C]" : "text-foreground"
                   }`}
                 >
                   {s.value}
@@ -251,10 +251,10 @@ export default function HomePage() {
                 <p
                   className={`mt-1.5 flex items-center gap-1 text-xs font-medium ${
                     s.up === true
-                      ? "text-[#0E9F8E]"
+                      ? "text-primary"
                       : s.up === false
                         ? "text-red-500"
-                        : "text-[#8AA09B]"
+                        : "text-muted-foreground"
                   }`}
                 >
                   {s.up === true && <ArrowUpRight className="size-3.5" />}
@@ -267,16 +267,16 @@ export default function HomePage() {
       {/* ── Two-column section ── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
         {/* Schedule table */}
-        <div className="rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#E7EEEC] px-5 py-4">
-            <h3 className="font-semibold text-[#16302b]">
+        <div className="rounded-xl border border-border bg-card shadow-sm">
+          <div className="flex items-center justify-between border-b border-border px-5 py-4">
+            <h3 className="font-semibold text-foreground">
               {isStudent
                 ? copy.schedule.titleStudent
                 : copy.schedule.titleTutor}
             </h3>
             <Link
               href="/schedule"
-              className="text-xs font-medium text-[#0E9F8E] hover:underline"
+              className="text-xs font-medium text-primary hover:underline"
             >
               {copy.schedule.viewWeek}
             </Link>
@@ -303,7 +303,7 @@ export default function HomePage() {
                 <TableRow>
                   <TableCell
                     colSpan={4}
-                    className="px-5 py-8 text-center text-[#9AAEA9]"
+                    className="px-5 py-8 text-center text-muted-foreground"
                   >
                     {copy.schedule.loading}
                   </TableCell>
@@ -312,7 +312,7 @@ export default function HomePage() {
                 <TableRow>
                   <TableCell
                     colSpan={4}
-                    className="px-5 py-8 text-center text-[#9AAEA9]"
+                    className="px-5 py-8 text-center text-muted-foreground"
                   >
                     {copy.schedule.emptyToday}
                   </TableCell>
@@ -321,20 +321,20 @@ export default function HomePage() {
                 schedule.map((row: DashboardScheduleItem) => (
                   <TableRow
                     key={row.id}
-                    className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9] transition-colors"
+                    className="border-b border-border-light last:border-0 hover:bg-primary-soft transition-colors"
                   >
-                    <TableCell className="px-5 py-3 font-medium text-[#16302b]">
+                    <TableCell className="px-5 py-3 font-medium text-foreground">
                       {formatTime(row.startAt)}
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <p className="font-semibold text-[#16302b]">
+                      <p className="font-semibold text-foreground">
                         {row.className}
                       </p>
-                      <p className="text-xs text-[#8AA09B]">
+                      <p className="text-xs text-muted-foreground">
                         {row.title ?? row.subject}
                       </p>
                     </TableCell>
-                    <TableCell className="px-3 py-3 text-[#16302b]">
+                    <TableCell className="px-3 py-3 text-foreground">
                       {row.location ??
                         (row.format === "ONLINE"
                           ? copy.schedule.onlineLocationFallback
@@ -355,25 +355,25 @@ export default function HomePage() {
         </div>
 
         {/* Notifications panel */}
-        <div className="rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#E7EEEC] px-5 py-4">
-            <h3 className="font-semibold text-[#16302b]">
+        <div className="rounded-xl border border-border bg-card shadow-sm">
+          <div className="flex items-center justify-between border-b border-border px-5 py-4">
+            <h3 className="font-semibold text-foreground">
               {copy.notifications.title}
             </h3>
             <Link
               href="/notifications"
-              className="text-xs font-medium text-[#0E9F8E] hover:underline"
+              className="text-xs font-medium text-primary hover:underline"
             >
               {copy.notifications.viewAll}
             </Link>
           </div>
-          <div className="divide-y divide-[#EEF3F1]">
+          <div className="divide-y divide-border-light">
             {isLoading ? (
-              <div className="px-5 py-8 text-center text-sm text-[#9AAEA9]">
+              <div className="px-5 py-8 text-center text-sm text-muted-foreground">
                 {copy.notifications.loading}
               </div>
             ) : notifications.length === 0 ? (
-              <div className="px-5 py-8 text-center text-sm text-[#9AAEA9]">
+              <div className="px-5 py-8 text-center text-sm text-muted-foreground">
                 {copy.notifications.empty}
               </div>
             ) : (
@@ -384,7 +384,7 @@ export default function HomePage() {
                     key={n.id}
                     className="flex items-start gap-3 px-5 py-3.5"
                   >
-                    <span className="mt-0.5 w-5 shrink-0 text-xs text-[#9AAEA9]">
+                    <span className="mt-0.5 w-5 shrink-0 text-xs text-muted-foreground">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span
@@ -392,12 +392,12 @@ export default function HomePage() {
                     >
                       {badge.label}
                     </span>
-                    <span className="flex-1 text-sm leading-snug text-[#16302b]">
+                    <span className="flex-1 text-sm leading-snug text-foreground">
                       {n.title}
                       {" · "}
                       <Link
                         href={safeRedirectHref(n.detailUrl ?? n.redirectUrl) ?? "/notifications"}
-                        className="font-medium text-[#0E9F8E] hover:underline"
+                        className="font-medium text-primary hover:underline"
                       >
                         {n.actionLabel || copy.notifications.detail}
                       </Link>
@@ -412,13 +412,13 @@ export default function HomePage() {
 
       {/* ── Revenue chart ── */}
       {!isStudent && (
-        <div className="rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
-          <div className="flex items-start justify-between border-b border-[#EEF3F1] px-5 py-4">
+        <div className="rounded-xl border border-border bg-card shadow-sm">
+          <div className="flex items-start justify-between border-b border-border-light px-5 py-4">
             <div>
-              <h3 className="font-semibold text-[#16302b]">
+              <h3 className="font-semibold text-foreground">
                 {copy.revenueChart.titlePrefix} · {today.getFullYear()}
               </h3>
-              <p className="mt-0.5 text-xs text-[#8AA09B]">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {copy.revenueChart.totalYearPrefix}{" "}
                 {formatMillions(
                   monthly.reduce((sum, m) => sum + m.revenue, 0),
@@ -428,7 +428,7 @@ export default function HomePage() {
                 {copy.revenueChart.sessionsSuffix}
               </p>
             </div>
-            <div className="hidden items-center gap-5 text-xs text-[#8AA09B] sm:flex">
+            <div className="hidden items-center gap-5 text-xs text-muted-foreground sm:flex">
               <span className="flex items-center gap-1.5">
                 <span
                   className="inline-block size-2.5 rounded-sm"
@@ -444,7 +444,7 @@ export default function HomePage() {
           </div>
           <div className="px-5 py-5">
             {isLoading ? (
-              <div className="h-34 animate-pulse rounded-lg bg-[#F3F7F5]" />
+              <div className="h-34 animate-pulse rounded-lg bg-muted" />
             ) : (
               <RevenueChart monthly={monthly} copy={copy} />
             )}
@@ -476,6 +476,7 @@ function RevenueChart({
           sessions: 0,
         }));
   return (
+    <div className="text-muted-foreground">
     <ResponsiveContainer width="100%" height={160}>
       <ComposedChart
         data={chartData}
@@ -483,18 +484,18 @@ function RevenueChart({
       >
         <CartesianGrid
           strokeDasharray="3 3"
-          stroke="#E7EEEC"
           vertical={false}
+          className="[&_line]:stroke-border"
         />
         <XAxis
           dataKey="label"
-          tick={{ fontSize: 10, fill: "#9AAEA9" }}
+          tick={{ fontSize: 10, fill: "currentColor" }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           yAxisId="left"
-          tick={{ fontSize: 10, fill: "#9AAEA9" }}
+          tick={{ fontSize: 10, fill: "currentColor" }}
           axisLine={false}
           tickLine={false}
           tickFormatter={(v: number) =>
@@ -516,8 +517,9 @@ function RevenueChart({
         <Tooltip
           contentStyle={{
             borderRadius: 8,
-            border: "1px solid #E7EEEC",
-            background: "#fff",
+            border: "1px solid var(--border)",
+            background: "var(--card)",
+            color: "var(--foreground)",
             fontSize: 12,
           }}
           formatter={(value, name) =>
@@ -545,10 +547,11 @@ function RevenueChart({
           stroke="#FF7A45"
           strokeWidth={2}
           dot={{ r: 3, fill: "#FF7A45", strokeWidth: 0 }}
-          activeDot={{ r: 5, fill: "#FF7A45", strokeWidth: 2, stroke: "#fff" }}
+          activeDot={{ r: 5, fill: "#FF7A45", strokeWidth: 2, stroke: "var(--card)" }}
           name="sessions"
         />
       </ComposedChart>
     </ResponsiveContainer>
+    </div>
   );
 }

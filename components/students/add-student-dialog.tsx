@@ -40,10 +40,13 @@ const DEFAULT_VALUES: FormValuesStudent = {
   userCode: "",
   classCode: "",
   gender: GENDER_ENUM.MALE,
+  email: "",
   studentPhone: "",
   school: "",
   parentLastName: "",
   parentFirstName: "",
+  parentPhone: "",
+  parentEmail: "",
   password: "",
 };
 
@@ -54,11 +57,14 @@ const FORM_FIELDS = [
   "userCode",
   "classCode",
   "gender",
+  "email",
   "studentPhone",
   "school",
   "password",
   "parentLastName",
   "parentFirstName",
+  "parentPhone",
+  "parentEmail",
 ] as const;
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -164,16 +170,28 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
       .map((part) => part.trim())
       .filter(Boolean)
       .join(" ");
+    const parentPhone = values.parentPhone?.trim() ?? "";
+    const parentEmail = values.parentEmail?.trim() ?? "";
+    /* phụ huynh MỚI phải có ít nhất SĐT hoặc email để liên lạc (phụ huynh có sẵn đã có sẵn thông tin) */
+    if (!linkedParent && !parentPhone && !parentEmail) {
+      const message = copy.validation.parentContactRequired;
+      setError("parentPhone", { type: "manual", message });
+      setError("parentEmail", { type: "manual", message });
+      return;
+    }
     const parentPayload: Partial<CreateStudentPayload> = linkedParent
       ? { parentId: linkedParent.id }
       : {
           parentName: parentFullName || undefined,
+          parentPhone: parentPhone || undefined,
+          parentEmail: parentEmail || undefined,
         };
     const payload: CreateStudentPayload = {
       tutorId: isAdmin ? values.tutorId : undefined,
       studentName: values.studentName.trim(),
       userCode: values.userCode?.trim() || undefined,
       gender: values.gender,
+      email: values.email.trim().toLowerCase(),
       studentPhone: values.studentPhone?.trim() || undefined,
       school: values.school?.trim() || undefined,
       password: values.password || undefined,
@@ -202,9 +220,9 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
           studentPhone: values.studentPhone?.trim() ?? "",
           school: values.school?.trim() ?? "",
           parentName: linkedParent ? linkedParent.name : parentFullName,
-          parentEmail: linkedParent ? (linkedParent.email ?? "") : "",
+          parentEmail: linkedParent ? (linkedParent.email ?? "") : parentEmail,
           parentRelationship: "",
-          parentPhone: linkedParent ? (linkedParent.phone ?? "") : "",
+          parentPhone: linkedParent ? (linkedParent.phone ?? "") : parentPhone,
         });
         handleClose();
       },
@@ -327,6 +345,21 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
             </FormField>
 
             <FormField
+              label={a.studentEmailLabel}
+              htmlFor="student-create-email"
+              required
+              error={errors.email?.message}
+            >
+              <Input
+                id="student-create-email"
+                {...register("email")}
+                type="email"
+                placeholder={a.studentEmailPlaceholder}
+                invalid={!!errors.email}
+              />
+            </FormField>
+
+            <FormField
               label={a.studentPhoneLabel}
               htmlFor="student-create-phone"
               error={errors.studentPhone?.message}
@@ -409,6 +442,36 @@ export function AddStudentDialog({ open, onClose, onAdd }: StudentProps) {
             )}
           />
 
+          {!linkedParent && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField
+                label={a.parentPhoneLabel}
+                htmlFor="student-create-parent-phone"
+                error={errors.parentPhone?.message}
+              >
+                <Input
+                  id="student-create-parent-phone"
+                  type="tel"
+                  {...register("parentPhone")}
+                  placeholder={a.parentPhonePlaceholder}
+                  invalid={!!errors.parentPhone}
+                />
+              </FormField>
+              <FormField
+                label={a.parentEmailLabel}
+                htmlFor="student-create-parent-email"
+                error={errors.parentEmail?.message}
+              >
+                <Input
+                  id="student-create-parent-email"
+                  type="email"
+                  {...register("parentEmail")}
+                  placeholder={a.parentEmailPlaceholder}
+                  invalid={!!errors.parentEmail}
+                />
+              </FormField>
+            </div>
+          )}
         </div>
       </form>
     </Dialog>

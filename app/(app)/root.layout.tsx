@@ -3,6 +3,7 @@ import AppHeader from "@/components/layout/app-header";
 import AiAnalysisWidget from "@/components/ai-chat/ai-analysis-widget";
 import { AuthGuard } from "@/components/providers/auth-guard";
 import { RouteAccessGuard } from "@/components/providers/route-access-guard";
+import { MustChangePasswordGuard } from "@/components/providers/must-change-password-guard";
 
 export default function AppRootLayout({
   children,
@@ -16,7 +17,9 @@ export default function AppRootLayout({
         <div className="flex min-w-0 flex-1 flex-col bg-sidebar">
           <AppHeader />
           <main className="flex-1 overflow-y-auto p-6 border rounded-bl-lg rounded-br-lg border-t-0 transform-gpu">
-            <RouteAccessGuard>{children}</RouteAccessGuard>
+            <RouteAccessGuard>
+              <MustChangePasswordGuard>{children}</MustChangePasswordGuard>
+            </RouteAccessGuard>
           </main>
         </div>
         <AiAnalysisWidget />

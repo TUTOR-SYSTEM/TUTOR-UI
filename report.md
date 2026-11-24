@@ -1,194 +1,266 @@
-# Báo cáo review source FE (D:\projects\ui)
+# Báo cáo test E2E — Gia Sư Pro (FE `ui` + API)
 
-Ngày: 2026-10-11 · Phạm vi: `app/`, `components/`, `lib/`, `hooks/`, `types/`, `test/`
-Phương pháp: 6 sub agent review song song, chỉ đọc code, không sửa file. Các phát hiện do sub agent báo lại, chưa được kiểm chứng lại từng mục.
-Ký hiệu: **(x2)** / **(x3)** = nhiều agent độc lập cùng phát hiện. **[CHẮC]** = đã đối chiếu code (và BE nếu có). **[NGHI]** = suy luận, phụ thuộc BE/runtime.
+Ngày test: 2026-11-24 · Môi trường: `localhost:3000` (FE), `localhost:8888` (gateway) · Trình duyệt: Chrome qua extension
 
----
+## 0. Bảng tổng hợp lỗi (cập nhật sau đợt sửa)
 
-## Nhóm 1: lỗi chức năng đang hỏng thật (sửa trước)
+Trạng thái: **Mở** = chưa sửa · **Đã sửa** = đã sửa trong đợt này (chưa commit) · **Đóng** = không phải lỗi / đúng thiết kế · **Ghi nhận** = thông tin, không chặn luồng.
 
-| # | Vị trí | Vấn đề |
-|---|---|---|
-| 1 | `components/schedule/schedule-form-dialog.tsx:132-171`, `types/session.types.ts:84` | Payload tạo/sửa buổi học sai hợp đồng BE. FE gửi `date/startTime/endTime`, BE (`createSessionSchema`) cần `startAt/endAt/sessionNumber`. Tạo bị 422; sửa trả 200 nhưng ngày giờ không đổi (Zod bỏ key lạ). Dòng 133-134 tính `startAt/endAt` rồi bỏ không dùng. |
-| 2 | `components/sessions/session-detail-view.tsx:281,393` | Dùng `axiosInstance.patch('/sessions/:id')` nhưng gateway chỉ có `@Put(':id')` → 404 khi đổi trạng thái và nhập tài liệu/bài tập. Invalidate `["session-detail", id]` không khớp key thật `["sessions","detail",id]`. |
-| 3 | `components/grades/grades-page.tsx:853-857, 197-201` | Đọc `.data` trong khi BE trả `{classes, pagination}` và `{sessions, pagination}` → danh sách lớp và buổi học luôn rỗng ở màn Điểm của gia sư. |
-| 4 | `components/students/add-student-dialog.tsx:36,107-120`, `types/student.types.ts:21-25` | `parentRelationship` mặc định `"MALE"` (lấy nhầm từ `GENDER_ENUM`), option "Người giám hộ" gửi `"OTHER"`; BE chỉ nhận `FATHER/MOTHER/GUARDIAN` → 422. Select lớp gửi `classCode` (BE không có field này, bị strip) nên chọn lớp không có tác dụng. |
-| 5 | `components/curriculum/components/chapter-section.tsx:31` | `setAddingLesson(true)` không được gọi ở đâu → không mở được form thêm bài học. |
-| 6 | `components/classes/page/session-table.tsx:189-227`, `class-detail-page.tsx:418,581-617` | `actionsColumn` được tạo nhưng không đưa vào `columns`; menu đổi trạng thái và checkbox chọn nhiều đều vô dụng, `changeStatusSelected` là code chết. |
-| 7 | `components/categories/category-form-dialog.tsx:56`, `categories-page.tsx:70,111` | `Category.parent` là tên cha nhưng select dùng `option.id`, API nhận `parent_id` → sửa category con gửi tên làm `parent_id`. |
-| 8 | `components/classes/edit-class-dialog.tsx:172-273, 230` | `studentIds` luôn được gửi, mặc định `[]` nếu query `class-students-edit` chưa tải xong; BE `syncStudents` xoá toàn bộ học sinh khi mảng rỗng. Cache `staleTime` 30s không invalidate sau lưu. Dòng 230 invalidate `["classes","list"]` sai key. |
-| 9 | `components/providers/socket.provider.tsx:35-79` **(x2)** | Socket không bao giờ kết nối: effect deps `[]` đọc token một lần, effect của con chạy trước effect rehydrate của cha (`skipHydration`) nên token còn `null`. Context truyền `socketRef.current` (ref, không re-render). Không disconnect khi logout. |
-| 10 | `hooks/useCurrentUserRole.ts:15-30`, `hooks/useCurrentUserId.ts:16-17` **(x2)** | `atob` lỗi với base64url (`-`, `_`) và UTF-8 → role rơi về `"TUTOR"`, `RoleGuard` đá ADMIN về `/` khi F5 ở deep link. Nên trả "loading" thay vì mặc định TUTOR. |
+| ID | Mức | Lỗi | Vị trí (file/BE) | Trạng thái |
+|---|---|---|---|---|
+| B-01 | Trung bình | Email giả `…@no-email.local` hiện ở form Sửa học sinh; lưu lại có thể ghi email giả | BE `user/src/features/student/student.service.ts:313,352`; FE `components/students/edit-student-dialog.tsx` | Đã sửa (chưa commit): email placeholder `@no-email.local` không còn hiển thị trong form Sửa; email học sinh bắt buộc khi tạo |
+| B-02 | Thấp | Cột "Học sinh" của gia sư mới hiện "0" thay vì "—" | `components/tutors/tutors-page.tsx` | Đã sửa (chưa commit): cột Học sinh hiện "—" khi trống |
+| B-03 | Cao | Admin không chấm được bài lớp của gia sư khác; buổi đã kết thúc không thêm được bài tập | `components/classes/page/session-detail-page.tsx`, `session-submissions-page.tsx` | Đã sửa (chưa commit): tutor chỉ thêm bài tập sau khi buổi kết thúc; admin xem bài nộp ở chế độ chỉ đọc (BE `exercise.repository.ts` cho ADMIN xem mọi bài) |
+| B-04 | Trung bình | Học sinh tạo không có email nên không nhận mật khẩu ngẫu nhiên; cần quy trình thay thế | BE/FE | Đã sửa (chưa commit): email học sinh là trường bắt buộc (FE + gateway `createStudentSchema`) |
+| B-05 | Trung bình | Buổi học tạo thủ công lệch lịch cố định của lớp, không cảnh báo | `components/classes/dialog/create-session-dialog.tsx` | Đã sửa (chưa commit): popup cảnh báo "Buổi học lệch lịch lớp" trước khi tạo; lịch lấy từ `/schedules/class/:id` |
+| B-06 | Thấp | Tab Học sinh không nhận SĐT, chỉ nhận mã HS; nhãn "Mã người dùng hoặc email" dễ nhầm | `components/auth/auth-ui.tsx`, `lib/i18n/auth.dictionary.ts` | Giữ nguyên (chưa có chỉ đạo sửa) |
+| B-07 | — | File bài tập không hiện cho học sinh khi buổi còn "Sắp diễn ra" | — | Tạm đóng (theo yêu cầu) |
+| B-08 | Cao | Trợ lý AI không truy cập dữ liệu ứng dụng, trả lời sai và gợi ý đường dẫn sandbox | `components/ai-chat/ai-chat.tsx` | Tạm đóng (theo yêu cầu) |
+| B-09 | Thấp | Ô "Số tiền" hoá đơn tự điền khi chọn học sinh; nhập thêm thành `300000300000` | `components/fees/create-tuition-dialog.tsx` | Tạm đóng (theo yêu cầu) |
+| B-10 | Trung bình | Thẻ "Quá hạn" đếm học sinh không khớp dữ liệu (hoá đơn không có hạn đóng vẫn bị tính) | `components/fees/fees-page.tsx` | Đã sửa (chưa commit): quá hạn = đã qua hạn đóng và chưa thanh toán; đếm theo học sinh |
+| B-11 | Ghi nhận | Thảo luận với phụ huynh đang tắt, menu vẫn hiện "Tin nhắn" | — | Ghi nhận |
+| B-12 | Cao | Admin không có cách đặt mật khẩu cho phụ huynh; email giả nên không dùng được quên mật khẩu | BE `user/src/features/student/student.service.ts` (chỉ có `setPassword` cho học sinh); FE không có nút | Đã sửa (chưa commit): trang **Quản lý phụ huynh** `/parents` (admin): danh sách, tìm kiếm, đặt mật khẩu. BE: `admin.listParents`, `admin.setParentPassword`, gateway `GET /admin/parents`, `PUT /admin/parents/:id/password`. Đã kiểm tra: admin đặt mật khẩu → phụ huynh đăng nhập được |
+| B-13 | Trung bình | Trang Bài tập của con có link "Xem học phí" nhưng trang Học phí báo chưa khả dụng | `components/grades/*`, `components/fees/*` | Đã sửa (chưa commit): bỏ link "Xem học phí" trong trang bài tập của con |
+| B-14 | — | Cài đặt phụ huynh trống (nghi ngờ ban đầu) | — | Đóng: đã kiểm tra lại, hồ sơ phụ huynh hiển thị đủ họ tên/SĐT/email (không phải lỗi) |
+| B-15 | Cao | Phụ huynh thấy nút "Tạo chương trình" ở trang Chương trình của con | `app/(app)/curriculum`, role guard | Đã sửa (chưa commit): `/curriculum` chỉ cho TUTOR (route guard), bỏ mục "Chương trình của con" khỏi menu phụ huynh. Đã kiểm tra: phụ huynh vào `/curriculum` bị chuyển về trang chủ |
+| B-16 | Thấp | Badge "Thông báo" hiện 8, trang chỉ có 6 thông báo | sidebar + `app/(app)/notifications` | Đã sửa (chưa commit): số đếm tab lấy từ server (không theo trang hiện tại); danh sách làm mới cùng nhịp 30s với badge |
+| B-17 | Thấp | Thông báo "Bài tập mới cần nộp" hiện "Chưa có hạn nộp" dù bài có hạn | BE/FE thông báo | Đã sửa (chưa commit): thông báo "Bài tập mới cần nộp" dùng hạn nộp = `endAt` của buổi khi chưa có `exerciseDueAt` (BE `tutor/src/features/session/session.service.ts`) |
+| B-18 | Thấp | Hướng dẫn trang Thông báo nhắc nút "Đánh dấu đã đọc" nhưng nút không có (thông báo đã đọc khi mở) | `app/(app)/notifications` | Mở |
+| B-19 | Ghi nhận | Gia sư tạo không chọn môn hiện "Môn dạy: —" | `components/tutors/add-tutor-dialog.tsx` | Đã sửa (chưa commit): bắt buộc chọn ít nhất một môn khi tạo gia sư (FE schema + gateway `admin.schema.ts`) |
 
----
+Đã sửa trong đợt này (chưa commit) — xem mục 1: lỗi đăng ký/nhập SĐT-email phụ huynh, thứ tự tên hiển thị, fallback "_ _ _ _" ở tiêu đề buổi học.
 
-## Nhóm 2: rủi ro cao về dữ liệu và bảo mật
+Chi tiết lịch sử test ở các mục 2–10 bên dưới.
 
-- **QR chuyển khoản dùng thông tin giả**: `lib/bank-info.ts`, `components/fees/tuition-pay-dialog.tsx`, `tuition-detail-dialog.tsx` hard-code STK `1234567890123`. Phụ huynh quét QR sẽ chuyển tiền sai nơi.
-- **PARENT thấy dữ liệu giả ở `/grades`**: `components/practice/parent-portal-view.tsx` dùng `MOCK_CHILD`/`MOCK_ASSIGNMENTS`.
-- **PARENT dùng id phụ huynh làm `studentId`**: `components/classes/page/exercise-submit-page.tsx:135,164-166,195-201` → luôn thấy "chưa nộp bài", không có điểm danh. `canSubmit` (dòng 317) không kiểm tra `exercisesLocked`.
-- **`/flow-request` thiếu guard role (x2)**: `app/(flow)/layout.tsx`, `lib/rbac/route-access.ts`. Mọi role đăng nhập xem được kiến trúc nội bộ (Kafka topic, gateway path, tên service). Cần `{ prefix: "/flow-request", allow: ["ADMIN"] }` hoặc `RoleGuard`.
-- **Logout không xoá cache React Query**: `components/layout/app-sidebar.tsx:196-199`. User B đăng nhập cùng tab có thể thấy cache của A. Cần `queryClient.clear()`.
-- **Refresh token**:
-  - `lib/axios/client.ts:155`, `refresh-access-token.ts`: refresh lỗi chỉ `clearAuth()`, không `clearAuthTokens()`; request interceptor vẫn fallback `getAccessToken()` nên gửi token chết (kể cả `/auth/login`).
-  - Mọi lỗi refresh (mạng, timeout, 5xx) đều coi là hết phiên → logout oan. Chỉ nên clear khi 401/403.
-  - `components/providers/auth.provider.tsx:89-163` **(x2)**: `verifySession` chạy lại mỗi lần token đổi, `isAuthenticated` chớp false, và gọi refresh thủ công lần nữa bằng refresh token đã dùng/thu hồi (có thể kích hoạt reuse detection của BE).
-  - `auth.provider.tsx:119-122`: lỗi mạng/500 vẫn `setSessionChecked(true)` mà không có `user`.
-  - [NGHI] Đa tab với refresh token rotation: tab B refresh thất bại rồi ghi `null` vào `auth-store` dùng chung, làm tab A mất phiên.
-- Hai nguồn lưu token (zustand persist và localStorage thô) không đồng bộ.
-- [NGHI] Token OAuth truyền qua query string (`oauth-callback.tsx:24-25`).
-- Admin tự đổi role của chính mình trong `edit-user-dialog` [NGHI]; `ROLE_COLOR[u.role]` crash nếu BE trả role lạ [NGHI].
+## 1. Đã sửa trong đợt này (chưa commit)
 
----
+| # | Lỗi | Trạng thái | File chính |
+|---|-----|-----------|-----------|
+| 1 | Form tạo học sinh không có SĐT/email phụ huynh; phụ huynh mới phải có ít nhất một trong hai | Đã sửa, đã kiểm tra trên trình duyệt | `components/students/add-student-dialog.tsx`, `lib/validation/student-form.schema.ts`, `types/student.types.ts`, `lib/i18n/students.dictionary.ts` |
+| 2 | Tên học sinh hiển thị sai thứ tự ("Học Sinh Một QA") ở điểm danh, bài nộp, học phí, bảng điểm, quản lý user, badge lớp | Đã sửa, đã kiểm tra điểm danh | `components/classes/page/session-detail-page.tsx`, `session-submissions-page.tsx`, `components/fees/tuition-*.tsx`, `components/grades/grades-page.tsx`, `components/users/*`, `components/classes/components/class-student-badges.tsx` |
+| 3 | Tên phụ huynh "Nguyễn QA Phụ Huynh" | Không đổi — hiển thị đúng thứ tự Họ Tên, chờ xác nhận kỳ vọng | — |
+| 4 | "_ _ _ _" ở tiêu đề buổi học khi chưa có chương | Đã sửa (fallback "—") | `components/classes/components/session-table.tsx` |
+| 5 | "- - - -" dưới tên buổi học | Đã sửa (cùng nguyên nhân với #4) | như #4 |
 
-## Nhóm 3: bug logic mức trung
+Kiểm tra: `tsc --noEmit` chỉ còn lỗi có sẵn ở `test/lib/axios/client.test.ts`; ESLint trên file đã sửa: 0 lỗi, 2 warning có sẵn.
 
-### Data layer / API
-- **Bẫy `unwrapApiData` với `data: null`** (`lib/axios/api-unwrap.ts:2-13` trả nguyên envelope) kết hợp `?? []`: `attendance.service:34`, `chapter.service:39`, `class.service:66`, `schedule.service:56`, `session.service:63`, `user.service:115,127,137`, `curriculum.service:63`, `fees/create-tuition-dialog.tsx:58`. Nên cho `unwrapApiData` nhận fallback hoặc thêm helper `unwrapApiList`. Hiện chỉ `class.service` có `it.fails`.
-- **Query không tham số tự chạy ở nhiều call site (x3)**: `generateCode` (`/classes/generate-code`, `/students/get-student-code`, `/curriculum/generate-code`) và `class.service` `list` (`/classes?limit=100`). Call site: `fees-page:82`, `session-detail-view:428`, `exercise-submit-page:189`, `add-student-dialog:98`, `edit-student-dialog:158`, `schedule-form-dialog:116`, `students/page:130`, `settings/page:696`, `family-fees-page:65`, `delete-class-dialog:23`, `class-detail-page:127`, `create-class-modal:158,167`. STUDENT/PARENT có thể nhận 400/403. Nếu endpoint sinh mã có side-effect thì tệ hơn (chưa kiểm tra BE).
-- `queryFn` không truyền `signal`; `apiDownloadFile` với `responseType: "blob"` làm mất message lỗi của BE (`toApiError` không đọc được Blob). Cùng vấn đề ở `session-shared.tsx:116-129`.
-- [NGHI] `update` gửi kèm `id` (và `curriculumId`) trong body, có thể bị 400 nếu BE bật `forbidNonWhitelisted` (`chapter.service:59`).
-- [NGHI] `useStudentActions` gửi `classCode/classId` nhưng `getStudentsQuerySchema` không có → filter lớp ở trang students có thể bị bỏ qua.
-- Invalidate sai/thiếu key: curriculum (`curriculum-form-dialog:170`, `delete-curriculum-dialog:26`), class (`class-detail-page:391-404`), attendance (`session-detail-page:169-170,444`), exercise (`exercise-grade-workspace`), `useMarkAsRead` không invalidate `unread-counts`.
+## 2. Bug còn lại
 
-### Form / mutation
-- `create-class-modal.tsx:304-347`: tạo lớp thành công nhưng `createBulk` lỗi → toast lỗi chung, không invalidate, bấm lại tạo lớp trùng.
-- `create-class-modal.tsx:290-317`: `grade` và `maxStudents` không có trong `createClassSchema` BE, bị bỏ lặng lẽ. Nút "Tạo buổi học đầu tiên"/"Xem chi tiết" chỉ `onClose`, không điều hướng.
-- `session-detail-page.tsx:428-453`: điểm danh nhanh nhiều học sinh bị mất callback (TanStack v5 chỉ gọi callback của lần `mutate` cuối). Nên dùng `mutateAsync` + try/catch.
-- Không xoá được field: `session-detail-page:312-328` (title/description/note), `exercise-grade-workspace` (comment), `tuition-detail-dialog:272-275` (note/dueDate/paidDate) do `|| undefined` làm key bị bỏ.
-- `tuition-detail-dialog.tsx:259`: chuyển PAID → UNPAID/OVERDUE vẫn gửi `paidDate`.
-- `exercise-grade-workspace.tsx:206-268`: annotation và file lời giải chỉ nằm trong state, không lưu; `doSave` dùng `mutateAsync` không try/catch.
-- `exercise-submit-page.tsx:205-230`: upload nhiều file, một file lỗi thì cả lô bị bỏ, file đã lên server bị orphan.
-- `categories-page.tsx:113,118`: đóng dialog ngay sau `mutate`, API lỗi là mất dữ liệu đã nhập; `userId` có thể là chuỗi rỗng.
-- `edit-user-dialog.tsx:297-301`: mở lại user cũ sau khi Hủy vẫn thấy giá trị gõ dở.
-- `edit-student-dialog.tsx:438`: gender `OTHER`/null bị ép thành `MALE`; Zod enum không có `OTHER`.
-- `wallet-form-dialog.tsx:63`: chặn số dư âm nên không sửa được ví CREDIT.
-- `delete-student-dialog`, `delete-user-dialog` không truyền `loading` → bấm nhiều lần gửi nhiều DELETE; xoá phần tử cuối trang cuối khiến `page` vượt `totalPages`.
-- `curriculum-detail-page:57-67`, `chapter-section:65,104`: xoá chương/bài học không có xác nhận.
-- `curriculum-form-dialog.tsx:44`: `grade` chuỗi tự do nhưng BE ép `Number()`; `code` FE tối đa 50 ký tự, BE tối đa 6 [NGHI].
+### 2.1 Bug mới (đợt admin)
 
-### UI primitives
-- `components/ui/pagination.ui.tsx:62-91`: Prev chỉ tắt khi `page === 1`, Next chỉ tắt khi `page === totalPages`. Với `totalPages = 0` (list rỗng), Next vẫn bật và gửi `page = 0`. Cần `page <= 1` / `page >= totalPages`. Cũng render toàn bộ số trang, không rút gọn.
-- `components/ui/dialog-form.ui.tsx:219-262`: thiếu focus trap, autofocus, restore focus, `aria-labelledby`.
-- `components/ui/index.ts:3`: `export * from "./menu-popover.ui"` không export gì (chỉ có `export default`).
-- `menu-popover.ui.tsx`: ESLint error `set-state-in-effect` (dòng 86); scroll listener capture đóng menu khi bất kỳ phần tử nào cuộn; thiếu `aria-expanded`, điều hướng bàn phím.
-- `data-table.ui.tsx:182-228`: khi loading/error mà còn data cũ thì hàng dữ liệu hiện cùng spinner/lỗi; `colSpan` = 0 nếu columns rỗng; prop `pageSize` không dùng; thiếu `role="status"`/`role="alert"`.
-- `otp-input.ui.tsx:63-80`: nhập vào ô sau khi ô trước còn trống thì chữ số bị dồn về ô trước.
-- `select.ui.tsx`: dropdown `absolute` không portal, có thể bị cắt trong Dialog [NGHI]; không có điều hướng bàn phím.
-- `button.ui.tsx`: không đặt `type="button"` mặc định; `loading` không có spinner.
+- **B-01 — Email giả của phụ huynh hiển thị ở form Sửa học sinh** (BE `user/src/features/student/student.service.ts:313,352`; FE `components/students/edit-student-dialog.tsx`)
+  - Hiện tượng: học sinh tạo không kèm email phụ huynh có email `tranqa_ph_hai@no-email.local` (BE tự sinh). Dialog Sửa hiển thị email này.
+  - Rủi ro: bấm "Lưu thay đổi" có thể ghi email giả vào hồ sơ phụ huynh.
+  - Nguyên nhân: BE dùng `${username}@no-email.local` khi không có email, và trả lại email này cho FE.
+  - Đề xuất: BE không trả email tự sinh (hoặc trả `null`); FE hiển thị ô trống và chỉ gửi email khi người dùng sửa.
+- **B-02 — Cột "Học sinh" của gia sư mới hiển thị "0"** (`components/tutors/tutors-page.tsx`)
+  - Gia sư chưa có học sinh hiển thị "0" dạng chữ, các gia sư khác hiển thị "—" hoặc danh sách tên. Không đồng nhất. Mức nhỏ.
 
-### Role / route
-- `app/(app)/schedule/page.tsx:536-963`: STUDENT/PARENT thấy nút Thêm/Sửa/Xoá lịch (không có check role; chưa xác minh BE có chặn 403).
-- `lib/rbac/route-access.ts` lệch `app-sidebar.tsx`: `/users` (ADMIN) và `/fees` (STUDENT) có route nhưng không có menu; `NAV.reports` không role nào hiện; các route legacy (`/reports`, `/accounts`, `/analytics`, `/budgets`, `/categories`, `/investments`, `/transactions`, `/practice-exams`, `/api-gaps`) mở cho mọi role.
-- `session-submissions-page.tsx`: danh sách bài nộp cả lớp không check role [NGHI, phụ thuộc BE].
-- `components/layout/app-header.tsx:11-31`: `pageTitles` thiếu `grades`, `curriculum`, `sessions`, `tutors`, `users`, `logger`, `test-monitor`, `reports` → hiện "Tổng quan".
-- `app-sidebar.tsx:50`: badge thông báo hard-code `5`.
-- `components/auth/login-form.tsx`: không đọc `?error=oauth_failed` từ OAuth callback → lỗi không hiện.
+### 2.2 Bug đã có từ trước (chưa xử lý)
 
-### Phân trang cứng / thống kê sai
-- `schedule/page.tsx:408-410`: chỉ tải `limit: 100`; còn `console.log` ở dòng 415-416.
-- `fees-page:76`, `family-fees-page:227,211`, `tuitions-board:190-206`: `limit: 100`, thống kê tính trên mảng cắt cụt; hook `summary` có sẵn nhưng không dùng.
-- `student-sessions-page.tsx:135`: `limit: 10`, thống kê tính trên 10 buổi đầu.
-- `classes-page.tsx:283-299`: lọc/phân trang client trên 100 lớp; nhãn `sessionsThisWeek`/`pendingFee` thực chất là tổng.
-- `notifications/page.tsx:284-297`: số đếm theo tab tính từ trang hiện tại (tối đa 5 item) nên không khớp tổng.
-- `students/page.tsx:466-479`: khi request lỗi hiện đồng thời "danh sách trống" và "lỗi".
+- **B-03 — Không có luồng chấm bài cho admin, và buổi đã kết thúc không thêm được bài tập** (`components/classes/page/session-detail-page.tsx`, `session-submissions-page.tsx`)
+  - Admin không phải gia sư lớp SZP590 nên trang lớp chỉ hiện giao diện học sinh.
+  - Buổi đã "Kết thúc" khoá ô upload bài tập và nút xem bài nộp ("Kết thúc buổi học để xem bài nộp").
+  - Cần quyết định sản phẩm: admin có được chấm bài lớp gia sư khác không; có cho thêm bài tập sau khi kết thúc buổi không.
+- **B-04 — Học sinh tạo không có email nên mật khẩu ngẫu nhiên không gửi được** (BE/FE)
+  - Đã kiểm tra: admin đặt mật khẩu cho học sinh thì học sinh đăng nhập được bằng mã HS. Vẫn cần quy trình rõ ràng khi không có email (ví dụ hiển thị mật khẩu tạm cho admin).
 
-### Ngày giờ / múi giờ
-- `toISOString().slice(0,10)` lấy ngày UTC → lùi một ngày trong khung 0h-7h giờ VN: `schedule-form-dialog:98`, `create-session-dialog:35`, `edit-class-dialog:48-55`, `tuition-detail-dialog:260`.
-- `tuitions-board.tsx:389`: nhãn "Tháng 0 · 2026" khi chọn "Tất cả"; `YEARS` hard-code 2024-2027; `millionsFmt` làm tròn kém.
-- `create-class-modal.tsx:98-104`: `endTime` < `startTime` khi buổi qua nửa đêm.
-- `discussions-page.tsx`: `formatTime` dùng chênh lệch 24h thay vì ngày lịch.
+### 2.3 Bug mới (đợt học sinh)
 
-### Họ tên
-- `add-tutor-dialog.tsx:132-138` lưu "Họ" vào `lastName`, `create-user-dialog.tsx:143-166` lưu "Họ" vào `firstName`; `tutors-page.tsx:66-68` hiện `firstName lastName`, `discussions-page.tsx:316` hiện `lastName firstName` → "Trần Văn Khoa" hiện thành "Văn Khoa Trần". Cần thống nhất quy ước.
+- **B-05 — Buổi học tạo thủ công lệch lịch cố định của lớp, không có cảnh báo** (`components/classes/dialog/create-session-dialog.tsx`)
+  - Hiện tượng: lớp có lịch T2 & T4 08:00–09:30 nhưng "Buổi 1 - QA" được tạo ở thứ 3 18:00–20:00. Trang lớp của học sinh vẫn hiển thị "T2 & T4 · 08:00", thông báo gửi học sinh ghi 18:00.
+  - Đề xuất: cảnh báo khi ngày/giờ không khớp lịch lớp, hoặc cho phép chọn có chủ đích.
+- **B-06 — Đăng nhập học sinh không chấp nhận SĐT, chỉ chấp nhận mã HS** (`components/auth/auth-ui.tsx`, `lib/i18n/auth.dictionary.ts`)
+  - Hiện tượng: tab "Học sinh" nhập `0900000001` báo "Dữ liệu không hợp lệ"; nhập mã `KHE2AF` thì đăng nhập được. Nhãn ô là "Mã người dùng hoặc email", nên người dùng dễ nhầm.
+  - Đề xuất: làm rõ nhãn hoặc hỗ trợ SĐT.
 
-### Realtime / monitoring
-- `components/ai-chat/ai-analysis-widget.tsx:160,232`, `hooks/useAiChat.hook.ts`: spinner không bao giờ hiện vì `messages` luôn có WELCOME_MESSAGE; lỗi hiển thị như kết quả phân tích. `useAiChat` có thể gửi đôi khi Enter nhanh (closure đóng băng `isPending`), và lưu thông báo lỗi vào `history`.
-- `components/logger/logger-page.tsx:76-99`: log socket mới được chèn vào cache dù đang search và không khớp; `pagination.total` tăng sai.
-- `hooks/useTestMonitorTrace.hook.ts:264-302`: đóng dialog trước khi response về thì `onSuccess` vẫn chạy, dialog tự mở lại và socket `/logs` mở lại. `open()` trace khác không `liveTrace.stop()`.
-- `hooks/useLogSocket.hook.ts:33-54` **(x2)**: token đọc một lần, reconnect dùng token cũ. Dùng `auth: (cb) => cb({ token: useAuthStore.getState().accessToken })`.
-- `hooks/useChatSocket.hook.ts:63-70`: không join lại room sau reconnect [NGHI].
-- `components/flow-requests/flow-request-diagram.tsx:198`: list rỗng hợp lệ cũng hiện lại dữ liệu seed; sửa/xoá item seed gọi PUT/DELETE id không tồn tại → 404.
-- `hooks/useTestMonitorMock.hook.ts:7,14`: `?mock=1` bật mock ở mọi môi trường; `test-monitor-mock-data.ts` (581 dòng) nằm trong bundle prod.
-- `discussions-page.tsx:229-243,280-283,332-338`: tin mới trong hội thoại đang mở không gọi `markAsRead`; `mutateAsync` tạo chat không `try/catch`/`onError`; `sendMessage` không `stopTyping()` [NGHI].
-- [NGHI] `useLiveTrace`: hop RPC log chậm hơn `SETTLE_MS = 500ms` có thể bị thiếu trong trace.
+### 2.4 Không kiểm tra được (bị chặn)
 
-### Khác
-- `session-detail-view.tsx:366-369,662-669,421`: điểm danh tutor chỉ ở state local và không có nút lưu; "Ghi chú riêng" hiện `SAMPLE.privateNote`; `tutorName` rơi về `SAMPLE.tutorName`.
-- `class-detail-page.tsx:573`: link `/classes/${id}/students` không có route (404); nút `+` ở bảng học sinh không có `onClick`; `nextSessionNumber = sessions.length + 1` có thể trùng khi đã xoá buổi.
-- `session-detail-page.tsx:1051-1053`: "Hạn nộp" dùng `session.endAt` thay vì `exerciseDueAt`. Dialog nói không thể sửa điểm danh sau khi kết thúc nhưng checkbox không bị disable (mâu thuẫn).
-- `accounts-page.tsx:217-231,301`: cộng số dư các ví khác `currency` rồi format cứng USD; mock tx ngày 6/2026 nên thu/chi tháng này luôn bằng 0.
-- `grades-page.tsx:844`: `.sort()` trực tiếp trên mảng trong cache React Query.
-- `reports-page.tsx:336,109`: `averageScore.toFixed` crash nếu `undefined`; `pagination.totalPages` không optional-chain.
-- Search không debounce: `tutors-page:127`, `users-page:334`, `reports-page:273`.
-- `users-page.tsx:169` dùng `window.confirm`, trái quy tắc `ConfirmDialog`.
-- `tuition-pay-dialog.tsx:80`: `window.open` thiếu `noopener`.
-- `hooks/useTeachingGrades.hook.ts`: lệch SSR/CSR, key localStorage không gắn theo user, `setItem` không `try/catch`. `hooks/use-mobile.ts:5-9`: hydration mismatch.
-- `components/logger/request-detail-dialog.tsx:283-342`: `navigator.clipboard.writeText` không `.catch`. `logger-utils.ts:173`: `roots[0]` có thể `undefined`.
-- Typo "Offine" ở `discussions-page.tsx:176`.
-- `app/layout.tsx`: `lang="en"` trong khi UI chủ yếu tiếng Việt.
-- `practice-exams/*`: toàn mock, chỉ exam id `"1"` có câu hỏi; `practice-exam-take-page.tsx:57` dùng `px-40` cố định, tràn trên mobile. `student-assignments-view.tsx:154-159`: `RESUBMIT` bị gộp thành "Chưa nộp".
+- Chấm bài (B-03) và nộp bài: cần bài tập trong buổi học đang mở.
+- Học phí, lịch dạy, chương trình, bài tập về nhà, trao đổi, AI trợ lý, thông báo của gia sư/phụ huynh: cần tài khoản gia sư Phan Đăng Hải (không có mật khẩu) hoặc phụ huynh.
 
----
 
-## Nhóm 4: tooling và test
+## 3. Dữ liệu test còn trong DB
 
-- `bun run lint` bị hỏng: `eslint "{src,apps,libs,test}/**/*.ts" --fix` (package.json:9) glob sai thư mục nên gần như không lint gì, lại có `--fix`. Agent xác nhận `git status` vẫn sạch sau khi chạy.
-- `tsc --noEmit`: 2 lỗi TS2345 ở `test/lib/axios/client.test.ts:55,63` (`AxiosError<unknown>` → `AxiosError<ApiErrorResponse>`); vitest không typecheck nên không phát hiện.
-- ESLint đủ thư mục (`--no-fix`): 3 error + 58 warning. Error: `menu-popover.ui.tsx:86` (`set-state-in-effect`), `socket.provider.tsx:82` (`refs`, báo 2 lần). Warning đáng chú ý: `session-shared.tsx:173` `<img>` thiếu `alt`, nhiều import/biến thừa.
-- Test: 43 file pass, 1 skipped; 369 pass, 1 expected-fail, 1 todo. Không có test fail.
-  - `it.fails` ở `test/lib/services/class.service.test.ts:74` đang che bug `unwrapApiData ?? []`.
-  - `it.todo` ở `test/app/layout.test.tsx:2` là placeholder rỗng.
-- **Độ phủ test mỏng**:
-  - `components/ui`: chỉ có test cho card, data-table, pagination, separator.
-  - `lib/services`: 5/18 (auth, class, notification, student, test-scenario).
-  - `hooks`: khoảng 4/36.
-  - `app/`: không có test page nào.
-- `types/index.ts` thiếu re-export `auth.types.ts` và `practice-exam.types.ts`.
-- i18n: 17 dictionary, key vi/en khớp 100%.
+- Học sinh: `QA Học Sinh Một` (KHE2AF, lớp SZP590), `QA Học Sinh Hai` (8PSOWW)
+- Phụ huynh: `Nguyễn QA Phụ Huynh`, `Trần QA PH Hai` (SĐT 0912345678)
+- Lớp: `QA Lớp Toán Test` (SZP590), buổi `Buổi 1 - QA` (đã kết thúc)
+- Gia sư: `Trần QA Gia Sư` (qa.tutor.test@example.com) — đã khoá rồi mở lại
 
----
+## 4. Kết quả test luồng học sinh (đợt này)
 
-## Nhóm 5: nợ kỹ thuật và code chết
+- Admin đặt mật khẩu học sinh KHE2AF: OK (toast xác nhận).
+- Đăng nhập học sinh bằng mã HS: OK. Lần đầu bắt buộc đổi mật khẩu: OK, sau đó vào được trang chủ.
+- Dashboard học sinh: hiển thị đúng 1 lớp đang học, 1 buổi tuần này, học phí và thông báo.
+- Trang Bài tập về nhà: hiển thị "Chưa có bài tập nào được giao" (đúng, vì buổi học không có bài tập).
+- Trang lớp học sinh: thông tin lớp, buổi "Đã kết thúc", danh sách bạn cùng lớp: OK. Thông báo "Bạn đã được thêm vào lớp" hiển thị. Sai lệch lịch: xem B-05.
+- Lịch học: hiển thị buổi 24/11 18:00, đúng theo buổi đã tạo (xem B-05).
+- Console: không có lỗi.
+- Chưa test: nộp bài (không có bài tập), trang học phí của học sinh, tin nhắn, AI trợ lý, đổi mật khẩu từ Cài đặt.
 
-- **Dead code**: `components/classes/page/curriculum-page.tsx` (cùng `curriculum-chapter-row`, `curriculum-lesson-row`, `create-class-chapter-dialog`; gọi sai endpoint), `components/sessions/student-session-detail.tsx`, `components/classes/page/session-detail-watch-page.tsx`, `components/practice/tutor-assignments-view.tsx`, `lib/axios/auth-redirect.ts` (`redirectIfAuthenticated` đọc cookie không bao giờ được set; còn khiến các trang auth bị dynamic render). Nhánh PARENT của `session-detail-view.tsx` là code chết vì `ROUTE_ACCESS` chặn.
-- **Trang tài chính legacy là UI tĩnh chưa nối API**: budgets, transactions, accounts, investments, analytics, `dashboard/*` (một số nút không có handler: "New budget", nút "Filter" của transactions).
-- **Vi phạm quy ước lan rộng**:
-  - Khoảng 54 file dùng `<button>` thô; ngoài ra còn `<input>`, `<label>`, `<table>`, `<select>` thô.
-  - Chuỗi hard-code không qua dictionary: fees, tutors, users, reports, discussions, budgets, analytics, categories.
-  - `unknown` làm generic: `useAdminUsers.hook.ts`, `users-page`, `categories-page`, `reports-page`.
-  - Gọi `axiosInstance`/`useQuery` thô trong component/hook: `useChat.hook.ts`, `session-detail-page`, `exercise-submit-page`, `exercise-grade-workspace`, `curriculum-detail-page`, `chapter-section`...
-  - Type DTO khai báo inline: `categories-page.tsx:25-62`, `fees/*`, `edit-user-dialog`, `ClassStudentDto` lặp nhiều file.
-  - `add-student-dialog`, `edit-student-dialog` vẫn gọi thẳng `usePost`/`usePut` (nợ đã ghi nhận trong rule).
-- **`CLAUDE.md` lỗi thời**: nhắc Redux và route `verify-otp`, nhưng code dùng Zustand và không có route đó.
+## 5. Ghi chú về trạng thái tài khoản test
 
----
+- Mật khẩu test của học sinh và gia sư đã được đặt riêng khi test; không ghi trong báo cáo. Đổi mật khẩu khi cần.
 
-## Điểm tốt (đã kiểm tra)
+## 6. Đợt test gia sư + chấm bài (tài khoản gia sư test)
 
-- Không có XSS (`dangerouslySetInnerHTML`/render markdown) trong phạm vi monitoring/ai-chat.
-- Không có type trùng tên giữa các `types/*.types.ts`; `DiagramRequest` đã tách đúng.
-- Không có rò rỉ listener/timer nghiêm trọng (`useLogSocket`, `useLiveTrace`, `useTracePlayback`, `useChatSocket`, `useDebounce`, theme picker đều cleanup đúng).
-- Logic xếp hàng refresh (`refreshInFlight`, cờ `_retry401`) đúng ở mức cơ bản.
-- Không có redirect loop giữa `AuthGuard`/`RoleGuard`/`AuthLayout`.
-- `useSearchParams` ở `oauth-callback` và `reset-pass` đã có Suspense.
-- Không vi phạm barrel `@/components`.
+Tài khoản gia sư test `Trần QA Gia Sư` (`qa.tutor.test@example.com`) đăng nhập được. Lớp SZP590 thuộc Phan Đăng Hải nên không dùng được; tạo dữ liệu mới bằng tài khoản này.
 
----
+| Bước | Kết quả |
+|---|---|
+| Đăng nhập gia sư, đổi mật khẩu lần đầu | OK |
+| Danh sách lớp (chưa có lớp) | OK, "Không có lớp học nào phù hợp" |
+| Học phí (chưa có hoá đơn) | OK, trang trống với hướng dẫn |
+| Tạo học sinh (gia sư tạo, có phụ huynh) | OK, học sinh "QA Học Sinh Ba" (mã M1E7LE), danh sách học sinh chỉ thấy học sinh của mình |
+| Tạo lớp mới (T2 08:00, 300.000đ) | OK, toast thành công |
+| Thêm học sinh vào lớp | OK |
+| Tạo buổi học "Buổi 1 - Bài tập QA" | OK, nhưng lệch lịch lớp (xem B-05) |
+| Tải file bài tập lên buổi học (gia sư) | Giao diện báo đã tải: `bai-tap-qa.txt` hiện trong mục Bài tập |
+| Học sinh đăng nhập (mã M1E7LE), đổi mật khẩu lần đầu | OK |
+| Học sinh xem Bài tập về nhà | **Không hiện bài** ("Chưa có bài tập nào được giao") |
+| Học sinh xem chi tiết buổi học | **Mục Bài tập: "Chưa có tài liệu bài tập"**, không có nút nộp bài |
+| Học sinh điểm danh (trạng thái) | "Chưa điểm danh" (đúng, buổi chưa diễn ra) |
 
-## Chưa xác minh / giới hạn của review
+### Bug mới đợt này
 
-- Chưa kiểm tra BE có chặn thao tác của STUDENT/PARENT ở `/schedule` và trang bài nộp hay không.
-- Chưa kiểm tra endpoint "sinh mã" có side-effect đặt chỗ hay không.
-- Chưa xác minh shape dashboard cho ADMIN/PARENT (`app/(app)/page.tsx:138` chỉ phân nhánh `isStudent`).
-- `settings/page.tsx` (1976 dòng) và `schedule/page.tsx` (976 dòng) mới được đọc một phần.
-- Một số file chỉ được grep, chưa đọc từng dòng: `flow-request/*`, các dialog test-monitor, `exercise-annotation-marker`, `staged-file-tile`, `watch-curriculum-chapter`, `class-status-menu`, `session-status-menu`, `curriculum-file-chip`, `class-student-badges`, `practice-exam-result-page`.
-- Chưa chạy app trên trình duyệt; các nghi vấn về layout/UX (Select trong Dialog, OTP autofill...) chưa được kiểm chứng.
+- **B-07 — File bài tập gia sư tải lên không hiển thị cho học sinh** (`components/classes/page/session-detail-page.tsx`, BE upload/exercise)
+  - Gia sư thấy file ngay sau khi tải lên, nhưng học sinh (cùng lớp, buổi "Sắp diễn ra") không thấy file, cũng không thấy bài tập trong "Bài tập về nhà", và không có nút nộp bài.
+  - Chưa xác định: file có được lưu trên server không (có thể cần bước "Lưu nội dung" hoặc trạng thái buổi khác), hay học sinh bị lọc theo điều kiện nào. Cần kiểm tra API `GET` bài tập của buổi học và kết quả khi tải lại trang gia sư.
+  - Mức ảnh hưởng: chặn toàn bộ luồng nộp bài và chấm bài.
 
-## Đề xuất thứ tự sửa
+### Chưa test trong đợt này
 
-1. Nhóm 1 (10 mục). Mục #3 và #4 đã được đối chiếu với schema BE.
-2. Các sửa nhỏ và an toàn: `Pagination` biên, guard `/flow-request`, `unwrapApiData` fallback, decode JWT base64url, `queryClient.clear()` khi logout, script `lint`, 2 lỗi `tsc` trong test.
-3. Nhóm 2: xử lý QR chuyển khoản, `socket.provider`, refresh token.
-4. Nhóm 3 và 5 theo từng feature, kèm bổ sung test cho `components/ui`, `lib/services` và `hooks`.
+- Nộp bài và chấm điểm: bị chặn bởi B-07.
+- Lịch dạy, chương trình, tin nhắn, AI trợ lý của gia sư: chưa test (cần đăng nhập gia sư lại; tài khoản gia sư hiện đang đăng nhập bằng học sinh).
+- Tạo hoá đơn học phí và thanh toán: chưa test.
+
+## 7. Đợt test tiếp (gia sư, kiểm tra B-07)
+
+### Kết quả
+- Đăng nhập gia sư (sau khi học sinh đăng xuất): OK.
+- B-07 kiểm tra lại: sau khi tải lại trang, gia sư vẫn thấy `bai-tap-qa.txt` → file **đã được lưu trên server**. Lỗi nằm ở phía học sinh (học sinh không thấy file và không có nút nộp bài).
+- Lịch dạy (`/schedule`): hiển thị buổi 18:00 của lớp, OK.
+- Chương trình (`/curriculum`): trang trống có hướng dẫn, OK.
+- Tin nhắn (`/discussions`): hiển thị "Tính năng thảo luận tạm thời chưa khả dụng" (xem B-11).
+- AI trợ lý (`/ai-chat`): gửi được tin nhắn nhưng trả lời sai (xem B-08). Không có lỗi console.
+- Học phí: tạo hoá đơn 300.000đ cho học sinh QA Học Sinh Ba: OK, toast thành công (xem B-10, B-09).
+
+### Bug mới đợt này
+
+- **B-07 (đã đóng: đúng thiết kế)** — Học sinh không thấy file bài tập. Đường dẫn `/classes/[id]/sessions/[sessionId]` dùng chung `SessionDetailPage` (`app/(app)/classes/[id]/sessions/[sessionId]/page.tsx`) cho cả gia sư và học sinh. Học sinh nhận cùng layout gia sư, trong khi `components/sessions/student-session-detail.tsx` là giao diện học sinh riêng và có nhánh hiển thị bài tập. Nghi ngờ: học sinh không được vào đúng giao diện. Chưa xác minh được dữ liệu API trả về cho học sinh (không đọc được token, bị từ chối quyền).
+- **B-08 — AI trợ lý không truy cập được dữ liệu của ứng dụng và trả lời sai** (`components/ai-chat/ai-chat.tsx`)
+  - Hiện tượng: hỏi "Lịch dạy hôm nay của tôi có gì?" → trả lời không có quyền truy cập lịch, yêu cầu dán lịch, gợi ý đọc file trong `/tmp/tutor-agent-sandbox`. Trong khi lịch hôm nay có buổi 18:00.
+  - Đề xuất: nối AI với dữ liệu lịch/lớp của người dùng, hoặc ghi rõ phạm vi và không gợi ý đường dẫn sandbox.
+- **B-09 — Ô "Số tiền" hoá đơn bị điền sẵn khi chọn học sinh, không rõ nguồn** (`components/fees/create-tuition-dialog.tsx`)
+  - Hiện tượng: sau khi chọn học sinh, ô số tiền đã có giá trị; nhập thêm `300000` tạo thành `300000300000`. Phải bôi đen rồi nhập lại mới đúng.
+  - Đề xuất: điền gợi ý dạng placeholder hoặc nút "Dùng học phí lớp", không điền thẳng vào ô nhập.
+- **B-10 — Thống kê học phí "Quá hạn" không khớp dữ liệu** (`components/fees/fees-page.tsx`)
+  - Hiện tượng: sau khi tạo 1 hoá đơn chưa đóng và không có hạn đóng, thẻ hiển thị "Chưa thu 0,3tr · 1 học sinh", "Quá hạn 0,0tr · 2 học sinh". Số học sinh quá hạn (2) lớn hơn số hoá đơn (1).
+  - Đề xuất: kiểm tra logic đếm quá hạn (hoá đơn không có hạn đóng không được tính quá hạn).
+- **B-11 — Tính năng Thảo luận với phụ huynh đang tắt** (thông tin, không phải lỗi). Menu vẫn hiển thị "Tin nhắn", dễ gây nhầm.
+
+### Chưa test
+- Nộp bài và chấm điểm: vẫn bị chặn bởi B-07.
+- Phụ huynh: chưa có tài khoản đăng nhập (cần đặt mật khẩu cho phụ huynh).
+
+## 8. Luồng nộp bài & chấm điểm end-to-end (đã hoàn thành)
+
+Học sinh M1E7LE (QA Học Sinh Ba), gia sư Trần QA Gia Sư, lớp W5FWYV, buổi "Buổi 1 - Bài tập QA".
+
+| Bước | Kết quả |
+|---|---|
+| Admin/gia sư đặt mật khẩu học sinh, học sinh đăng nhập | OK |
+| Gia sư tải bài tập lên buổi học | OK (file lưu trên server) |
+| Học sinh xem trang nộp bài khi buổi "Sắp diễn ra" | Bài tập ẩn: "Bài tập sẽ hiển thị sau khi buổi học kết thúc" (đúng thiết kế, B-07 đóng) |
+| Gia sư kết thúc buổi học | OK |
+| Học sinh thấy bài tập, nộp `bai-tap-qa.txt` | OK, "Đã nộp — chờ chấm" |
+| Gia sư xem bài nộp, chấm 8.0 + nhận xét "Trình bày tốt", lưu & trả bài | OK, "Đã chấm điểm 8" |
+| Học sinh xem điểm ở Bài tập về nhà | OK, "Đã có điểm 8.0/10", Điểm TB 8 |
+
+Ghi chú nhỏ: trang nộp bài của học sinh hiện "Điểm danh của tôi: Vắng mặt" dù học sinh chưa được điểm danh; trạng thái này do hệ thống tự gán khi buổi kết thúc. Nên kiểm tra xem đây có phải hành vi mong muốn không.
+
+
+## 9. Đăng nhập phụ huynh (phụ huynh của QA Học Sinh Ba)
+
+- Đăng nhập tab Phụ huynh bằng SĐT `0912000003` với mật khẩu được cung cấp: **thất bại** ("Dữ liệu không hợp lệ"). Tài khoản phụ huynh này chưa có mật khẩu được đặt (không có đường đặt mật khẩu cho phụ huynh, xem mục 8/B-12).
+- Đăng nhập bằng email giả `leqa_ph_ba@no-email.local` với mật khẩu đã cung cấp: **thành công**. Lần đầu bắt buộc đổi mật khẩu (đã đổi sang mật khẩu test khác).
+- Lớp `/classes`: hiển thị lớp QA Lớp Gia Sư Test, học sinh QA Học Sinh Ba: OK.
+- `/grades` (Bài tập của con): hiển thị điểm 8.0, 1/1 bài đã nộp, nhưng có link "Xem học phí".
+- `/fees` (Học phí): "Chức năng xem học phí của học sinh liên kết hiện chưa khả dụng." → mâu thuẫn với link "Xem học phí" ở `/grades`.
+- Console: không có lỗi.
+
+**B-12 — Phụ huynh không có đường để nhận mật khẩu**: admin không đặt được mật khẩu phụ huynh; email giả nên không dùng được quên mật khẩu. (Mục 2/B-12 là ghi chú mới.)
+**B-13 — Trang Bài tập của con có link "Xem học phí" nhưng trang Học phí báo chưa khả dụng.**
+
+## 10. Đợt test: curriculum, sửa lớp/buổi, hoá đơn, chấm lại, nộp lại, thông báo, admin
+
+| Khu vực | Kết quả |
+|---|---|
+| Gia sư: tạo chương trình "Toán – Khối 9" (MAT-717) | OK |
+| Gia sư: tạo chương, thêm bài học, sửa tên chương, xoá bài học | OK |
+| Gia sư: sửa buổi học đã kết thúc | Các ô bị khoá (đúng quy tắc: buổi "Kết thúc") |
+| Gia sư: đánh dấu hoá đơn "Đã đóng" (ngày đóng tự điền hôm nay) | OK; "Đã thu 0,3tr · 1/1", tỷ lệ thu 100% |
+| Gia sư: sửa điểm 8 → 9 | OK, "Đã chấm điểm 9" |
+| Gia sư: "Yêu cầu nộp lại" | OK, trạng thái "Cần nộp lại" |
+| Học sinh: "Nộp lại bài" với 2 file | OK, "Đã nộp — chờ chấm", hiển thị 2 file |
+| Học sinh: nộp file > 20 MB | **Không test được**: công cụ upload giới hạn 10.4 MB mỗi lần |
+| Học sinh: xem học phí (`/fees`) | OK, hiển thị hoá đơn đã đóng 300.000đ |
+| Học sinh/gia sư: thông báo | Mở thông báo là tự đánh dấu đã đọc, không có nút "Đánh dấu đã đọc" (xem B-18) |
+| Admin: tạo gia sư tạm, sửa (SĐT, môn), đặt mật khẩu, xoá | OK (toast cho từng bước) |
+| Phụ huynh: thông báo | Trống, OK |
+| Phụ huynh: cài đặt | OK, hiển thị đủ họ tên/SĐT/email giả |
+| Phụ huynh: chương trình của con | **Bug B-15**: hiển thị nút "Tạo chương trình" và thẻ tạo chương cho phụ huynh |
+| Phụ huynh: học phí / nộp học phí | Bị chặn: trang báo chưa khả dụng (B-13) |
+
+### Bug mới đợt này
+- **B-15 — Phụ huynh thấy nút "Tạo chương trình" ở trang Chương trình của con** (`app/(app)/curriculum`, role guard). Phụ huynh chỉ nên xem, không tạo.
+- **B-16 — Badge "Thông báo" hiện 8 trong khi trang chỉ có 6 thông báo** (gia sư/học sinh; sidebar vs. danh sách).
+- **B-17 — Thông báo "Bài tập mới cần nộp" hiện "Chưa có hạn nộp" dù bài tập có hạn nộp** (20:00 24/11).
+- **B-18 — Hướng dẫn trang Thông báo nói nhấn "Đánh dấu đã đọc" nhưng nút không tồn tại** (đã đọc khi mở).
+- **B-19 — Gia sư vừa tạo hiện "Môn dạy: —" dù có thể chọn môn** (chỉ là dữ liệu, không bắt buộc; ghi nhận).
+
+### Dữ liệu test thêm
+- Chương trình "Toán – Khối 9" (MAT-717) còn trong DB, chương "Chương 1: Số hữu tỉ (đã sửa)" không còn bài.
+- Hoá đơn 300.000đ của QA Học Sinh Ba đã đóng.
+- Gia sư tạm đã xoá; mật khẩu đã đặt bị xoá cùng.
+
+
+## 11. Đợt sửa lỗi (chưa commit)
+
+Thay đổi FE (`ui`):
+- `components/tutors/tutors-page.tsx`: cột Học sinh hiện "—" (B-02).
+- `components/classes/dialog/create-session-dialog.tsx` + `components/classes/page/class-detail-page.tsx`: popup cảnh báo khi buổi lệch lịch lớp (B-05).
+- `components/classes/page/session-detail-page.tsx`: nút "Thêm ô nhập tệp" bài tập chỉ bật khi buổi đã kết thúc, có dòng hướng dẫn (B-03).
+- `components/classes/page/session-submissions-page.tsx`: không phải tutor thì nút là "Xem bài" (B-03).
+- `components/classes/page/exercise-grade-page.tsx`: admin được mở trang bài ở chế độ chỉ đọc (B-03).
+- `components/students/add-student-dialog.tsx`, `types/student.types.ts`, `lib/validation/student-form.schema.ts`, `lib/i18n/students.dictionary.ts`: ô "Email học sinh" bắt buộc (B-01, B-04).
+- `components/students/edit-student-dialog.tsx`: không hiển thị email giả `@no-email.local` (B-01).
+- `components/fees/tuitions-board.tsx`: thống kê quá hạn theo hạn đóng, đếm theo học sinh (B-10).
+
+Thay đổi BE:
+- `../gateway/src/packages/entities/student/student.schema.ts`: `email` bắt buộc khi tạo học sinh (B-04).
+- `../tutor/src/features/exercise/exercise.repository.ts`: ADMIN được liệt kê mọi bài tập (B-03).
+
+Kiểm tra:
+- `tsc --noEmit` (FE): không còn lỗi, chỉ còn lỗi có sẵn ở `test/lib/axios/client.test.ts`.
+- ESLint các file đã sửa: 0 lỗi.
+- Trình duyệt (admin): danh sách bài nộp hiện bài của học sinh với nút "Xem bài"; trang xem bài chỉ đọc; form thêm học sinh có ô email bắt buộc.
+
+Chưa kiểm tra trên trình duyệt (cần thao tác riêng): popup lệch lịch khi tạo buổi, nút thêm bài tập bị khoá khi buổi chưa kết thúc (cần tutor đăng nhập), gateway/BE chạy lại sau khi sửa schema email.
+
+Ghi chú:
+- Nhập tài liệu bài giảng vào phần bài tập ("Nhập cả bài") vẫn có thể thực hiện khi buổi chưa kết thúc; chưa đổi.
+- Điểm số của bài "Đã nộp — chờ chấm" sau khi nộp lại vẫn hiện điểm cũ (9) trong danh sách admin; cần xem lại khi nộp lại (chưa xử lý).
+
+## 12. Đợt sửa B-12 → B-19 (chưa commit)
+
+- **B-12**: thêm trang `/parents` (admin) với danh sách phụ huynh, tìm kiếm và đặt mật khẩu. Chỉ admin truy cập được (`lib/rbac/route-access.ts`, mục menu admin). BE: `user/src/features/admin/*` (thêm role PARENT), gateway `admin.controller.ts`. Lưu ý: payload đặt mật khẩu chỉ gửi `{ password }`, `id` nằm trong URL (BE schema strict).
+- **B-13**: bỏ link "Xem học phí" ở `components/practice/parent-portal-view.tsx`.
+- **B-14**: kiểm tra lại, không phải lỗi.
+- **B-15**: `/curriculum` chỉ cho TUTOR; bỏ "Chương trình của con" khỏi menu phụ huynh.
+- **B-16**: `components/…/notifications` → `useNotificationCounts()` đếm từ server; danh sách làm mới 30s.
+- **B-17**: hạn nộp trong thông báo lấy `endAt` làm dự phòng.
+- **B-19**: bắt buộc chọn môn khi tạo gia sư (FE + gateway).
+
+Chưa kiểm tra trên trình duyệt: B-05 (popup lệch lịch), B-03 phía tutor (nút khoá trước khi kết thúc), B-16 (badge sau khi làm mới), B-17 (nội dung thông báo mới). B-18 chưa xử lý (không nằm trong yêu cầu lần này). B-06 vẫn mở.
+

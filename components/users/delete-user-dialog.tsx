@@ -2,6 +2,7 @@
 
 import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
 import type { ManagedUser } from "./edit-user-dialog";
+import { currentPersonName } from "@/lib/format/person-name";
 
 type Props = {
   user: ManagedUser | null;
@@ -24,7 +25,7 @@ export function DeleteUserDialog({ user, onClose, onConfirm }: Props) {
         <>
           Bạn có chắc muốn xóa tài khoản{" "}
           <span className="font-semibold text-foreground">
-            {user ? `${user.firstName} ${user.lastName}` : ""}
+            {user ? currentPersonName(user.firstName, user.lastName) : ""}
           </span>
           ? Người dùng sẽ mất quyền truy cập hệ thống ngay lập tức. Hành động
           này không thể hoàn tác.

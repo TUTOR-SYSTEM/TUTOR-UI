@@ -47,12 +47,12 @@ const ASSIGNMENT_COLUMNS: DataTableColumn<AssignmentRowData>[] = [
     header: "Bài tập",
     render: (a) => (
       <div className="flex min-w-0 items-center gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F1F0FE] text-[#6366F1]">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F1F0FE] dark:bg-[#6366F1]/15 text-[#6366F1] dark:text-[#A5B4FC]">
           <ClipboardCheck className="size-4" />
         </span>
         <div className="min-w-0">
-          <p className="truncate font-semibold text-[#16302b]">{a.title}</p>
-          <p className="truncate text-xs text-[#5c726d]">{a.description}</p>
+          <p className="truncate font-semibold text-[#16302b] dark:text-foreground">{a.title}</p>
+          <p className="truncate text-xs text-[#5c726d] dark:text-muted-foreground">{a.description}</p>
         </div>
       </div>
     ),
@@ -61,7 +61,7 @@ const ASSIGNMENT_COLUMNS: DataTableColumn<AssignmentRowData>[] = [
     key: "session",
     header: "Buổi học",
     render: (a) => (
-      <span className="text-xs font-medium text-[#16302b]">{a.dueLabel}</span>
+      <span className="text-xs font-medium text-[#16302b] dark:text-foreground">{a.dueLabel}</span>
     ),
   },
   {
@@ -89,13 +89,13 @@ const ASSIGNMENT_COLUMNS: DataTableColumn<AssignmentRowData>[] = [
     align: "center",
     render: (a) =>
       a.status === "GRADED" && a.score !== null ? (
-        <span className="inline-flex items-center gap-1 font-bold text-[#4f46e5]">
+        <span className="inline-flex items-center gap-1 font-bold text-[#4f46e5] dark:text-[#A5B4FC]">
           <Star className="size-3.5 fill-current" />
           {a.score.toFixed(1)}
-          <span className="text-xs font-normal text-[#9AAEA9]">/10</span>
+          <span className="text-xs font-normal text-[#9AAEA9] dark:text-muted-foreground">/10</span>
         </span>
       ) : (
-        <span className="text-[#9AAEA9]">—</span>
+        <span className="text-[#9AAEA9] dark:text-muted-foreground">—</span>
       ),
   },
   {
@@ -107,7 +107,7 @@ const ASSIGNMENT_COLUMNS: DataTableColumn<AssignmentRowData>[] = [
         asChild
         variant="ghost"
         size="sm"
-        className="text-[#0E9F8E]"
+        className="text-[#0E9F8E] dark:text-[#2DD4BF]"
         aria-label="Xem bài tập đã giao"
         title="Xem bài tập đã giao"
       >
@@ -213,8 +213,8 @@ export const StudentAssignmentsView = () => {
   return (
     <div className="flex w-full flex-col gap-4 pb-8">
       <div>
-        <h1 className="text-2xl font-bold text-[#16302b]">Bài tập được giao</h1>
-        <p className="mt-1 text-sm text-[#9AAEA9]">
+        <h1 className="text-2xl font-bold text-[#16302b] dark:text-foreground">Bài tập được giao</h1>
+        <p className="mt-1 text-sm text-[#9AAEA9] dark:text-muted-foreground">
           Xem đề bài sau mỗi buổi học, nộp bài đúng hạn và nhận điểm cùng nhận
           xét của gia sư.
         </p>
@@ -230,10 +230,10 @@ export const StudentAssignmentsView = () => {
           ].map((s) => (
             <div
               key={s.label}
-              className="rounded-lg border border-[#E7EEEC] bg-[#F9FDFB] px-3 py-2.5"
+              className="rounded-lg border border-[#E7EEEC] dark:border-border bg-[#F9FDFB] dark:bg-primary-soft px-3 py-2.5"
             >
-              <p className="text-xs text-[#9AAEA9]">{s.label}</p>
-              <p className="mt-0.5 text-lg font-bold text-[#16302b]">
+              <p className="text-xs text-[#9AAEA9] dark:text-muted-foreground">{s.label}</p>
+              <p className="mt-0.5 text-lg font-bold text-[#16302b] dark:text-foreground">
                 {s.value}
               </p>
             </div>
@@ -243,24 +243,24 @@ export const StudentAssignmentsView = () => {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="size-6 animate-spin text-[#9AAEA9]" />
+          <Loader2 className="size-6 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
         </div>
       ) : sessionsError ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <XCircle className="size-8 text-red-400" />
-          <p className="mt-2 text-sm text-[#9AAEA9]">
+          <p className="mt-2 text-sm text-[#9AAEA9] dark:text-muted-foreground">
             {getErrorMessage(sessionsError, "Không thể tải danh sách bài tập")}
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
           <DataTable
             data={assignments}
             columns={ASSIGNMENT_COLUMNS}
             rowKey={(a) => a.key}
             emptyMessage="Chưa có bài tập nào được giao."
-            headerRowClassName="border-b border-[#E7EEEC] bg-[#F3F7F5]"
-            rowClassName="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9]"
+            headerRowClassName="border-b border-[#E7EEEC] dark:border-border bg-[#F3F7F5] dark:bg-muted"
+            rowClassName="border-b border-[#EEF3F1] dark:border-border-light last:border-0 hover:bg-[#F1FBF9] dark:hover:bg-primary-soft"
             pageSize={10}
           />
         </div>

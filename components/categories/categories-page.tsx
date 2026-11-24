@@ -106,7 +106,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Use the{" "}
-        <span className="font-semibold text-[#16302b]">
+        <span className="font-semibold text-[#16302b] dark:text-foreground">
           All / Income / Expense
         </span>{" "}
         tabs above the grid to narrow the list.
@@ -119,7 +119,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Click{" "}
-        <span className="font-semibold text-[#0E9F8E]">+ New category</span> to
+        <span className="font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">+ New category</span> to
         create one with a custom icon and color.
       </>
     ),
@@ -130,7 +130,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Hover a category card and use the{" "}
-        <span className="font-semibold text-[#16302b]">✏️ / 🗑️</span> icons that
+        <span className="font-semibold text-[#16302b] dark:text-foreground">✏️ / 🗑️</span> icons that
         appear to edit or remove it.
       </>
     ),
@@ -141,7 +141,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Categories can be nested under a{" "}
-        <span className="font-semibold text-[#16302b]">parent category</span>,
+        <span className="font-semibold text-[#16302b] dark:text-foreground">parent category</span>,
         shown under the category name.
       </>
     ),
@@ -150,7 +150,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
 
 const USAGE_GUIDE_WARNING = (
   <>
-    <span className="font-semibold text-[#E85D24]">Note:</span> Deleting a
+    <span className="font-semibold text-[#E85D24] dark:text-[#FF9A6C]">Note:</span> Deleting a
     category is permanent — transactions using it will need to be reassigned.
   </>
 );

@@ -34,15 +34,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 const PAGE_SIZE = 8;
 
 function rateBadgeClass(rate: number): string {
-  if (rate >= 90) return "bg-[#E4F6EF] text-[#0B7A6D]";
-  if (rate >= 70) return "bg-[#FEF3C7] text-[#B45309]";
-  return "bg-[#FEE2E2] text-[#DC2626]";
+  if (rate >= 90) return "bg-[#E4F6EF] dark:bg-primary-light text-[#0B7A6D] dark:text-[#5EEAD4]";
+  if (rate >= 70) return "bg-[#FEF3C7] dark:bg-[#F59E0B]/15 text-[#B45309] dark:text-[#FCD34D]";
+  return "bg-[#FEE2E2] dark:bg-[#ef4444]/15 text-[#DC2626] dark:text-red-400";
 }
 
 function ProgressBar({ value }: { value: number }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[#EEF3F1]">
+      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[#EEF3F1] dark:bg-muted">
         <div
           className="h-full rounded-full"
           style={{
@@ -51,7 +51,7 @@ function ProgressBar({ value }: { value: number }) {
           }}
         />
       </div>
-      <span className="text-xs font-medium text-[#16302b]">{value}%</span>
+      <span className="text-xs font-medium text-[#16302b] dark:text-foreground">{value}%</span>
     </div>
   );
 }
@@ -111,14 +111,14 @@ export function ReportsPage() {
 
   if (!isAdmin) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[#E7EEEC] bg-white py-24 text-center shadow-sm">
-        <span className="flex size-12 items-center justify-center rounded-full bg-[#FFF0E6]">
-          <ShieldOff className="size-6 text-[#E85D24]" />
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card py-24 text-center shadow-sm">
+        <span className="flex size-12 items-center justify-center rounded-full bg-[#FFF0E6] dark:bg-[#E85D24]/15">
+          <ShieldOff className="size-6 text-[#E85D24] dark:text-[#FF9A6C]" />
         </span>
-        <h2 className="text-lg font-bold text-[#16302b]">
+        <h2 className="text-lg font-bold text-[#16302b] dark:text-foreground">
           Không có quyền truy cập
         </h2>
-        <p className="max-w-sm text-sm text-[#8AA09B]">
+        <p className="max-w-sm text-sm text-[#8AA09B] dark:text-muted-foreground">
           Chỉ quản trị viên mới có thể xem báo cáo học tập.
         </p>
       </div>
@@ -152,8 +152,8 @@ export function ReportsPage() {
     <div className="flex flex-col gap-5">
       {/* ── Header ── */}
       <div>
-        <h1 className="text-2xl font-bold text-[#16302b]">Báo cáo học tập</h1>
-        <p className="mt-1 text-sm text-[#8AA09B]">
+        <h1 className="text-2xl font-bold text-[#16302b] dark:text-foreground">Báo cáo học tập</h1>
+        <p className="mt-1 text-sm text-[#8AA09B] dark:text-muted-foreground">
           Tổng quan tiến độ, điểm danh và kết quả học tập theo từng lớp.
         </p>
       </div>
@@ -170,19 +170,19 @@ export function ReportsPage() {
           ? Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="h-26 animate-pulse rounded-xl border border-[#E7EEEC] bg-[#F3F7F5]"
+                className="h-26 animate-pulse rounded-xl border border-[#E7EEEC] dark:border-border bg-[#F3F7F5] dark:bg-muted"
               />
             ))
           : statTiles.map((s) => (
               <div
                 key={s.label}
-                className="rounded-xl border border-[#E7EEEC] bg-white p-5 shadow-sm"
+                className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-5 shadow-sm"
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm text-[#8AA09B]">{s.label}</span>
-                  <s.icon className="size-4 text-[#9AAEA9]" />
+                  <span className="text-sm text-[#8AA09B] dark:text-muted-foreground">{s.label}</span>
+                  <s.icon className="size-4 text-[#9AAEA9] dark:text-muted-foreground" />
                 </div>
-                <p className="text-2xl font-bold tracking-tight text-[#16302b]">
+                <p className="text-2xl font-bold tracking-tight text-[#16302b] dark:text-foreground">
                   {s.value}
                 </p>
               </div>
@@ -190,17 +190,17 @@ export function ReportsPage() {
       </div>
 
       {/* ── Attendance trend chart ── */}
-      <div className="rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#EEF3F1] px-5 py-4">
+      <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#EEF3F1] dark:border-border-light px-5 py-4">
           <div>
-            <h3 className="font-semibold text-[#16302b]">
+            <h3 className="font-semibold text-[#16302b] dark:text-foreground">
               Tỉ lệ điểm danh theo tháng
             </h3>
-            <p className="mt-0.5 text-xs text-[#8AA09B]">
+            <p className="mt-0.5 text-xs text-[#8AA09B] dark:text-muted-foreground">
               6 tháng gần nhất, tính trên toàn bộ lớp đang hoạt động.
             </p>
           </div>
-          <span className="flex items-center gap-1.5 text-xs text-[#8AA09B]">
+          <span className="flex items-center gap-1.5 text-xs text-[#8AA09B] dark:text-muted-foreground">
             <span
               className="inline-block size-2.5 rounded-sm"
               style={{ background: "#0E9F8E" }}
@@ -210,9 +210,9 @@ export function ReportsPage() {
         </div>
         <div className="px-5 py-5">
           {isTrendLoading ? (
-            <div className="h-40 animate-pulse rounded-lg bg-[#F3F7F5]" />
+            <div className="h-40 animate-pulse rounded-lg bg-[#F3F7F5] dark:bg-muted" />
           ) : !trend || trend.length === 0 ? (
-            <div className="flex h-40 items-center justify-center text-sm text-[#9AAEA9]">
+            <div className="flex h-40 items-center justify-center text-sm text-[#9AAEA9] dark:text-muted-foreground">
               Chưa có dữ liệu điểm danh.
             </div>
           ) : (
@@ -263,11 +263,11 @@ export function ReportsPage() {
       </div>
 
       {/* ── Per-class table ── */}
-      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EEF3F1] px-5 py-4">
-          <h3 className="font-semibold text-[#16302b]">Theo lớp</h3>
+      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EEF3F1] dark:border-border-light px-5 py-4">
+          <h3 className="font-semibold text-[#16302b] dark:text-foreground">Theo lớp</h3>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#9AAEA9]" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#9AAEA9] dark:text-muted-foreground" />
             <input
               type="search"
               value={search}
@@ -276,7 +276,7 @@ export function ReportsPage() {
                 setPage(1);
               }}
               placeholder="Tìm theo tên lớp..."
-              className="h-10 w-56 rounded-lg border border-[#E7EEEC] bg-white pl-9 pr-3 text-sm text-[#16302b] placeholder:text-[#9AAEA9] focus:outline-none focus:ring-2 focus:ring-[#0E9F8E]/30 focus:border-[#0E9F8E] transition-colors"
+              className="h-10 w-56 rounded-lg border border-[#E7EEEC] dark:border-border bg-white dark:bg-card pl-9 pr-3 text-sm text-[#16302b] dark:text-foreground placeholder:text-[#9AAEA9] focus:outline-none focus:ring-2 focus:ring-[#0E9F8E]/30 focus:border-[#0E9F8E] transition-colors"
             />
           </div>
         </div>
@@ -306,15 +306,15 @@ export function ReportsPage() {
               {classRows.map((row: ClassReportRow) => (
                 <TableRow
                   key={row.classId}
-                  className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9] transition-colors"
+                  className="border-b border-[#EEF3F1] dark:border-border-light last:border-0 hover:bg-[#F1FBF9] dark:hover:bg-primary-soft transition-colors"
                 >
-                  <TableCell className="px-4 py-3.5 font-semibold text-[#16302b]">
+                  <TableCell className="px-4 py-3.5 font-semibold text-[#16302b] dark:text-foreground">
                     {row.className}
                   </TableCell>
-                  <TableCell className="px-4 py-3.5 text-[#16302b]">
+                  <TableCell className="px-4 py-3.5 text-[#16302b] dark:text-foreground">
                     {row.tutorName}
                   </TableCell>
-                  <TableCell className="px-4 py-3.5 text-[#16302b]">
+                  <TableCell className="px-4 py-3.5 text-[#16302b] dark:text-foreground">
                     {row.studentCount}
                   </TableCell>
                   <TableCell className="px-4 py-3.5">
@@ -327,17 +327,17 @@ export function ReportsPage() {
                   <TableCell className="px-4 py-3.5">
                     <ProgressBar value={row.curriculumProgress} />
                   </TableCell>
-                  <TableCell className="px-4 py-3.5 text-[#16302b]">
+                  <TableCell className="px-4 py-3.5 text-[#16302b] dark:text-foreground">
                     {row.assignmentsSubmitted}/{row.assignmentsTotal}
                   </TableCell>
                   <TableCell className="px-4 py-3.5">
                     {row.averageScore !== null ? (
-                      <span className="inline-flex items-center gap-1 font-semibold text-[#16302b]">
+                      <span className="inline-flex items-center gap-1 font-semibold text-[#16302b] dark:text-foreground">
                         <Award className="size-3.5 text-[#FF7A45]" />
                         {row.averageScore.toFixed(1)}
                       </span>
                     ) : (
-                      <span className="text-[#9AAEA9]">—</span>
+                      <span className="text-[#9AAEA9] dark:text-muted-foreground">—</span>
                     )}
                   </TableCell>
                 </TableRow>
@@ -345,14 +345,14 @@ export function ReportsPage() {
 
               {!isClassesPending && classRows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-14 text-center text-[#9AAEA9]">
+                  <TableCell colSpan={7} className="py-14 text-center text-[#9AAEA9] dark:text-muted-foreground">
                     Không tìm thấy lớp phù hợp.
                   </TableCell>
                 </TableRow>
               )}
               {isClassesPending && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-14 text-center text-[#9AAEA9]">
+                  <TableCell colSpan={7} className="py-14 text-center text-[#9AAEA9] dark:text-muted-foreground">
                     Đang tải…
                   </TableCell>
                 </TableRow>
@@ -372,12 +372,12 @@ export function ReportsPage() {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-end gap-1 border-t border-[#EEF3F1] px-4 py-3">
+        <div className="flex items-center justify-end gap-1 border-t border-[#EEF3F1] dark:border-border-light px-4 py-3">
           <button
             type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="rounded-lg px-3 py-1.5 text-sm text-[#16302b] hover:bg-[#F3F7F5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="rounded-lg px-3 py-1.5 text-sm text-[#16302b] dark:text-foreground hover:bg-[#F3F7F5] dark:hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Trước
           </button>
@@ -400,7 +400,7 @@ export function ReportsPage() {
             type="button"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="rounded-lg px-3 py-1.5 text-sm text-[#16302b] hover:bg-[#F3F7F5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="rounded-lg px-3 py-1.5 text-sm text-[#16302b] dark:text-foreground hover:bg-[#F3F7F5] dark:hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Sau
           </button>

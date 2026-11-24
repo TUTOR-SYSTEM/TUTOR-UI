@@ -473,9 +473,9 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                     <Input
                       value={classCode}
                       readOnly
-                      className="cursor-default bg-[#F3F7F5] text-[#9AAEA9]"
+                      className="cursor-default bg-[#F3F7F5] dark:bg-muted text-[#9AAEA9] dark:text-muted-foreground"
                     />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded bg-[#E7EEEC] px-1.5 py-0.5 text-[10px] font-medium text-[#9AAEA9]">
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded bg-[#E7EEEC] dark:bg-muted px-1.5 py-0.5 text-[10px] font-medium text-[#9AAEA9] dark:text-muted-foreground">
                       {copy.create.step1.classCodeAuto}
                     </span>
                   </div>
@@ -545,8 +545,8 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                       className={cn(
                         "flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all",
                         teachingType === opt.value
-                          ? "border-[#0E9F8E] bg-[#E4F6EF]"
-                          : "border-[#E7EEEC] bg-white hover:border-[#0E9F8E]/40",
+                          ? "border-[#0E9F8E] bg-[#E4F6EF] dark:bg-primary-light"
+                          : "border-[#E7EEEC] dark:border-border bg-white dark:bg-card hover:border-[#0E9F8E]/40",
                       )}
                     >
                       <span
@@ -557,7 +557,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                       >
                         {opt.title}
                       </span>
-                      <span className="mt-0.5 text-xs text-[#9AAEA9]">
+                      <span className="mt-0.5 text-xs text-[#9AAEA9] dark:text-muted-foreground">
                         {opt.desc}
                       </span>
                     </button>
@@ -573,7 +573,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
                   placeholder={copy.common.descriptionPlaceholder}
-                  className="w-full resize-none rounded-lg border border-[#E7EEEC] bg-white px-3 py-2.5 text-sm text-[#16302b] outline-none placeholder:text-[#9AAEA9] focus:border-[#0E9F8E] focus:ring-2 focus:ring-[#0E9F8E]/30 transition-colors"
+                  className="w-full resize-none rounded-lg border border-[#E7EEEC] dark:border-border bg-white dark:bg-card px-3 py-2.5 text-sm text-[#16302b] dark:text-foreground outline-none placeholder:text-[#9AAEA9] focus:border-[#0E9F8E] focus:ring-2 focus:ring-[#0E9F8E]/30 transition-colors"
                 />
               </div>
             </div>
@@ -588,7 +588,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                   {copy.create.step2.formatLabel}{" "}
                   <span className="text-red-400">*</span>
                 </Label>
-                <p className="text-xs text-[#9AAEA9]">
+                <p className="text-xs text-[#9AAEA9] dark:text-muted-foreground">
                   {copy.create.step2.formatHint}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
@@ -622,8 +622,8 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                         className={cn(
                           "rounded-xl border-2 p-4 transition-all",
                           selected
-                            ? "border-[#0E9F8E] bg-[#E4F6EF]"
-                            : "border-[#E7EEEC] bg-white hover:border-[#0E9F8E]/40",
+                            ? "border-[#0E9F8E] bg-[#E4F6EF] dark:bg-primary-light"
+                            : "border-[#E7EEEC] dark:border-border bg-white dark:bg-card hover:border-[#0E9F8E]/40",
                         )}
                       >
                         <button
@@ -646,14 +646,14 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                             >
                               {opt.title}
                             </span>
-                            <span className="mt-0.5 block text-xs text-[#9AAEA9]">
+                            <span className="mt-0.5 block text-xs text-[#9AAEA9] dark:text-muted-foreground">
                               {opt.desc}
                             </span>
                           </div>
                         </button>
 
                         <div className="mt-3 space-y-1">
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9AAEA9] dark:text-muted-foreground">
                             {isOnline
                               ? copy.common.onlineLocationLabel
                               : copy.common.offlineLocationLabel}
@@ -679,12 +679,12 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
               {/* Curriculum import */}
               <div className="space-y-2">
                 <Label>{copy.common.curriculumLabel}</Label>
-                <p className="text-xs text-[#9AAEA9]">
+                <p className="text-xs text-[#9AAEA9] dark:text-muted-foreground">
                   {copy.common.curriculumHint}
                 </p>
 
                 {selectedFramework ? (
-                  <div className="flex items-center gap-3 rounded-xl border border-[#0E9F8E] bg-[#E4F6EF] px-4 py-3">
+                  <div className="flex items-center gap-3 rounded-xl border border-[#0E9F8E] bg-[#E4F6EF] dark:bg-primary-light px-4 py-3">
                     <span
                       className="flex size-9 shrink-0 items-center justify-center rounded-full text-white"
                       style={{ background: BRAND }}
@@ -692,7 +692,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                       <BookOpen className="size-4" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-[#16302b]">
+                      <span className="block truncate text-sm font-medium text-[#16302b] dark:text-foreground">
                         {selectedFramework.subject}
                         {selectedFramework.grade
                           ? copy.common.curriculumGradeSuffix(
@@ -700,7 +700,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                             )
                           : ""}
                       </span>
-                      <span className="block truncate text-xs text-[#9AAEA9]">
+                      <span className="block truncate text-xs text-[#9AAEA9] dark:text-muted-foreground">
                         {copy.common.curriculumCodeLine(
                           selectedFramework.code,
                           selectedFramework.courseTime,
@@ -714,7 +714,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                         setCurriculumSearch("");
                       }}
                       aria-label={copy.common.curriculumDeselectAriaLabel}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-[#9AAEA9] transition-colors hover:bg-white hover:text-red-500"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-[#9AAEA9] dark:text-muted-foreground transition-colors hover:bg-white dark:hover:bg-card hover:text-red-500"
                     >
                       <X className="size-4" />
                     </button>
@@ -722,7 +722,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                 ) : (
                   <>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9AAEA9]" />
+                      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9AAEA9] dark:text-muted-foreground" />
                       <Input
                         value={curriculumSearch}
                         onChange={(e) => setCurriculumSearch(e.target.value)}
@@ -732,23 +732,23 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                     </div>
 
                     {curriculumSearch.trim() && (
-                      <div className="scrollbar-thin max-h-70 overflow-y-auto rounded-xl border border-[#E7EEEC]">
+                      <div className="scrollbar-thin max-h-70 overflow-y-auto rounded-xl border border-[#E7EEEC] dark:border-border">
                         {frameworksLoading ? (
                           <div className="flex items-center justify-center py-10">
-                            <Loader2 className="size-5 animate-spin text-[#9AAEA9]" />
+                            <Loader2 className="size-5 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
                           </div>
                         ) : filteredFrameworks.length === 0 ? (
-                          <div className="py-8 text-center text-sm text-[#9AAEA9]">
+                          <div className="py-8 text-center text-sm text-[#9AAEA9] dark:text-muted-foreground">
                             {copy.common.curriculumNoResults}
                           </div>
                         ) : (
-                          <div className="divide-y divide-[#E7EEEC]">
+                          <div className="divide-y divide-[#E7EEEC] dark:divide-border">
                             {filteredFrameworks.map((fw) => (
                               <button
                                 key={fw.id}
                                 type="button"
                                 onClick={() => setCurriculumId(fw.id)}
-                                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#F3F7F5]"
+                                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#F3F7F5] dark:hover:bg-muted"
                               >
                                 <span
                                   className="flex size-9 shrink-0 items-center justify-center rounded-full text-white"
@@ -757,7 +757,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                                   <BookOpen className="size-4" />
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                  <span className="block truncate text-sm font-medium text-[#16302b]">
+                                  <span className="block truncate text-sm font-medium text-[#16302b] dark:text-foreground">
                                     {fw.subject}
                                     {fw.grade
                                       ? copy.common.curriculumGradeSuffix(
@@ -765,7 +765,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                                         )
                                       : ""}
                                   </span>
-                                  <span className="block truncate text-xs text-[#9AAEA9]">
+                                  <span className="block truncate text-xs text-[#9AAEA9] dark:text-muted-foreground">
                                     {copy.common.curriculumCodeLine(
                                       fw.code,
                                       fw.courseTime,
@@ -793,10 +793,10 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[#9AAEA9] dark:text-muted-foreground">
                         {copy.create.step3.scheduleSectionLabel}
                       </p>
-                      <p className="text-xs text-[#9AAEA9]">
+                      <p className="text-xs text-[#9AAEA9] dark:text-muted-foreground">
                         {copy.create.step3.scheduleCountSuffix(
                           selectedDays.length,
                         )}
@@ -809,17 +809,17 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                     {schedules.map((slot, idx) => (
                       <div
                         key={idx}
-                        className="rounded-xl border border-[#E7EEEC] bg-[#F3F7F5]/50 p-4"
+                        className="rounded-xl border border-[#E7EEEC] dark:border-border bg-[#F3F7F5]/50 dark:bg-muted/50 p-4"
                       >
                         <div className="mb-3 flex items-center justify-between">
-                          <span className="text-xs font-medium text-[#9AAEA9]">
+                          <span className="text-xs font-medium text-[#9AAEA9] dark:text-muted-foreground">
                             {copy.create.step3.scheduleSlotLabel(idx + 1)}
                           </span>
                           {schedules.length > 1 && (
                             <button
                               type="button"
                               onClick={() => removeSchedule(idx)}
-                              className="flex size-6 items-center justify-center rounded text-[#9AAEA9] hover:bg-red-50 hover:text-red-500 transition-colors"
+                              className="flex size-6 items-center justify-center rounded text-[#9AAEA9] dark:text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-colors"
                             >
                               <DeleteIcon />
                             </button>
@@ -851,7 +851,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                         {/* Time + Duration */}
                         <div className="flex gap-3">
                           <div className="flex-1 space-y-1">
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9AAEA9] dark:text-muted-foreground">
                               {copy.create.step3.startTimeLabel}
                             </p>
                             <TimePicker
@@ -863,7 +863,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                             />
                           </div>
                           <div className="flex-1 space-y-1">
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9AAEA9] dark:text-muted-foreground">
                               {copy.create.step3.durationLabel}
                             </p>
                             <Select
@@ -883,7 +883,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                   <button
                     type="button"
                     onClick={addSchedule}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[#E7EEEC] bg-white py-3 text-sm font-medium text-[#9AAEA9] hover:border-[#0E9F8E]/50 hover:text-[#0E9F8E] hover:bg-[#E4F6EF] transition-colors"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[#E7EEEC] dark:border-border bg-white dark:bg-card py-3 text-sm font-medium text-[#9AAEA9] dark:text-muted-foreground hover:border-[#0E9F8E]/50 hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF] hover:bg-[#E4F6EF] dark:hover:bg-primary-light transition-colors"
                   >
                     <Plus className="size-4" />
                     {copy.create.step3.addSlotButton}
@@ -892,7 +892,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
 
                 {/* Course duration */}
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#9AAEA9] dark:text-muted-foreground">
                     {copy.create.step3.courseDurationSectionLabel}
                   </p>
                   <div className="grid grid-cols-2 gap-3">
@@ -936,7 +936,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                       >
                         ∑
                       </span>
-                      <span className="text-sm text-[#16302b]">
+                      <span className="text-sm text-[#16302b] dark:text-foreground">
                         {copy.create.step3.totalSessionsPrefix}:{" "}
                         <strong style={{ color: BRAND }}>
                           {totalSessions} {copy.common.sessionsUnit}
@@ -948,7 +948,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
 
                 {/* Tuition */}
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#9AAEA9] dark:text-muted-foreground">
                     {copy.create.step3.tuitionSectionLabel}
                   </p>
                   <div className="grid grid-cols-2 gap-3">
@@ -971,7 +971,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                           className="pr-8"
                           invalid={!!errors.fee}
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#9AAEA9]">
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#9AAEA9] dark:text-muted-foreground">
                           {copy.common.feeCurrencySuffix}
                         </span>
                       </div>
@@ -1016,12 +1016,12 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                       borderColor: "#B2E8DF",
                     }}
                   >
-                    <p className="mb-1 font-semibold text-[#16302b]">
+                    <p className="mb-1 font-semibold text-[#16302b] dark:text-foreground">
                       {className ||
                         copy.create.step3.summaryClassNamePlaceholder}
                     </p>
                     {(subject || teachingType) && (
-                      <p className="mb-4 text-xs text-[#16302b]">
+                      <p className="mb-4 text-xs text-[#16302b] dark:text-foreground">
                         {[
                           subject,
                           teachingType === "1-1"
@@ -1035,13 +1035,13 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
 
                     {selectedDays.length > 0 && (
                       <div className="mb-3 space-y-1">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9AAEA9]">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9AAEA9] dark:text-muted-foreground">
                           {copy.create.step3.summaryScheduleLabel}
                         </p>
                         {schedules
                           .filter((s) => s.days.length)
                           .map((s, i) => (
-                            <p key={i} className="text-xs text-[#16302b]">
+                            <p key={i} className="text-xs text-[#16302b] dark:text-foreground">
                               {s.days
                                 .map((d) => copy.common.weekdayNames[d] ?? d)
                                 .join(", ")}{" "}
@@ -1051,7 +1051,7 @@ export const CreateClassModal = ({ open, onClose }: CreateClassModalProps) => {
                       </div>
                     )}
 
-                    <div className="space-y-1 text-xs text-[#16302b]">
+                    <div className="space-y-1 text-xs text-[#16302b] dark:text-foreground">
                       {totalSessions > 0 && (
                         <p>
                           {copy.create.step3.summarySessionsPrefix}:{" "}

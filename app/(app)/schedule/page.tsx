@@ -579,7 +579,7 @@ export default function SchedulePage() {
 
   const usageGuideWarning = (
     <>
-      <span className="font-semibold text-[#E85D24]">{copy.guide.noteLabel}</span>{" "}
+      <span className="font-semibold text-[#E85D24] dark:text-[#FF9A6C]">{copy.guide.noteLabel}</span>{" "}
       {copy.guide.noteBody}
     </>
   );

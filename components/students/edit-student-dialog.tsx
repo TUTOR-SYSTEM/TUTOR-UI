@@ -117,7 +117,8 @@ function getDefaultValues(student: Student): FormValues {
     parentFirstName: student.parentFirstName,
     parentRelationship: student.parentRelationship ?? "",
     parentPhone: student.parentPhone ?? "",
-    parentEmail: student.parentEmail ?? "",
+    /* Email giả do BE sinh (`@no-email.local`) không hiển thị — để trống cho người dùng nhập email thật. */
+    parentEmail: student.parentEmail?.endsWith("@no-email.local") ? "" : (student.parentEmail ?? ""),
   };
 }
 

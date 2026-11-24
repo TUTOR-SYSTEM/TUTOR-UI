@@ -3,6 +3,7 @@
 import { HoverCard } from "@/components/ui/hover-card.ui";
 import { Button } from "@/components/ui/button.ui";
 import { useClassesCopy } from "@/hooks/useClassesCopy.hook";
+import { currentPersonName } from "@/lib/format/person-name";
 
 type MiniClassStudent = {
   id: string;
@@ -26,7 +27,7 @@ const MAX_STUDENT_BADGES = 3;
 
 function studentLabel(s: MiniClassStudent, fallback: string) {
   return (
-    `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim() ||
+    currentPersonName(s.firstName, s.lastName) ||
     s.code ||
     s.userCode ||
     s.username ||
@@ -69,7 +70,7 @@ export function ClassStudentBadges({
 
   if (students.length === 0) {
     return (
-      <span className="text-xs text-[#9AAEA9]">{list.table.noStudents}</span>
+      <span className="text-xs text-[#9AAEA9] dark:text-muted-foreground">{list.table.noStudents}</span>
     );
   }
 
@@ -90,7 +91,7 @@ export function ClassStudentBadges({
               type="button"
               variant="ghost"
               size="xs"
-              className="h-auto! shrink-0 px-1.5! py-0.5! text-xs font-medium text-[#0E9F8E]"
+              className="h-auto! shrink-0 px-1.5! py-0.5! text-xs font-medium text-[#0E9F8E] dark:text-[#2DD4BF]"
             >
               {list.table.studentOverflow(overflow)}
             </Button>

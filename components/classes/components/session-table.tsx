@@ -156,7 +156,7 @@ export const SessionTable = ({
               {session.title || detail.sessions.defaultLessonTitle}
             </p>
             <p className="mt-0.5 text-xs italic text-muted-foreground">
-              {chapter ?? "_ _ _ _"}
+              {chapter ?? "—"}
             </p>
           </>
         );

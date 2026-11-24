@@ -48,9 +48,9 @@ function fmtAddress(
 /* ─── Info row ─── */
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-3 border-b border-[#EEF3F1] last:border-0">
-      <span className="text-sm text-[#9AAEA9] shrink-0 w-36">{label}</span>
-      <span className="text-sm font-semibold text-[#16302b] text-right">
+    <div className="flex items-start justify-between gap-4 py-3 border-b border-[#EEF3F1] dark:border-border-light last:border-0">
+      <span className="text-sm text-[#9AAEA9] dark:text-muted-foreground shrink-0 w-36">{label}</span>
+      <span className="text-sm font-semibold text-[#16302b] dark:text-foreground text-right">
         {value || "—"}
       </span>
     </div>
@@ -140,7 +140,7 @@ export default function StudentDetailPage() {
   if (studentLoading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <Loader2 className="size-8 animate-spin text-[#9AAEA9]" />
+        <Loader2 className="size-8 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
       </div>
     );
   }
@@ -149,12 +149,12 @@ export default function StudentDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center">
         <XCircle className="size-10 text-red-500" />
-        <p className="mt-3 text-sm font-medium text-[#9AAEA9]">
+        <p className="mt-3 text-sm font-medium text-[#9AAEA9] dark:text-muted-foreground">
           {getErrorMessage(studentError) || copy.detail.loadError}
         </p>
         <Link
           href="/students"
-          className="mt-4 text-sm font-medium text-[#0E9F8E] hover:underline"
+          className="mt-4 text-sm font-medium text-[#0E9F8E] dark:text-[#2DD4BF] hover:underline"
         >
           {copy.detail.backToList}
         </Link>
@@ -169,19 +169,19 @@ export default function StudentDetailPage() {
         <nav className="flex items-center gap-1.5 text-sm">
           <Link
             href="/students"
-            className="text-[#9AAEA9] hover:text-[#0E9F8E] transition-colors"
+            className="text-[#9AAEA9] dark:text-muted-foreground hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF] transition-colors"
           >
             {copy.detail.breadcrumbStudents}
           </Link>
-          <ChevronRight className="size-3.5 text-[#9AAEA9]" />
-          <span className="font-semibold text-[#16302b]">{student.name}</span>
+          <ChevronRight className="size-3.5 text-[#9AAEA9] dark:text-muted-foreground" />
+          <span className="font-semibold text-[#16302b] dark:text-foreground">{student.name}</span>
         </nav>
         <div className="flex items-center gap-2.5">
           {isAdmin && (
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="flex items-center gap-2 rounded-lg border border-[#E7EEEC] bg-white px-4 py-2 text-sm font-medium text-[#16302b] hover:bg-[#F3F7F5] transition-colors shadow-sm"
+              className="flex items-center gap-2 rounded-lg border border-[#E7EEEC] dark:border-border bg-white dark:bg-card px-4 py-2 text-sm font-medium text-[#16302b] dark:text-foreground hover:bg-[#F3F7F5] dark:hover:bg-muted transition-colors shadow-sm"
             >
               <Pencil className="size-3.5" />
               {copy.detail.editProfile}
@@ -198,7 +198,7 @@ export default function StudentDetailPage() {
       </div>
 
       {/* ── Profile card ── */}
-      <div className="rounded-xl border border-[#E7EEEC] bg-white px-6 py-5 shadow-sm">
+      <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card px-6 py-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-6">
           {/* Left: avatar + info */}
           <div className="flex items-center gap-4">
@@ -210,16 +210,16 @@ export default function StudentDetailPage() {
             </div>
             <div>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-xl font-bold text-[#16302b]">
+                <h1 className="text-xl font-bold text-[#16302b] dark:text-foreground">
                   {student.name}
                 </h1>
                 {student.studentId && (
-                  <span className="rounded-md bg-[#F3F7F5] px-2 py-0.5 text-xs font-semibold text-[#9AAEA9]">
+                  <span className="rounded-md bg-[#F3F7F5] dark:bg-muted px-2 py-0.5 text-xs font-semibold text-[#9AAEA9] dark:text-muted-foreground">
                     {student.studentId}
                   </span>
                 )}
               </div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-4 text-sm text-[#9AAEA9]">
+              <div className="mt-1.5 flex flex-wrap items-center gap-4 text-sm text-[#9AAEA9] dark:text-muted-foreground">
                 {student.classCode && (
                   <span className="flex items-center gap-1.5">
                     <BookOpen className="size-3.5" />
@@ -243,20 +243,20 @@ export default function StudentDetailPage() {
           </div>
 
           {/* Right: stats */}
-          <div className="flex shrink-0 items-center gap-8 border-l border-[#EEF3F1] pl-8">
+          <div className="flex shrink-0 items-center gap-8 border-l border-[#EEF3F1] dark:border-border-light pl-8">
             <div className="text-center">
-              <p className="text-2xl font-bold text-[#0E9F8E]">
+              <p className="text-2xl font-bold text-[#0E9F8E] dark:text-[#2DD4BF]">
                 {avgScore ?? "—"}
               </p>
-              <p className="mt-0.5 text-xs text-[#9AAEA9]">
+              <p className="mt-0.5 text-xs text-[#9AAEA9] dark:text-muted-foreground">
                 {copy.detail.statAvgScore}
               </p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-[#16302b]">
+              <p className="text-2xl font-bold text-[#16302b] dark:text-foreground">
                 {exercisesList.length}
               </p>
-              <p className="mt-0.5 text-xs text-[#9AAEA9]">
+              <p className="mt-0.5 text-xs text-[#9AAEA9] dark:text-muted-foreground">
                 {copy.detail.statSubmitted}
               </p>
             </div>
@@ -264,7 +264,7 @@ export default function StudentDetailPage() {
               <p className="text-2xl font-bold text-[#F97316]">
                 {gradedExercises.length}
               </p>
-              <p className="mt-0.5 text-xs text-[#9AAEA9]">
+              <p className="mt-0.5 text-xs text-[#9AAEA9] dark:text-muted-foreground">
                 {copy.detail.statGraded}
               </p>
             </div>
@@ -273,7 +273,7 @@ export default function StudentDetailPage() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="flex gap-0 border-b border-[#E7EEEC]">
+      <div className="flex gap-0 border-b border-[#E7EEEC] dark:border-border">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -281,8 +281,8 @@ export default function StudentDetailPage() {
             onClick={() => setTab(t.id)}
             className={`relative px-5 py-2.5 text-sm font-medium transition-colors ${
               tab === t.id
-                ? "text-[#0E9F8E]"
-                : "text-[#9AAEA9] hover:text-[#16302b]"
+                ? "text-[#0E9F8E] dark:text-[#2DD4BF]"
+                : "text-[#9AAEA9] dark:text-muted-foreground hover:text-[#16302b] dark:hover:text-foreground"
             }`}
           >
             {t.label}
@@ -297,8 +297,8 @@ export default function StudentDetailPage() {
       {tab === "info" && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Student info */}
-          <div className="rounded-xl border border-[#E7EEEC] bg-white p-5 shadow-sm">
-            <h3 className="mb-1 font-semibold text-[#16302b]">
+          <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-5 shadow-sm">
+            <h3 className="mb-1 font-semibold text-[#16302b] dark:text-foreground">
               {copy.detail.studentInfoTitle}
             </h3>
             <div className="mt-3">
@@ -342,8 +342,8 @@ export default function StudentDetailPage() {
           </div>
 
           {/* Parent info */}
-          <div className="rounded-xl border border-[#E7EEEC] bg-white p-5 shadow-sm">
-            <h3 className="mb-1 font-semibold text-[#16302b]">
+          <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-5 shadow-sm">
+            <h3 className="mb-1 font-semibold text-[#16302b] dark:text-foreground">
               {copy.detail.parentInfoTitle}
             </h3>
             <div className="mt-3">
@@ -381,13 +381,13 @@ export default function StudentDetailPage() {
       )}
 
       {tab === "scores" && (
-        <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
           {exercisesLoading ? (
             <div className="flex items-center justify-center py-14">
-              <Loader2 className="size-5 animate-spin text-[#9AAEA9]" />
+              <Loader2 className="size-5 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
             </div>
           ) : gradedExercises.length === 0 ? (
-            <p className="py-14 text-center text-[#9AAEA9]">
+            <p className="py-14 text-center text-[#9AAEA9] dark:text-muted-foreground">
               {copy.detail.scoresEmpty}
             </p>
           ) : (
@@ -412,16 +412,16 @@ export default function StudentDetailPage() {
                 {gradedExercises.map((e) => (
                   <TableRow
                     key={e.id}
-                    className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9] transition-colors"
+                    className="border-b border-[#EEF3F1] dark:border-border-light last:border-0 hover:bg-[#F1FBF9] dark:hover:bg-primary-soft transition-colors"
                   >
-                    <TableCell className="px-4 py-3 text-[#9AAEA9]">
+                    <TableCell className="px-4 py-3 text-[#9AAEA9] dark:text-muted-foreground">
                       {fmtDateTime(e.gradedAt)}
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <span
                         className={`font-bold ${
                           (e.score ?? 0) >= 8
-                            ? "text-[#0E9F8E]"
+                            ? "text-[#0E9F8E] dark:text-[#2DD4BF]"
                             : (e.score ?? 0) >= 6
                               ? "text-[#F59E0B]"
                               : "text-[#EF4444]"
@@ -429,9 +429,9 @@ export default function StudentDetailPage() {
                       >
                         {e.score}
                       </span>
-                      <span className="text-[#9AAEA9]">/10</span>
+                      <span className="text-[#9AAEA9] dark:text-muted-foreground">/10</span>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-[#9AAEA9]">
+                    <TableCell className="px-4 py-3 text-[#9AAEA9] dark:text-muted-foreground">
                       {e.comment || "—"}
                     </TableCell>
                   </TableRow>
@@ -443,13 +443,13 @@ export default function StudentDetailPage() {
       )}
 
       {tab === "sessions" && (
-        <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
           {exercisesLoading ? (
             <div className="flex items-center justify-center py-14">
-              <Loader2 className="size-5 animate-spin text-[#9AAEA9]" />
+              <Loader2 className="size-5 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
             </div>
           ) : exercisesList.length === 0 ? (
-            <p className="py-14 text-center text-[#9AAEA9]">
+            <p className="py-14 text-center text-[#9AAEA9] dark:text-muted-foreground">
               {copy.detail.sessionsEmpty}
             </p>
           ) : (
@@ -476,9 +476,9 @@ export default function StudentDetailPage() {
                   return (
                     <TableRow
                       key={e.id}
-                      className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9] transition-colors"
+                      className="border-b border-[#EEF3F1] dark:border-border-light last:border-0 hover:bg-[#F1FBF9] dark:hover:bg-primary-soft transition-colors"
                     >
-                      <TableCell className="px-4 py-3 font-medium text-[#16302b]">
+                      <TableCell className="px-4 py-3 font-medium text-[#16302b] dark:text-foreground">
                         {fmtDateTime(e.updatedAt)}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-center">
@@ -487,7 +487,7 @@ export default function StudentDetailPage() {
                           className={meta.className}
                         />
                       </TableCell>
-                      <TableCell className="px-4 py-3 text-[#16302b]">
+                      <TableCell className="px-4 py-3 text-[#16302b] dark:text-foreground">
                         {e.score ?? "—"}
                       </TableCell>
                     </TableRow>
@@ -500,20 +500,20 @@ export default function StudentDetailPage() {
       )}
 
       {tab === "files" && (
-        <div className="rounded-xl border border-[#E7EEEC] bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-5 shadow-sm">
           {exercisesLoading ? (
             <div className="flex items-center justify-center py-10">
-              <Loader2 className="size-5 animate-spin text-[#9AAEA9]" />
+              <Loader2 className="size-5 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
             </div>
           ) : submittedFiles.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="flex size-12 items-center justify-center rounded-full bg-[#F3F7F5]">
-                <BookOpen className="size-5 text-[#9AAEA9]" />
+              <div className="flex size-12 items-center justify-center rounded-full bg-[#F3F7F5] dark:bg-muted">
+                <BookOpen className="size-5 text-[#9AAEA9] dark:text-muted-foreground" />
               </div>
-              <p className="mt-3 text-sm font-medium text-[#16302b]">
+              <p className="mt-3 text-sm font-medium text-[#16302b] dark:text-foreground">
                 {copy.detail.filesEmptyTitle}
               </p>
-              <p className="mt-1 text-xs text-[#9AAEA9]">
+              <p className="mt-1 text-xs text-[#9AAEA9] dark:text-muted-foreground">
                 {copy.detail.filesEmptyBody}
               </p>
             </div>
@@ -556,9 +556,9 @@ export default function StudentDetailPage() {
           ].map((stat) => (
             <div
               key={stat.label}
-              className="rounded-xl border border-[#E7EEEC] bg-white p-5 shadow-sm"
+              className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-5 shadow-sm"
             >
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#9AAEA9] dark:text-muted-foreground">
                 {stat.label}
               </p>
               <p
@@ -567,7 +567,7 @@ export default function StudentDetailPage() {
               >
                 {stat.value}
               </p>
-              <p className="mt-1 text-xs text-[#9AAEA9]">{stat.sub}</p>
+              <p className="mt-1 text-xs text-[#9AAEA9] dark:text-muted-foreground">{stat.sub}</p>
             </div>
           ))}
         </div>

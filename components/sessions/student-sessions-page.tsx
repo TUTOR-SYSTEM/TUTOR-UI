@@ -39,7 +39,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Dùng các nút{" "}
-        <span className="font-semibold text-[#16302b]">
+        <span className="font-semibold text-[#16302b] dark:text-foreground">
           Tất cả / Sắp diễn ra / Đang diễn ra / Đã kết thúc
         </span>{" "}
         để lọc danh sách buổi học.
@@ -72,7 +72,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Cột{" "}
-        <span className="font-semibold text-[#16302b]">
+        <span className="font-semibold text-[#16302b] dark:text-foreground">
           Thời gian / Địa điểm
         </span>{" "}
         hiển thị lịch học cụ thể của từng buổi.

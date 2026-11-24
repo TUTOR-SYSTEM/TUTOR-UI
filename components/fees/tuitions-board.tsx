@@ -48,7 +48,7 @@ const STATUS_TABS: {
   {
     value: "paid",
     label: "Đã đóng",
-    activeStyle: "border-[#0E9F8E] text-[#0E9F8E]",
+    activeStyle: "border-[#0E9F8E] text-[#0E9F8E] dark:text-[#2DD4BF]",
   },
   {
     value: "unpaid",
@@ -192,8 +192,18 @@ export const TuitionsBoard = ({
 
   const stats = useMemo(() => {
     const paid = periodTuitions.filter((t) => t.status === "PAID");
-    const unpaid = periodTuitions.filter((t) => t.status === "UNPAID");
-    const overdue = periodTuitions.filter((t) => t.status === "OVERDUE");
+    /* Quá hạn = đã qua hạn đóng mà chưa thanh toán (hóa đơn không có hạn đóng không tính). */
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const isOverdue = (t: (typeof periodTuitions)[number]) =>
+      t.status === "OVERDUE" ||
+      (t.status === "UNPAID" &&
+        !!t.dueDate &&
+        new Date(t.dueDate) < startOfToday);
+    const overdue = periodTuitions.filter(isOverdue);
+    const unpaid = periodTuitions.filter(
+      (t) => t.status === "UNPAID" && !isOverdue(t),
+    );
     const total = periodTuitions.reduce((s, t) => s + Number(t.amount), 0);
     const collected = paid.reduce((s, t) => s + Number(t.amount), 0);
     return {
@@ -201,9 +211,10 @@ export const TuitionsBoard = ({
       collectedCount: paid.length,
       totalCount: periodTuitions.length,
       unpaidAmount: unpaid.reduce((s, t) => s + Number(t.amount), 0),
-      unpaidCount: unpaid.length,
+      unpaidCount: new Set(unpaid.map((t) => t.studentId)).size,
       overdueAmount: overdue.reduce((s, t) => s + Number(t.amount), 0),
-      overdueCount: overdue.length,
+      /* đếm theo học sinh (một học sinh nhiều hóa đơn quá hạn chỉ tính 1) */
+      overdueCount: new Set(overdue.map((t) => t.studentId)).size,
       rate: total > 0 ? Math.round((collected / total) * 100) : 0,
     };
   }, [periodTuitions]);
@@ -213,7 +224,7 @@ export const TuitionsBoard = ({
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-[#16302b]">Học phí</h1>
+          <h1 className="text-2xl font-bold text-[#16302b] dark:text-foreground">Học phí</h1>
 
           {/* Month selector */}
           <Select
@@ -240,7 +251,7 @@ export const TuitionsBoard = ({
 
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#9AAEA9]" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#9AAEA9] dark:text-muted-foreground" />
             <Input
               type="search"
               value={search}
@@ -268,67 +279,67 @@ export const TuitionsBoard = ({
       {/* ── Stat Cards ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {/* Đã thu */}
-        <div className="rounded-xl border border-[#0E9F8E]/20 bg-[#E4F6EF] p-5 shadow-sm">
+        <div className="rounded-xl border border-[#0E9F8E]/20 bg-[#E4F6EF] dark:bg-primary-light p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
             <span className="flex size-7 items-center justify-center rounded-full bg-[#0E9F8E]">
               <Check className="size-4 text-white" />
             </span>
-            <p className="text-sm font-medium text-[#0B7A6D]">Đã thu</p>
+            <p className="text-sm font-medium text-[#0B7A6D] dark:text-[#5EEAD4]">Đã thu</p>
           </div>
-          <p className="text-3xl font-bold text-[#0E9F8E]">
+          <p className="text-3xl font-bold text-[#0E9F8E] dark:text-[#2DD4BF]">
             {millionsFmt(stats.collectedAmount)}
           </p>
-          <p className="mt-1 text-sm text-[#0B7A6D]">
+          <p className="mt-1 text-sm text-[#0B7A6D] dark:text-[#5EEAD4]">
             {stats.collectedCount}/{stats.totalCount} học sinh
           </p>
         </div>
 
         {/* Chưa thu */}
-        <div className="rounded-xl border border-[#E7EEEC] bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
-            <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF0E6]">
+            <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF0E6] dark:bg-[#E85D24]/15">
               <Clock className="size-4 text-[#F97316]" />
             </span>
-            <p className="text-sm font-medium text-[#16302b]">Chưa thu</p>
+            <p className="text-sm font-medium text-[#16302b] dark:text-foreground">Chưa thu</p>
           </div>
           <p className="text-3xl font-bold text-[#F97316]">
             {millionsFmt(stats.unpaidAmount)}
           </p>
-          <p className="mt-1 text-sm text-[#9AAEA9]">
+          <p className="mt-1 text-sm text-[#9AAEA9] dark:text-muted-foreground">
             {stats.unpaidCount} học sinh
           </p>
         </div>
 
         {/* Quá hạn */}
-        <div className="rounded-xl border border-[#E7EEEC] bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
             <span className="flex size-7 items-center justify-center rounded-full bg-red-50">
               <AlertTriangle className="size-4 text-red-500" />
             </span>
-            <p className="text-sm font-medium text-[#16302b]">Quá hạn</p>
+            <p className="text-sm font-medium text-[#16302b] dark:text-foreground">Quá hạn</p>
           </div>
           <p className="text-3xl font-bold text-red-500">
             {millionsFmt(stats.overdueAmount)}
           </p>
-          <p className="mt-1 text-sm text-[#9AAEA9]">
+          <p className="mt-1 text-sm text-[#9AAEA9] dark:text-muted-foreground">
             {stats.overdueCount} học sinh
           </p>
         </div>
 
         {/* Tỷ lệ thu */}
-        <div className="rounded-xl border border-[#E7EEEC] bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
             <span className="flex size-7 items-center justify-center rounded-full bg-blue-50">
               <Calendar className="size-4 text-blue-500" />
             </span>
-            <p className="text-sm font-medium text-[#16302b]">Tỷ lệ thu</p>
+            <p className="text-sm font-medium text-[#16302b] dark:text-foreground">Tỷ lệ thu</p>
           </div>
-          <p className="text-3xl font-bold text-[#16302b]">
+          <p className="text-3xl font-bold text-[#16302b] dark:text-foreground">
             {stats.rate}
             <span className="text-xl font-semibold">%</span>
           </p>
           <p className="mt-1 text-sm text-blue-500">Mục tiêu 90%</p>
-          <div className="mt-2 h-1.5 w-full rounded-full bg-[#E7EEEC]">
+          <div className="mt-2 h-1.5 w-full rounded-full bg-[#E7EEEC] dark:bg-muted">
             <div
               className="h-1.5 rounded-full bg-blue-400 transition-all"
               style={{ width: `${stats.rate}%` }}
@@ -338,9 +349,9 @@ export const TuitionsBoard = ({
       </div>
 
       {/* ── Table Card ── */}
-      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
         {/* Filter bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E7EEEC] px-5 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E7EEEC] dark:border-border px-5 py-3">
           <div className="flex items-center gap-1.5">
             {STATUS_TABS.map((tab) => {
               const isActive = statusFilter === tab.value;
@@ -358,7 +369,7 @@ export const TuitionsBoard = ({
                     className={
                       isActive
                         ? "bg-[#0E9F8E]! text-white! hover:bg-[#0E9F8E]!"
-                        : "border-[#E7EEEC] text-[#16302b] hover:border-[#0E9F8E]/40 hover:text-[#0E9F8E]"
+                        : "border-[#E7EEEC] dark:border-border text-[#16302b] dark:text-foreground hover:border-[#0E9F8E]/40 hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF]"
                     }
                   >
                     Tất cả
@@ -378,7 +389,7 @@ export const TuitionsBoard = ({
                   className={
                     isActive
                       ? tab.activeStyle
-                      : "border-[#E7EEEC] text-[#16302b] hover:border-[#0E9F8E]/40 hover:text-[#0E9F8E]"
+                      : "border-[#E7EEEC] dark:border-border text-[#16302b] dark:text-foreground hover:border-[#0E9F8E]/40 hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF]"
                   }
                 >
                   {tab.label}
@@ -387,8 +398,8 @@ export const TuitionsBoard = ({
             })}
           </div>
 
-          <span className="flex items-center gap-1.5 rounded-lg border border-[#E7EEEC] px-3 py-1.5 text-sm text-[#16302b]">
-            <Calendar className="size-3.5 text-[#9AAEA9]" />
+          <span className="flex items-center gap-1.5 rounded-lg border border-[#E7EEEC] dark:border-border px-3 py-1.5 text-sm text-[#16302b] dark:text-foreground">
+            <Calendar className="size-3.5 text-[#9AAEA9] dark:text-muted-foreground" />
             {month === 0 ? "Tất cả tháng" : `Tháng ${month} · ${year}`}
           </span>
         </div>
@@ -396,7 +407,7 @@ export const TuitionsBoard = ({
         {/* Table */}
         <Table className="min-w-[860px]">
           <TableHeader>
-            <TableRow className="border-b border-[#E7EEEC] bg-[#F3F7F5] hover:bg-[#F3F7F5]">
+            <TableRow className="border-b border-[#E7EEEC] dark:border-border bg-[#F3F7F5] dark:bg-muted hover:bg-[#F3F7F5] dark:hover:bg-muted">
               {[
                 "Thứ tự",
                 "Học sinh",
@@ -420,7 +431,7 @@ export const TuitionsBoard = ({
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-14 text-center">
-                  <Loader2 className="mx-auto size-5 animate-spin text-[#9AAEA9]" />
+                  <Loader2 className="mx-auto size-5 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : isError ? (
@@ -443,10 +454,10 @@ export const TuitionsBoard = ({
                   return (
                     <TableRow
                       key={fee.id}
-                      className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9] transition-colors"
+                      className="border-b border-[#EEF3F1] dark:border-border-light last:border-0 hover:bg-[#F1FBF9] dark:hover:bg-primary-soft transition-colors"
                     >
                       {/* STT */}
-                      <TableCell className="py-3.5 pl-5 pr-2 text-[#9AAEA9] font-medium">
+                      <TableCell className="py-3.5 pl-5 pr-2 text-[#9AAEA9] dark:text-muted-foreground font-medium">
                         {String(
                           (safePage - 1) * PAGE_SIZE + i + 1,
                         ).padStart(2, "0")}
@@ -465,10 +476,10 @@ export const TuitionsBoard = ({
                             )}
                           </span>
                           <div>
-                            <p className="font-semibold text-[#16302b] leading-tight">
+                            <p className="font-semibold text-[#16302b] dark:text-foreground leading-tight">
                               {name}
                             </p>
-                            <p className="text-xs text-[#9AAEA9] mt-0.5">
+                            <p className="text-xs text-[#9AAEA9] dark:text-muted-foreground mt-0.5">
                               {fee.student.userCode || "—"}
                             </p>
                           </div>
@@ -477,25 +488,25 @@ export const TuitionsBoard = ({
 
                       {/* Class */}
                       <TableCell className="py-3.5">
-                        <span className="rounded-md border border-[#0E9F8E]/25 bg-[#E4F6EF] px-2.5 py-0.5 text-xs font-semibold text-[#0B7A6D]">
+                        <span className="rounded-md border border-[#0E9F8E]/25 bg-[#E4F6EF] dark:bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-[#0B7A6D] dark:text-[#5EEAD4]">
                           {fee.class.code}
                         </span>
                       </TableCell>
 
                       {/* Period */}
-                      <TableCell className="py-3.5 text-[#16302b]">
+                      <TableCell className="py-3.5 text-[#16302b] dark:text-foreground">
                         {fmtPeriod(fee.dueDate)}
                       </TableCell>
 
                       {/* Amount */}
                       <TableCell className="py-3.5 tabular-nums">
-                        <span className="font-semibold text-[#16302b]">
+                        <span className="font-semibold text-[#16302b] dark:text-foreground">
                           {moneyFmt(Number(fee.amount))}
                         </span>
                       </TableCell>
 
                       {/* Due date */}
-                      <TableCell className="py-3.5 text-[#16302b]">
+                      <TableCell className="py-3.5 text-[#16302b] dark:text-foreground">
                         {fmtDueDate(fee.dueDate)}
                       </TableCell>
 
@@ -520,7 +531,7 @@ export const TuitionsBoard = ({
                           size="icon-sm"
                           title="Xem chi tiết"
                           onClick={() => onRowClick(fee)}
-                          className="text-[#8AA09B] hover:bg-[#E4F6EF] hover:text-[#0E9F8E]"
+                          className="text-[#8AA09B] dark:text-muted-foreground hover:bg-[#E4F6EF] dark:hover:bg-primary-light hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF]"
                         >
                           <Eye className="size-3.5" />
                         </Button>
@@ -533,7 +544,7 @@ export const TuitionsBoard = ({
                   <TableRow>
                     <TableCell
                       colSpan={8}
-                      className="py-14 text-center text-[#9AAEA9]"
+                      className="py-14 text-center text-[#9AAEA9] dark:text-muted-foreground"
                     >
                       Không có hóa đơn nào phù hợp.
                     </TableCell>
@@ -545,7 +556,7 @@ export const TuitionsBoard = ({
         </Table>
 
         {/* Pagination */}
-        <div className="border-t border-[#EEF3F1] px-4 py-3">
+        <div className="border-t border-[#EEF3F1] dark:border-border-light px-4 py-3">
           <Pagination
             page={safePage}
             totalPages={totalPages}

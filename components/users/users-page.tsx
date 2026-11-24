@@ -29,6 +29,7 @@ import type {
   ManagedUsersApiPayload,
 } from "@/types";
 import { DeleteIcon } from "@/components/ui/delete-icon.ui";
+import { currentPersonName } from "@/lib/format/person-name";
 
 function initials(firstName: string, lastName: string): string {
   const f = firstName.trim().charAt(0);
@@ -79,7 +80,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Nhấn{" "}
-        <span className="font-semibold text-[#0E9F8E]">Thêm người dùng</span> để
+        <span className="font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">Thêm người dùng</span> để
         tạo tài khoản mới với vai trò bất kỳ.
       </>
     ),
@@ -159,7 +160,7 @@ export function UsersPage() {
     if (
       turningOff &&
       !window.confirm(
-        `Khóa tài khoản của ${user.firstName} ${user.lastName}? Người này sẽ không thể đăng nhập.`,
+        `Khóa tài khoản của ${currentPersonName(user.firstName, user.lastName)}? Người này sẽ không thể đăng nhập.`,
       )
     ) {
       return;
@@ -182,7 +183,7 @@ export function UsersPage() {
       key: "stt",
       header: "Thứ tự",
       headerClassName: "w-14 px-4",
-      cellClassName: "px-4 py-3.5 font-medium text-[#9AAEA9]",
+      cellClassName: "px-4 py-3.5 font-medium text-[#9AAEA9] dark:text-muted-foreground",
       render: (_u, i) => String((page - 1) * pageSize + i + 1).padStart(2, "0"),
     },
     {
@@ -199,10 +200,10 @@ export function UsersPage() {
             {initials(u.firstName, u.lastName)}
           </span>
           <div>
-            <p className="font-semibold text-[#16302b] leading-tight">
+            <p className="font-semibold text-[#16302b] dark:text-foreground leading-tight">
               {u.firstName} {u.lastName}
             </p>
-            <p className="text-xs text-[#8AA09B] mt-0.5">{u.email}</p>
+            <p className="text-xs text-[#8AA09B] dark:text-muted-foreground mt-0.5">{u.email}</p>
           </div>
         </div>
       ),
@@ -245,8 +246,8 @@ export function UsersPage() {
           className={cn(
             "h-auto! w-auto! rounded-md px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60",
             u.isActive
-              ? "bg-[#E4F6EF]! text-[#0B7A6D] hover:bg-[#E4F6EF]!"
-              : "bg-[#FEE2E2]! text-[#DC2626] hover:bg-[#FEE2E2]!",
+              ? "bg-[#E4F6EF] dark:bg-primary-light! text-[#0B7A6D] dark:text-[#5EEAD4] hover:bg-[#E4F6EF] dark:hover:bg-primary-light!"
+              : "bg-[#FEE2E2] dark:bg-[#ef4444]/15! text-[#DC2626] dark:text-red-400 hover:bg-[#FEE2E2] hover:dark:bg-[#ef4444]/15!",
           )}
         >
           {u.isActive ? "Hoạt động" : "Ngừng hoạt động"}
@@ -257,7 +258,7 @@ export function UsersPage() {
       key: "createdAt",
       header: "Ngày tạo",
       headerClassName: "px-4",
-      cellClassName: "px-4 py-3.5 text-[#16302b]",
+      cellClassName: "px-4 py-3.5 text-[#16302b] dark:text-foreground",
       render: (u) => formatDate(u.createdAt),
     },
     {
@@ -274,7 +275,7 @@ export function UsersPage() {
             size="icon-sm"
             title="Chỉnh sửa"
             onClick={() => setEditingUser(u)}
-            className="rounded-md text-[#8AA09B] hover:bg-[#E4F6EF] hover:text-[#0E9F8E]"
+            className="rounded-md text-[#8AA09B] dark:text-muted-foreground hover:bg-[#E4F6EF] dark:hover:bg-primary-light hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF]"
           >
             <Pencil className="size-3.5" />
           </Button>
@@ -287,7 +288,7 @@ export function UsersPage() {
             }
             onClick={() => setDeletingUser(u)}
             disabled={u.id === currentUserId}
-            className="rounded-md text-[#8AA09B] hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#8AA09B]"
+            className="rounded-md text-[#8AA09B] dark:text-muted-foreground hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#8AA09B]"
           >
             <DeleteIcon />
           </Button>
@@ -298,14 +299,14 @@ export function UsersPage() {
 
   if (role !== "ADMIN") {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[#E7EEEC] bg-white py-24 text-center shadow-sm">
-        <span className="flex size-12 items-center justify-center rounded-full bg-[#FFF0E6]">
-          <ShieldOff className="size-6 text-[#E85D24]" />
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card py-24 text-center shadow-sm">
+        <span className="flex size-12 items-center justify-center rounded-full bg-[#FFF0E6] dark:bg-[#E85D24]/15">
+          <ShieldOff className="size-6 text-[#E85D24] dark:text-[#FF9A6C]" />
         </span>
-        <h2 className="text-lg font-bold text-[#16302b]">
+        <h2 className="text-lg font-bold text-[#16302b] dark:text-foreground">
           Không có quyền truy cập
         </h2>
-        <p className="max-w-sm text-sm text-[#8AA09B]">
+        <p className="max-w-sm text-sm text-[#8AA09B] dark:text-muted-foreground">
           Chỉ quản trị viên mới có thể xem và quản lý danh sách người dùng.
         </p>
       </div>
@@ -317,14 +318,14 @@ export function UsersPage() {
       {/* ── Page header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-[#16302b]">Người dùng</h1>
-          <span className="rounded-full bg-[#E4F6EF] px-3 py-0.5 text-sm font-semibold text-[#0E9F8E]">
+          <h1 className="text-2xl font-bold text-[#16302b] dark:text-foreground">Người dùng</h1>
+          <span className="rounded-full bg-[#E4F6EF] dark:bg-primary-light px-3 py-0.5 text-sm font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">
             {totalUsers} người dùng
           </span>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#9AAEA9]" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#9AAEA9] dark:text-muted-foreground" />
             <Input
               type="search"
               value={search}
@@ -333,7 +334,7 @@ export function UsersPage() {
                 setPage(1);
               }}
               placeholder="Tìm theo tên, email..."
-              className="h-10! w-56 rounded-lg border-[#E7EEEC] bg-white pl-9 pr-3 text-sm text-[#16302b] placeholder:text-[#9AAEA9] focus-visible:border-[#0E9F8E] focus-visible:ring-2 focus-visible:ring-[#0E9F8E]/30"
+              className="h-10! w-56 rounded-lg border-[#E7EEEC] dark:border-border bg-white dark:bg-card pl-9 pr-3 text-sm text-[#16302b] dark:text-foreground placeholder:text-[#9AAEA9] focus-visible:border-[#0E9F8E] focus-visible:ring-2 focus-visible:ring-[#0E9F8E]/30"
             />
           </div>
           <Button
@@ -365,7 +366,7 @@ export function UsersPage() {
               "h-auto! w-auto! rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
               activeTab === tab.value
                 ? "bg-[#0E9F8E]! text-white shadow-sm hover:bg-[#0E9F8E]!"
-                : "border border-[#E7EEEC] bg-white text-[#16302b] hover:border-[#0E9F8E]/40 hover:bg-white hover:text-[#0E9F8E]",
+                : "border border-[#E7EEEC] dark:border-border bg-white dark:bg-card text-[#16302b] dark:text-foreground hover:border-[#0E9F8E]/40 hover:bg-white dark:hover:bg-card hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF]",
             )}
           >
             {tab.label}
@@ -374,7 +375,7 @@ export function UsersPage() {
       </div>
 
       {/* ── Table ── */}
-      <div className="rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
+      <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
         <div className="overflow-hidden rounded-t-xl">
           <DataTable
             data={users}
@@ -387,15 +388,15 @@ export function UsersPage() {
               "Không thể tải danh sách người dùng.",
             )}
             emptyMessage="Không tìm thấy người dùng phù hợp."
-            headerRowClassName="border-b border-[#E7EEEC] bg-[#F3F7F5]"
-            rowClassName="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9]"
+            headerRowClassName="border-b border-[#E7EEEC] dark:border-border bg-[#F3F7F5] dark:bg-muted"
+            rowClassName="border-b border-[#EEF3F1] dark:border-border-light last:border-0 hover:bg-[#F1FBF9] dark:hover:bg-primary-soft"
             pageSize={pageSize}
           />
         </div>
 
         {/* Kept outside the overflow-hidden table wrapper so the page-size
             dropdown isn't clipped */}
-        <div className="border-t border-[#EEF3F1] px-4 py-3">
+        <div className="border-t border-[#EEF3F1] dark:border-border-light px-4 py-3">
           <Pagination
             page={page}
             totalPages={totalPages}

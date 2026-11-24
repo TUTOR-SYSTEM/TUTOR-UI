@@ -2,6 +2,7 @@ export * from "./auth.provider";
 export * from "./auth-guard";
 export * from "./role-guard";
 export * from "./route-access-guard";
+export * from "./must-change-password-guard";
 export * from "./query.provider";
 export * from "./theme.provider";
 export * from "./color-theme.provider";

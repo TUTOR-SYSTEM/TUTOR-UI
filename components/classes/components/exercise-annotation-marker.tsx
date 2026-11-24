@@ -54,7 +54,7 @@ export const AnnotationMarker = ({
         {annotation.number}
       </span>
       {isEditing ? (
-        <div className="flex items-center gap-1 rounded-full bg-white p-1 shadow-lg ring-1 ring-border">
+        <div className="flex items-center gap-1 rounded-full bg-white dark:bg-card p-1 shadow-lg ring-1 ring-border">
           <input
             autoFocus
             value={annotation.note}
