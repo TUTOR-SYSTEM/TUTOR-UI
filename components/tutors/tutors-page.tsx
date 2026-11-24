@@ -148,14 +148,14 @@ export function TutorsPage() {
 
   if (role !== "ADMIN") {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[#E7EEEC] bg-white py-24 text-center shadow-sm">
-        <span className="flex size-12 items-center justify-center rounded-full bg-[#FFF0E6]">
-          <ShieldOff className="size-6 text-[#E85D24]" />
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card py-24 text-center shadow-sm">
+        <span className="flex size-12 items-center justify-center rounded-full bg-[#FFF0E6] dark:bg-[#E85D24]/15">
+          <ShieldOff className="size-6 text-[#E85D24] dark:text-[#FF9A6C]" />
         </span>
-        <h2 className="text-lg font-bold text-[#16302b]">
+        <h2 className="text-lg font-bold text-[#16302b] dark:text-foreground">
           {copy.page.noAccessTitle}
         </h2>
-        <p className="max-w-sm text-sm text-[#8AA09B]">
+        <p className="max-w-sm text-sm text-[#8AA09B] dark:text-muted-foreground">
           {copy.page.noAccessDescription}
         </p>
       </div>
@@ -172,16 +172,16 @@ export function TutorsPage() {
       {/* ── Page header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-[#16302b]">{copy.page.title}</h1>
+          <h1 className="text-2xl font-bold text-[#16302b] dark:text-foreground">{copy.page.title}</h1>
           {!isPending && !isError ? (
-            <span className="rounded-full bg-[#E4F6EF] px-3 py-0.5 text-sm font-semibold text-[#0E9F8E]">
+            <span className="rounded-full bg-[#E4F6EF] dark:bg-primary-light px-3 py-0.5 text-sm font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">
               {copy.page.countSuffix(total)}
             </span>
           ) : null}
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 size-3.5 text-[#9AAEA9]" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 size-3.5 text-[#9AAEA9] dark:text-muted-foreground" />
             <Input
               type="search"
               value={search}
@@ -241,10 +241,10 @@ export function TutorsPage() {
       />
 
       {/* ── Table ── */}
-      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-[#E7EEEC] bg-[#F3F7F5]">
+            <TableRow className="border-b border-[#E7EEEC] dark:border-border bg-[#F3F7F5] dark:bg-muted">
               {columns.map((col, i) => (
                 <TableHead
                   key={col}
@@ -262,9 +262,9 @@ export function TutorsPage() {
             {tutors.map((t, i) => (
               <TableRow
                 key={t.id}
-                className="border-b border-[#EEF3F1] last:border-0 hover:bg-[#F1FBF9]"
+                className="border-b border-[#EEF3F1] dark:border-border-light last:border-0 hover:bg-[#F1FBF9] dark:hover:bg-primary-soft"
               >
-                <TableCell className="px-4 py-3.5 font-medium text-[#9AAEA9]">
+                <TableCell className="px-4 py-3.5 font-medium text-[#9AAEA9] dark:text-muted-foreground">
                   {String((page - 1) * PAGE_SIZE + i + 1).padStart(2, "0")}
                 </TableCell>
 
@@ -286,10 +286,10 @@ export function TutorsPage() {
                       </span>
                     )}
                     <div className="min-w-0">
-                      <p className="truncate font-semibold leading-tight text-[#16302b]">
+                      <p className="truncate font-semibold leading-tight text-[#16302b] dark:text-foreground">
                         {fullName(t)}
                       </p>
-                      <p className="mt-0.5 truncate text-xs text-[#8AA09B]">
+                      <p className="mt-0.5 truncate text-xs text-[#8AA09B] dark:text-muted-foreground">
                         {t.email || "—"}
                       </p>
                     </div>
@@ -305,7 +305,7 @@ export function TutorsPage() {
                           {(t.subjects ?? []).slice(0, VISIBLE_LIMIT).map((s) => (
                             <span
                               key={s}
-                              className="max-w-24 shrink-0 truncate rounded-md bg-[#E4F6EF] px-2 py-0.5 text-xs font-medium text-[#0B7A6D]"
+                              className="max-w-24 shrink-0 truncate rounded-md bg-[#E4F6EF] dark:bg-primary-light px-2 py-0.5 text-xs font-medium text-[#0B7A6D] dark:text-[#5EEAD4]"
                             >
                               {s}
                             </span>
@@ -313,14 +313,14 @@ export function TutorsPage() {
                         </div>
                       }
                     >
-                      <p className="mb-2 font-semibold text-[#16302b]">
+                      <p className="mb-2 font-semibold text-[#16302b] dark:text-foreground">
                         {copy.page.subjectsDetail((t.subjects ?? []).length)}
                       </p>
                       <div className="flex max-w-xs flex-wrap gap-1">
                         {(t.subjects ?? []).map((s) => (
                           <span
                             key={s}
-                            className="rounded-md bg-[#E4F6EF] px-2 py-0.5 text-xs font-medium text-[#0B7A6D]"
+                            className="rounded-md bg-[#E4F6EF] dark:bg-primary-light px-2 py-0.5 text-xs font-medium text-[#0B7A6D] dark:text-[#5EEAD4]"
                           >
                             {s}
                           </span>
@@ -328,15 +328,15 @@ export function TutorsPage() {
                       </div>
                     </HoverCardIf>
                   ) : (
-                    <span className="text-[#9AAEA9]">—</span>
+                    <span className="text-[#9AAEA9] dark:text-muted-foreground">—</span>
                   )}
                 </TableCell>
 
-                <TableCell className="px-4 py-3.5 text-[#16302b]">
+                <TableCell className="px-4 py-3.5 text-[#16302b] dark:text-foreground">
                   {t.phone || "—"}
                 </TableCell>
 
-                <TableCell className="px-4 py-3.5 text-[#16302b]">
+                <TableCell className="px-4 py-3.5 text-[#16302b] dark:text-foreground">
                   {t.classCount ?? "—"}
                 </TableCell>
 
@@ -349,7 +349,7 @@ export function TutorsPage() {
                           {(t.students ?? []).slice(0, VISIBLE_LIMIT).map((s) => (
                             <span
                               key={s.id}
-                              className="max-w-28 shrink-0 truncate rounded-md bg-[#E4F6EF] px-2 py-0.5 text-xs font-semibold text-[#0B7A6D]"
+                              className="max-w-28 shrink-0 truncate rounded-md bg-[#E4F6EF] dark:bg-primary-light px-2 py-0.5 text-xs font-semibold text-[#0B7A6D] dark:text-[#5EEAD4]"
                             >
                               {personName(s)}
                             </span>
@@ -357,19 +357,19 @@ export function TutorsPage() {
                         </div>
                       }
                     >
-                      <p className="mb-2 font-semibold text-[#16302b]">
+                      <p className="mb-2 font-semibold text-[#16302b] dark:text-foreground">
                         {copy.page.studentsDetail(t.studentCount ?? 0)}
                       </p>
                       <ul className="flex max-w-xs flex-col gap-1">
                         {(t.students ?? []).map((s) => (
-                          <li key={s.id} className="text-[#16302b]">
+                          <li key={s.id} className="text-[#16302b] dark:text-foreground">
                             {personName(s)}
                           </li>
                         ))}
                       </ul>
                     </HoverCardIf>
                   ) : (
-                    <span className="text-[#9AAEA9]">0</span>
+                    <span className="text-[#9AAEA9] dark:text-muted-foreground">—</span>
                   )}
                 </TableCell>
 
@@ -384,8 +384,8 @@ export function TutorsPage() {
                     className={cn(
                       "h-auto! w-auto! rounded-md px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60",
                       t.isActive
-                        ? "bg-[#E4F6EF]! text-[#0B7A6D] hover:bg-[#E4F6EF]!"
-                        : "bg-[#FEE2E2]! text-[#DC2626] hover:bg-[#FEE2E2]!",
+                        ? "bg-[#E4F6EF] dark:bg-primary-light! text-[#0B7A6D] dark:text-[#5EEAD4] hover:bg-[#E4F6EF] dark:hover:bg-primary-light!"
+                        : "bg-[#FEE2E2] dark:bg-[#ef4444]/15! text-[#DC2626] dark:text-red-400 hover:bg-[#FEE2E2] hover:dark:bg-[#ef4444]/15!",
                     )}
                   >
                     {t.isActive ? copy.status.active : copy.status.locked}
@@ -410,7 +410,7 @@ export function TutorsPage() {
                       }
                       disabled={updateTutor.isPending}
                       onClick={() => setStatusTutor(t)}
-                      className="rounded-md text-[#8AA09B] hover:bg-red-50 hover:text-red-500"
+                      className="rounded-md text-[#8AA09B] dark:text-muted-foreground hover:bg-red-50 hover:text-red-500"
                     >
                       <RefreshCw className="size-3.5" />
                     </Button>
@@ -421,7 +421,7 @@ export function TutorsPage() {
                       title={copy.rowActions.password}
                       aria-label={copy.rowActions.password}
                       onClick={() => setPasswordTutor(t)}
-                      className="rounded-md text-[#8AA09B] hover:bg-[#E4F6EF] hover:text-[#0E9F8E]"
+                      className="rounded-md text-[#8AA09B] dark:text-muted-foreground hover:bg-[#E4F6EF] dark:hover:bg-primary-light hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF]"
                     >
                       <KeyRound className="size-3.5" />
                     </Button>
@@ -432,7 +432,7 @@ export function TutorsPage() {
                       title={copy.rowActions.edit}
                       aria-label={copy.rowActions.edit}
                       onClick={() => setEditingTutor(t)}
-                      className="rounded-md text-[#8AA09B] hover:bg-[#E4F6EF] hover:text-[#0E9F8E]"
+                      className="rounded-md text-[#8AA09B] dark:text-muted-foreground hover:bg-[#E4F6EF] dark:hover:bg-primary-light hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF]"
                     >
                       <Pencil className="size-3.5" />
                     </Button>
@@ -443,7 +443,7 @@ export function TutorsPage() {
                       title={copy.rowActions.delete}
                       aria-label={copy.rowActions.delete}
                       onClick={() => setDeletingTutor(t)}
-                      className="rounded-md text-[#8AA09B] hover:bg-red-50 hover:text-red-500"
+                      className="rounded-md text-[#8AA09B] dark:text-muted-foreground hover:bg-red-50 hover:text-red-500"
                     >
                       <DeleteIcon />
                     </Button>
@@ -456,7 +456,7 @@ export function TutorsPage() {
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="py-14 text-center text-[#9AAEA9]"
+                  className="py-14 text-center text-[#9AAEA9] dark:text-muted-foreground"
                 >
                   {copy.page.empty}
                 </TableCell>
@@ -466,7 +466,7 @@ export function TutorsPage() {
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="py-14 text-center text-[#9AAEA9]"
+                  className="py-14 text-center text-[#9AAEA9] dark:text-muted-foreground"
                 >
                   <Loader2 className="mx-auto size-5 animate-spin" />
                 </TableCell>
@@ -486,7 +486,7 @@ export function TutorsPage() {
         </Table>
 
         {totalPages > 1 && (
-          <div className="border-t border-[#EEF3F1] px-4 py-3">
+          <div className="border-t border-[#EEF3F1] dark:border-border-light px-4 py-3">
             <Pagination
               page={page}
               totalPages={totalPages}

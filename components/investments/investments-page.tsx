@@ -203,7 +203,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         The line chart tracks 12-month value.{" "}
-        <span className="font-semibold text-[#16302b]">
+        <span className="font-semibold text-[#16302b] dark:text-foreground">
           Growth / Top Gainer / Biggest Holding
         </span>{" "}
         summarize the trend below it.
@@ -216,7 +216,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Each row lists shares, price, current value and{" "}
-        <span className="font-semibold text-[#16302b]">gain/loss</span> for
+        <span className="font-semibold text-[#16302b] dark:text-foreground">gain/loss</span> for
         one holding.
       </>
     ),

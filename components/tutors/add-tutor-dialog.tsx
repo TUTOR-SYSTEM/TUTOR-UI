@@ -83,7 +83,7 @@ export function AddTutorDialog({ open, onClose, onCreated }: Props) {
       email: values.email.trim(),
       firstName: values.firstName.trim(),
       lastName: values.lastName.trim(),
-      password: values.password,
+      password: values.password || undefined,
       phone: values.phone.trim() || undefined,
       subjects: values.subjects.length ? values.subjects : undefined,
       school: values.school.trim() || undefined,
@@ -172,7 +172,6 @@ export function AddTutorDialog({ open, onClose, onCreated }: Props) {
         <FormField
           label={f.password}
           htmlFor="tutor-create-password"
-          required
           hint={f.passwordHint}
           error={errors.password?.message}
         >

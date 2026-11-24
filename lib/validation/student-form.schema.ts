@@ -31,6 +31,11 @@ export function buildStudentCreateSchema(
       .min(1, m.required)
       .min(2, m.nameMin)
       .max(255, m.nameMax),
+    email: z
+      .string()
+      .trim()
+      .min(1, m.required)
+      .refine((v) => z.email().safeParse(v).success, { message: m.emailInvalid }),
     userCode: z.string().max(50, m.codeMax),
     classCode: z.string(),
     gender: z.nativeEnum(GENDER_ENUM),
@@ -38,6 +43,11 @@ export function buildStudentCreateSchema(
     school: z.string().trim().max(255, m.schoolMax),
     parentLastName: z.string().trim().min(1, m.required).max(255, m.nameMax),
     parentFirstName: z.string().trim().min(1, m.required).max(255, m.nameMax),
+    parentPhone: z.string().trim().max(20, m.phoneMax),
+    parentEmail: z
+      .string()
+      .trim()
+      .refine((v) => v === "" || z.email().safeParse(v).success, { message: m.emailInvalid }),
     // default "" → output luôn là string (khớp FormValuesStudent); input thiếu vẫn hợp lệ.
     password: z.string().default(""),
   });

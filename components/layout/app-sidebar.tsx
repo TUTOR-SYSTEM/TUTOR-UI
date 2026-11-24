@@ -19,6 +19,7 @@ import {
   MessageSquare,
   Settings,
   Sparkles,
+  UserRound,
 } from "lucide-react";
 
 import { SidebarProvider } from "@/components/ui/sidebar.ui";
@@ -52,6 +53,7 @@ const NAV = {
   curriculum: { key: "curriculum", url: "/curriculum", icon: BookText },
   grades: { key: "grades", url: "/grades", icon: Award },
   tutors: { key: "tutors", url: "/tutors", icon: GraduationCap },
+  parents: { key: "parents", url: "/parents", icon: UserRound },
   allClasses: { key: "allClasses", url: "/classes", icon: BookOpen },
   students: { key: "students", url: "/students", icon: Users },
   fees: { key: "fees", url: "/fees", icon: CreditCard },
@@ -81,7 +83,14 @@ const roleNav: Record<UserRole, NavItem[]> = {
   ],
   // Admin — trimmed menu: Overview, Tutors, Students.
   // (Settings is appended for every role via `navSettings`.)
-  ADMIN: [NAV.overview, NAV.tutors, NAV.students, NAV.allClasses, NAV.notifications],
+  ADMIN: [
+    NAV.overview,
+    NAV.tutors,
+    NAV.parents,
+    NAV.students,
+    NAV.allClasses,
+    NAV.notifications,
+  ],
   // Student — no "Students"; "Tuition" is view-only.
   STUDENT: [
     NAV.overview,
@@ -92,13 +101,12 @@ const roleNav: Record<UserRole, NavItem[]> = {
     NAV.discussions,
     NAV.aiChat,
   ],
-  // Parent — hides "Sessions" and "Students"; "Curriculum" shows progress only.
+  // Parent — không có Chương trình (chỉ gia sư tạo); xem lớp/điểm của con.
   PARENT: [
     NAV.overview,
     NAV.schedule,
     NAV.notifications,
     NAV.classes,
-    { ...NAV.curriculum, key: "curriculumOfChild" },
     { ...NAV.grades, key: "gradesOfChild" },
     NAV.fees,
     NAV.discussions,

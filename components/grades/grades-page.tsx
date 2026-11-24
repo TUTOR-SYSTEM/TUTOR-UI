@@ -34,6 +34,7 @@ import UsageGuides, {
 } from "@/components/ui/usage-guide.ui";
 import Image from "next/image";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.ui";
+import { currentPersonName } from "@/lib/format/person-name";
 
 /* ─── Types ─────────────────────────────────────────────── */
 
@@ -155,7 +156,7 @@ function avgOf(scores: number[]): number | null {
 }
 
 function classify(avg: number | null) {
-  if (avg === null) return { label: "—", className: "text-[#9AAEA9]" };
+  if (avg === null) return { label: "—", className: "text-[#9AAEA9] dark:text-muted-foreground" };
   if (avg >= 8)
     return { label: "Giỏi", className: "bg-emerald-50 text-emerald-700" };
   if (avg >= 6.5)
@@ -256,7 +257,7 @@ const GradeTable = ({ classId }: { classId: string }) => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="size-6 animate-spin text-[#9AAEA9]" />
+        <Loader2 className="size-6 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
       </div>
     );
   }
@@ -265,7 +266,7 @@ const GradeTable = ({ classId }: { classId: string }) => {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <XCircle className="size-7 text-red-400" />
-        <p className="mt-2 text-sm text-[#9AAEA9]">
+        <p className="mt-2 text-sm text-[#9AAEA9] dark:text-muted-foreground">
           {getErrorMessage(studentsError, "Không thể tải danh sách học sinh")}
         </p>
       </div>
@@ -275,8 +276,8 @@ const GradeTable = ({ classId }: { classId: string }) => {
   if (students.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Users className="size-9 text-[#C5D5D1]" />
-        <p className="mt-2 text-sm text-[#9AAEA9]">Lớp chưa có học sinh nào.</p>
+        <Users className="size-9 text-[#C5D5D1] dark:text-muted-foreground" />
+        <p className="mt-2 text-sm text-[#9AAEA9] dark:text-muted-foreground">Lớp chưa có học sinh nào.</p>
       </div>
     );
   }
@@ -297,24 +298,24 @@ const GradeTable = ({ classId }: { classId: string }) => {
         ].map((s) => (
           <div
             key={s.label}
-            className="rounded-lg border border-[#E7EEEC] bg-[#F9FDFB] px-3 py-2.5"
+            className="rounded-lg border border-[#E7EEEC] dark:border-border bg-[#F9FDFB] dark:bg-primary-soft px-3 py-2.5"
           >
-            <p className="text-xs text-[#9AAEA9]">{s.label}</p>
-            <p className="mt-0.5 text-lg font-bold text-[#16302b]">{s.value}</p>
+            <p className="text-xs text-[#9AAEA9] dark:text-muted-foreground">{s.label}</p>
+            <p className="mt-0.5 text-lg font-bold text-[#16302b] dark:text-foreground">{s.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white">
+      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card">
         {gradeSessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <ClipboardCheck className="size-9 text-[#C5D5D1]" />
-            <p className="mt-2 text-sm text-[#9AAEA9]">
+            <ClipboardCheck className="size-9 text-[#C5D5D1] dark:text-muted-foreground" />
+            <p className="mt-2 text-sm text-[#9AAEA9] dark:text-muted-foreground">
               Chưa có bài tập nào được chấm điểm trong lớp này.
             </p>
             <Link
               href={`/classes/${classId}`}
-              className="mt-2 flex items-center gap-1 text-xs font-medium text-[#0E9F8E] hover:underline"
+              className="mt-2 flex items-center gap-1 text-xs font-medium text-[#0E9F8E] dark:text-[#2DD4BF] hover:underline"
             >
               Vào lớp học để chấm bài <ChevronRight className="size-3.5" />
             </Link>
@@ -352,7 +353,7 @@ const GradeTable = ({ classId }: { classId: string }) => {
                 </TableHeader>
                 <TableBody>
                   {students.map((s, idx) => {
-                    const name = `${s.firstName} ${s.lastName}`;
+                    const name = currentPersonName(s.firstName, s.lastName);
                     const initials = getInitials(s.firstName, s.lastName);
                     const colorClass =
                       AVATAR_COLORS[idx % AVATAR_COLORS.length];
@@ -368,9 +369,9 @@ const GradeTable = ({ classId }: { classId: string }) => {
                     return (
                       <TableRow
                         key={s.id}
-                        className="border-b border-[#EEF3F1] last:border-0 transition-colors hover:bg-[#F9FDFB]"
+                        className="border-b border-[#EEF3F1] dark:border-border-light last:border-0 transition-colors hover:bg-[#F9FDFB] dark:hover:bg-primary-soft"
                       >
-                        <TableCell className="py-3 pl-4 text-xs font-medium text-[#9AAEA9]">
+                        <TableCell className="py-3 pl-4 text-xs font-medium text-[#9AAEA9] dark:text-muted-foreground">
                           {String(idx + 1).padStart(2, "0")}
                         </TableCell>
                         <TableCell className="px-3 py-3">
@@ -394,7 +395,7 @@ const GradeTable = ({ classId }: { classId: string }) => {
                               </div>
                             )}
                             <div className="min-w-0">
-                              <p className="truncate text-xs font-medium text-[#16302b]">
+                              <p className="truncate text-xs font-medium text-[#16302b] dark:text-foreground">
                                 {name}
                               </p>
                             </div>
@@ -405,7 +406,7 @@ const GradeTable = ({ classId }: { classId: string }) => {
                           return (
                             <TableCell key={sess.id} className="px-2 py-3">
                               {!ex ? (
-                                <span className="text-xs text-[#C5D5D1]">
+                                <span className="text-xs text-[#C5D5D1] dark:text-muted-foreground">
                                   —
                                 </span>
                               ) : ex.status === "GRADED" ? (
@@ -429,7 +430,7 @@ const GradeTable = ({ classId }: { classId: string }) => {
                           <span
                             className={cn(
                               "text-xs font-bold",
-                              scoreColor(avg) || "text-[#9AAEA9]",
+                              scoreColor(avg) || "text-[#9AAEA9] dark:text-muted-foreground",
                             )}
                           >
                             {avg ?? "—"}
@@ -446,7 +447,7 @@ const GradeTable = ({ classId }: { classId: string }) => {
                               {rankLabel}
                             </span>
                           ) : (
-                            <span className="text-xs text-[#C5D5D1]">—</span>
+                            <span className="text-xs text-[#C5D5D1] dark:text-muted-foreground">—</span>
                           )}
                         </TableCell>
                       </TableRow>
@@ -456,13 +457,13 @@ const GradeTable = ({ classId }: { classId: string }) => {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between border-t border-[#EEF3F1] px-4 py-2.5">
-              <p className="text-xs text-[#9AAEA9]">
+            <div className="flex items-center justify-between border-t border-[#EEF3F1] dark:border-border-light px-4 py-2.5">
+              <p className="text-xs text-[#9AAEA9] dark:text-muted-foreground">
                 Chấm điểm bài tập trong trang chi tiết từng buổi học.
               </p>
               <button
                 type="button"
-                className="flex items-center gap-1.5 rounded-lg border border-[#E7EEEC] bg-white px-2.5 py-1.5 text-xs font-medium text-[#5c726d] transition-colors hover:bg-[#F3F7F5]"
+                className="flex items-center gap-1.5 rounded-lg border border-[#E7EEEC] dark:border-border bg-white dark:bg-card px-2.5 py-1.5 text-xs font-medium text-[#5c726d] dark:text-muted-foreground transition-colors hover:bg-[#F3F7F5] dark:hover:bg-muted"
               >
                 <Download className="size-3" />
                 Xuất Excel
@@ -494,11 +495,11 @@ const GradeCard = ({ grade }: { grade: Grade }) => {
   }, [chaptersRaw]);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#E7EEEC] bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[#F9FDFB]"
+        className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[#F9FDFB] dark:hover:bg-primary-soft"
       >
         <span
           className="flex size-12 shrink-0 items-center justify-center rounded-xl text-xl font-extrabold"
@@ -511,34 +512,34 @@ const GradeCard = ({ grade }: { grade: Grade }) => {
           {grade.level}
         </span>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-[#16302b]">{grade.name}</p>
-          <p className="mt-0.5 text-xs text-[#9AAEA9]">
+          <p className="font-semibold text-[#16302b] dark:text-foreground">{grade.name}</p>
+          <p className="mt-0.5 text-xs text-[#9AAEA9] dark:text-muted-foreground">
             Nhấn để xem chương trình
           </p>
         </div>
         <ChevronDown
           className={cn(
-            "size-4 shrink-0 text-[#9AAEA9] transition-transform",
+            "size-4 shrink-0 text-[#9AAEA9] dark:text-muted-foreground transition-transform",
             expanded && "rotate-180",
           )}
         />
       </button>
 
       {expanded && (
-        <div className="border-t border-[#EEF3F1]">
+        <div className="border-t border-[#EEF3F1] dark:border-border-light">
           {isLoading ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="size-5 animate-spin text-[#9AAEA9]" />
+              <Loader2 className="size-5 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
             </div>
           ) : chapters.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 text-center">
-              <BookOpen className="size-7 text-[#C5D5D1]" />
-              <p className="mt-2 text-xs text-[#9AAEA9]">
+              <BookOpen className="size-7 text-[#C5D5D1] dark:text-muted-foreground" />
+              <p className="mt-2 text-xs text-[#9AAEA9] dark:text-muted-foreground">
                 Chưa có chương trình nào.
               </p>
               <Link
                 href="/classes"
-                className="mt-2 flex items-center gap-1 text-xs font-medium text-[#0E9F8E] hover:underline"
+                className="mt-2 flex items-center gap-1 text-xs font-medium text-[#0E9F8E] dark:text-[#2DD4BF] hover:underline"
               >
                 Vào lớp học để tạo <ChevronRight className="size-3.5" />
               </Link>
@@ -547,7 +548,7 @@ const GradeCard = ({ grade }: { grade: Grade }) => {
             chapters.map((ch) => (
               <div
                 key={ch.id}
-                className="flex items-center justify-between border-b border-[#EEF3F1] px-5 py-3.5 last:border-0"
+                className="flex items-center justify-between border-b border-[#EEF3F1] dark:border-border-light px-5 py-3.5 last:border-0"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -555,17 +556,17 @@ const GradeCard = ({ grade }: { grade: Grade }) => {
                     style={{ background: colors.dot }}
                   />
                   <div>
-                    <p className="text-sm font-medium text-[#16302b]">
+                    <p className="text-sm font-medium text-[#16302b] dark:text-foreground">
                       {ch.title}
                     </p>
                     {ch.description && (
-                      <p className="text-xs text-[#9AAEA9]">{ch.description}</p>
+                      <p className="text-xs text-[#9AAEA9] dark:text-muted-foreground">{ch.description}</p>
                     )}
                   </div>
                 </div>
                 <Link
                   href="/classes"
-                  className="flex items-center gap-1 text-xs font-medium text-[#0E9F8E] hover:underline"
+                  className="flex items-center gap-1 text-xs font-medium text-[#0E9F8E] dark:text-[#2DD4BF] hover:underline"
                 >
                   <BookOpen className="size-3.5" />
                   Xem lớp
@@ -597,7 +598,7 @@ const EXERCISE_STATUS_BADGE: Record<
   ExerciseStatus,
   { label: string; className: string }
 > = {
-  ASSIGNED: { label: "Chưa nộp", className: "bg-slate-100 text-slate-600" },
+  ASSIGNED: { label: "Chưa nộp", className: "bg-slate-100 dark:bg-muted text-slate-600 dark:text-muted-foreground" },
   SUBMITTED: { label: "Chờ chấm", className: "bg-amber-50 text-amber-700" },
   GRADED: { label: "Đã chấm", className: "bg-emerald-50 text-emerald-700" },
   RESUBMIT: { label: "Cần nộp lại", className: "bg-rose-50 text-rose-700" },
@@ -642,9 +643,9 @@ const AllExercisesList = () => {
   );
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E7EEEC] px-5 py-3.5">
-        <h3 className="font-semibold text-[#16302b]">Bài tập tất cả lớp</h3>
+    <div className="overflow-hidden rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E7EEEC] dark:border-border px-5 py-3.5">
+        <h3 className="font-semibold text-[#16302b] dark:text-foreground">Bài tập tất cả lớp</h3>
         <div className="flex flex-wrap items-center gap-1.5">
           {EXERCISE_TABS.map((tab) => {
             const isActive = filter === tab.value;
@@ -657,7 +658,7 @@ const AllExercisesList = () => {
                   "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                   isActive
                     ? "bg-[#0E9F8E] text-white"
-                    : "border border-[#E7EEEC] bg-white text-[#16302b] hover:border-[#0E9F8E]/40 hover:text-[#0E9F8E]",
+                    : "border border-[#E7EEEC] dark:border-border bg-white dark:bg-card text-[#16302b] dark:text-foreground hover:border-[#0E9F8E]/40 hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF]",
                 )}
               >
                 {tab.label} ({counts[tab.value]})
@@ -669,19 +670,19 @@ const AllExercisesList = () => {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="size-6 animate-spin text-[#9AAEA9]" />
+          <Loader2 className="size-6 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
         </div>
       ) : error ? (
         <div className="flex flex-col items-center justify-center py-12">
           <XCircle className="size-7 text-red-400" />
-          <p className="mt-2 text-sm text-[#9AAEA9]">
+          <p className="mt-2 text-sm text-[#9AAEA9] dark:text-muted-foreground">
             {getErrorMessage(error, "Không thể tải danh sách bài tập")}
           </p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <ClipboardCheck className="size-9 text-[#C5D5D1]" />
-          <p className="mt-2 text-sm text-[#9AAEA9]">
+          <ClipboardCheck className="size-9 text-[#C5D5D1] dark:text-muted-foreground" />
+          <p className="mt-2 text-sm text-[#9AAEA9] dark:text-muted-foreground">
             Không có bài tập nào phù hợp.
           </p>
         </div>
@@ -710,7 +711,7 @@ const AllExercisesList = () => {
             </TableHeader>
             <TableBody>
               {filtered.map((ex) => {
-                const name = `${ex.student.firstName} ${ex.student.lastName}`;
+                const name = currentPersonName(ex.student.firstName, ex.student.lastName);
                 const initials = getInitials(
                   ex.student.firstName,
                   ex.student.lastName,
@@ -725,7 +726,7 @@ const AllExercisesList = () => {
                     key={ex.id}
                     onClick={gradeHref ? () => router.push(gradeHref) : undefined}
                     className={cn(
-                      "border-b border-[#EEF3F1] last:border-0 hover:bg-[#F9FDFB] transition-colors",
+                      "border-b border-[#EEF3F1] dark:border-border-light last:border-0 hover:bg-[#F9FDFB] dark:hover:bg-primary-soft transition-colors",
                       gradeHref && "cursor-pointer",
                     )}
                   >
@@ -742,15 +743,15 @@ const AllExercisesList = () => {
                             {initials}
                           </div>
                         )}
-                        <span className="text-xs font-medium text-[#16302b]">
+                        <span className="text-xs font-medium text-[#16302b] dark:text-foreground">
                           {name}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-xs text-[#16302b]">
+                    <TableCell className="px-4 py-3 text-xs text-[#16302b] dark:text-foreground">
                       {ex.class ? `${ex.class.name} (${ex.class.code})` : "—"}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-xs text-[#16302b]">
+                    <TableCell className="px-4 py-3 text-xs text-[#16302b] dark:text-foreground">
                       {ex.session?.sessionNumber
                         ? `Buổi ${ex.session.sessionNumber}`
                         : "—"}
@@ -765,17 +766,17 @@ const AllExercisesList = () => {
                         {badge.label}
                       </span>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-xs font-semibold text-[#16302b]">
+                    <TableCell className="px-4 py-3 text-xs font-semibold text-[#16302b] dark:text-foreground">
                       {ex.score ?? "—"}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-xs text-[#9AAEA9]">
+                    <TableCell className="px-4 py-3 text-xs text-[#9AAEA9] dark:text-muted-foreground">
                       {fmtDateTime(ex.updatedAt)}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-center">
                       {gradeHref && (
                         <Link
                           href={gradeHref}
-                          className="text-xs font-medium text-[#0E9F8E] hover:underline"
+                          className="text-xs font-medium text-[#0E9F8E] dark:text-[#2DD4BF] hover:underline"
                         >
                           {ex.status === "GRADED" ? "Xem" : "Chấm điểm"} →
                         </Link>
@@ -804,7 +805,7 @@ const GRADES_USAGE_GUIDE_STEPS: UsageGuideStep[] = [
         Lọc theo <span className="font-semibold text-amber-700">Chờ chấm</span>,{" "}
         <span className="font-semibold text-emerald-700">Đã chấm</span> hoặc{" "}
         <span className="font-semibold text-rose-700">Cần nộp lại</span>, rồi
-        nhấn <span className="font-semibold text-[#0E9F8E]">Chấm điểm</span> để
+        nhấn <span className="font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">Chấm điểm</span> để
         vào bài nộp.
       </>
     ),
@@ -882,22 +883,22 @@ const TutorGradesPage = () => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold text-[#16302b]">
+            <h1 className="text-2xl font-bold text-[#16302b] dark:text-foreground">
               Bài tập về nhà
             </h1>
             {hasGrades && (
-              <span className="rounded-full bg-[#E4F6EF] px-3 py-0.5 text-sm font-semibold text-[#0E9F8E]">
+              <span className="rounded-full bg-[#E4F6EF] dark:bg-primary-light px-3 py-0.5 text-sm font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">
                 {selectedGrades.length} khối
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-[#9AAEA9]">
+          <p className="mt-1 text-sm text-[#9AAEA9] dark:text-muted-foreground">
             Chọn khối lớp để xem chương trình và nhập điểm học sinh.
           </p>
         </div>
         <Link
           href="/settings"
-          className="flex items-center gap-1.5 rounded-lg border border-[#E7EEEC] bg-white px-3 py-2 text-sm font-medium text-[#5c726d] transition-colors hover:bg-[#F1FBF9]"
+          className="flex items-center gap-1.5 rounded-lg border border-[#E7EEEC] dark:border-border bg-white dark:bg-card px-3 py-2 text-sm font-medium text-[#5c726d] dark:text-muted-foreground transition-colors hover:bg-[#F1FBF9] dark:hover:bg-primary-soft"
         >
           <Settings className="size-3.5" />
           Cài đặt khối lớp
@@ -906,11 +907,11 @@ const TutorGradesPage = () => {
 
       {/* ── All-classes exercise summary (independent of khối lớp setup) ── */}
       <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-[#EEF3F1]" />
-        <span className="text-xs font-medium text-[#9AAEA9]">
+        <div className="h-px flex-1 bg-[#EEF3F1] dark:bg-muted" />
+        <span className="text-xs font-medium text-[#9AAEA9] dark:text-muted-foreground">
           Bài tập cần chấm — tất cả lớp
         </span>
-        <div className="h-px flex-1 bg-[#EEF3F1]" />
+        <div className="h-px flex-1 bg-[#EEF3F1] dark:bg-muted" />
       </div>
 
       <AllExercisesList />
@@ -918,13 +919,13 @@ const TutorGradesPage = () => {
       {/* ── No grade selected ── */}
       {gradesLoading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="size-6 animate-spin text-[#9AAEA9]" />
+          <Loader2 className="size-6 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
         </div>
       ) : !hasGrades ? null : (
         <>
           {/* ── Grade level cards ── */}
           <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#9AAEA9] dark:text-muted-foreground">
               Khối lớp đang dạy — xem chương trình theo khối
             </p>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -936,25 +937,25 @@ const TutorGradesPage = () => {
 
           {/* ── Divider ── */}
           <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-[#EEF3F1]" />
-            <span className="text-xs font-medium text-[#9AAEA9]">
+            <div className="h-px flex-1 bg-[#EEF3F1] dark:bg-muted" />
+            <span className="text-xs font-medium text-[#9AAEA9] dark:text-muted-foreground">
               Bảng điểm theo lớp
             </span>
-            <div className="h-px flex-1 bg-[#EEF3F1]" />
+            <div className="h-px flex-1 bg-[#EEF3F1] dark:bg-muted" />
           </div>
 
           {/* ── Stat bar ── */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {[
               {
-                icon: <BookOpen className="size-5 text-[#0E9F8E]" />,
+                icon: <BookOpen className="size-5 text-[#0E9F8E] dark:text-[#2DD4BF]" />,
                 bg: "#E4F6EF",
                 label: "Tổng lớp học",
                 value: classes.length,
                 suffix: "lớp",
               },
               {
-                icon: <GraduationCap className="size-5 text-[#0E9F8E]" />,
+                icon: <GraduationCap className="size-5 text-[#0E9F8E] dark:text-[#2DD4BF]" />,
                 bg: "#E4F6EF",
                 label: "Khối lớp",
                 value: selectedGrades.length,
@@ -977,7 +978,7 @@ const TutorGradesPage = () => {
             ].map((card) => (
               <div
                 key={card.label}
-                className="rounded-xl border border-[#E7EEEC] bg-white p-4 shadow-sm"
+                className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-4 shadow-sm"
               >
                 <div className="mb-2.5 flex items-center gap-2.5">
                   <span
@@ -986,11 +987,11 @@ const TutorGradesPage = () => {
                   >
                     {card.icon}
                   </span>
-                  <p className="text-xs text-[#5c726d]">{card.label}</p>
+                  <p className="text-xs text-[#5c726d] dark:text-muted-foreground">{card.label}</p>
                 </div>
-                <p className="text-xl font-bold text-[#16302b]">
+                <p className="text-xl font-bold text-[#16302b] dark:text-foreground">
                   {card.value}
-                  <span className="ml-1 text-xs font-medium text-[#9AAEA9]">
+                  <span className="ml-1 text-xs font-medium text-[#9AAEA9] dark:text-muted-foreground">
                     {card.suffix}
                   </span>
                 </p>
@@ -1001,17 +1002,17 @@ const TutorGradesPage = () => {
           {/* ── Class tabs + score table ── */}
           {classesLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="size-6 animate-spin text-[#9AAEA9]" />
+              <Loader2 className="size-6 animate-spin text-[#9AAEA9] dark:text-muted-foreground" />
             </div>
           ) : classes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-[#E7EEEC] bg-white py-12 text-center">
-              <BookOpen className="size-8 text-[#C5D5D1]" />
-              <p className="mt-3 text-sm text-[#9AAEA9]">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card py-12 text-center">
+              <BookOpen className="size-8 text-[#C5D5D1] dark:text-muted-foreground" />
+              <p className="mt-3 text-sm text-[#9AAEA9] dark:text-muted-foreground">
                 Chưa có lớp học nào.
               </p>
               <Link
                 href="/classes"
-                className="mt-3 flex items-center gap-1 text-sm font-medium text-[#0E9F8E] hover:underline"
+                className="mt-3 flex items-center gap-1 text-sm font-medium text-[#0E9F8E] dark:text-[#2DD4BF] hover:underline"
               >
                 Tạo lớp học <ChevronRight className="size-4" />
               </Link>
@@ -1030,7 +1031,7 @@ const TutorGradesPage = () => {
                         "flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition-all",
                         active
                           ? "border-[#0E9F8E] bg-[#0E9F8E] text-white shadow-sm"
-                          : "border-[#E7EEEC] bg-white text-[#5c726d] hover:border-[#0E9F8E]/40 hover:bg-[#F1FBF9] hover:text-[#0E9F8E]",
+                          : "border-[#E7EEEC] dark:border-border bg-white dark:bg-card text-[#5c726d] dark:text-muted-foreground hover:border-[#0E9F8E]/40 hover:bg-[#F1FBF9] dark:hover:bg-primary-soft hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF]",
                       )}
                     >
                       <BookOpen className="size-3.5 shrink-0" />
@@ -1040,7 +1041,7 @@ const TutorGradesPage = () => {
                           "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
                           active
                             ? "bg-white/20 text-white"
-                            : "bg-[#E4F6EF] text-[#0E9F8E]",
+                            : "bg-[#E4F6EF] dark:bg-primary-light text-[#0E9F8E] dark:text-[#2DD4BF]",
                         )}
                       >
                         {cls.studentCount}
@@ -1053,16 +1054,16 @@ const TutorGradesPage = () => {
               {activeClass && (
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-[#16302b]">
+                    <h2 className="text-base font-bold text-[#16302b] dark:text-foreground">
                       {activeClass.name}
                     </h2>
-                    <span className="rounded-full bg-[#E4F6EF] px-2.5 py-0.5 text-xs font-semibold text-[#0B7A6D]">
+                    <span className="rounded-full bg-[#E4F6EF] dark:bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-[#0B7A6D] dark:text-[#5EEAD4]">
                       {activeClass.subject || activeClass.code}
                     </span>
                   </div>
                   <Link
                     href={`/classes/${activeClass.id}/curriculum`}
-                    className="flex items-center gap-1 text-xs font-medium text-[#0E9F8E] transition-colors hover:text-[#0B7A6D]"
+                    className="flex items-center gap-1 text-xs font-medium text-[#0E9F8E] dark:text-[#2DD4BF] transition-colors hover:text-[#0B7A6D] hover:dark:text-[#5EEAD4]"
                   >
                     <BookOpen className="size-3.5" />
                     Xem chương trình
@@ -1077,8 +1078,8 @@ const TutorGradesPage = () => {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-4 text-xs text-[#9AAEA9]">
-            <span className="font-medium text-[#5c726d]">Xếp loại:</span>
+          <div className="flex flex-wrap items-center gap-4 text-xs text-[#9AAEA9] dark:text-muted-foreground">
+            <span className="font-medium text-[#5c726d] dark:text-muted-foreground">Xếp loại:</span>
             {[
               {
                 label: "Giỏi",

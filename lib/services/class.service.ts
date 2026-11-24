@@ -2,6 +2,7 @@ import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { useGet, usePost, usePut, useDelete } from "@/lib/axios/query";
 import type { QueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { STUDENTS_QUERY_KEY } from "@/lib/services/student.service";
+import { ApiError } from "@/types";
 import type {
   ApiResponse,
   DeleteResult,
@@ -24,6 +25,14 @@ export function invalidateClassRelatedQueries(queryClient: QueryClient) {
     queryClient.invalidateQueries({ queryKey: CLASSES_QUERY_KEY }),
     queryClient.invalidateQueries({ queryKey: STUDENTS_QUERY_KEY }),
   ]);
+}
+
+/**
+ * BE trả 404 cho list khi tài khoản chưa có lớp nào (không phải lỗi thật) → coi như danh sách rỗng.
+ * Không retry 404 (vô ích); các lỗi khác (500/401/403...) giữ nguyên hành vi lỗi.
+ */
+function isNotFoundError(error: unknown): boolean {
+  return error instanceof ApiError && error.statusCode === 404;
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -50,15 +59,37 @@ export function useClassActions(args?: {
     "queryKey" | "queryFn"
   >;
 }) {
-  const list = useGet<ApiResponse<ClassesApiPayload>, ClassesApiPayload>(
+  const listQuery = useGet<ApiResponse<ClassesApiPayload>, ClassesApiPayload>(
     [...CLASSES_QUERY_KEY, args?.list],
     "/classes",
     {
       params: { limit: 100, ...args?.list },
       select: (raw) => unwrapApiData<ClassesApiPayload>(raw),
+      retry: (failureCount, error) => !isNotFoundError(error) && failureCount < 3,
       ...args?.listOptions,
     },
   );
+  // 404 của list = chưa có lớp → hiển thị trạng thái rỗng thay vì lỗi.
+  const list = isNotFoundError(listQuery.error)
+    ? {
+        ...listQuery,
+        data: {
+          classes: [],
+          pagination: {
+            total: 0,
+            page: Number(args?.list?.page ?? 1),
+            limit: Number(args?.list?.limit ?? 100),
+            totalPages: 0,
+          },
+        } satisfies ClassesApiPayload,
+        error: null,
+        isError: false,
+        isPending: false,
+        isLoading: false,
+        isSuccess: true,
+        status: "success" as const,
+      }
+    : listQuery;
 
   const detail = useGet<ApiResponse<ClassDetailDto>, ClassDetailDto>(
     [...CLASSES_QUERY_KEY, "detail", args?.detailId],

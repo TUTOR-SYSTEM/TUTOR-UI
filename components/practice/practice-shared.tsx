@@ -154,17 +154,17 @@ export const PRACTICE_STATUS: Record<
 > = {
   GRADED: {
     label: "Đã có điểm",
-    badge: "bg-[#EEF0FF] text-[#4f46e5]",
+    badge: "bg-[#EEF0FF] dark:bg-[#6366F1]/15 text-[#4f46e5] dark:text-[#A5B4FC]",
     bar: "bg-[#6366F1]",
   },
   SUBMITTED: {
     label: "Đã nộp · chờ chấm",
-    badge: "bg-[#E4F6EF] text-[#0B7A6D]",
+    badge: "bg-[#E4F6EF] dark:bg-primary-light text-[#0B7A6D] dark:text-[#5EEAD4]",
     bar: "bg-[#0E9F8E]",
   },
   NOT_SUBMITTED: {
     label: "Chưa nộp",
-    badge: "bg-[#FFF0E6] text-[#E85D24]",
+    badge: "bg-[#FFF0E6] dark:bg-[#E85D24]/15 text-[#E85D24] dark:text-[#FF9A6C]",
     bar: "bg-[#F97316]",
   },
 };
@@ -177,7 +177,7 @@ export const StatTile = ({
   value,
   suffix,
   icon: Icon,
-  iconClass = "bg-[#E4F6EF] text-[#0E9F8E]",
+  iconClass = "bg-[#E4F6EF] dark:bg-primary-light text-[#0E9F8E] dark:text-[#2DD4BF]",
 }: {
   label: string;
   value: React.ReactNode;
@@ -185,9 +185,9 @@ export const StatTile = ({
   icon: ElementType;
   iconClass?: string;
 }) => (
-  <div className="rounded-xl border border-[#E7EEEC] bg-white p-4 shadow-sm">
+  <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-4 shadow-sm">
     <div className="flex items-start justify-between">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9AAEA9]">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9AAEA9] dark:text-muted-foreground">
         {label}
       </p>
       <span
@@ -199,10 +199,10 @@ export const StatTile = ({
         <Icon className="size-3.5" />
       </span>
     </div>
-    <p className="mt-2 text-2xl font-bold text-[#16302b]">
+    <p className="mt-2 text-2xl font-bold text-[#16302b] dark:text-foreground">
       {value}
       {suffix && (
-        <span className="ml-1 text-sm font-medium text-[#9AAEA9]">
+        <span className="ml-1 text-sm font-medium text-[#9AAEA9] dark:text-muted-foreground">
           {suffix}
         </span>
       )}
@@ -245,7 +245,7 @@ export const PortalBanner = ({
 
 /** Shared page footer note. */
 export const PortalFooter = () => (
-  <p className="pt-2 text-center text-xs text-[#B7C6C2]">
+  <p className="pt-2 text-center text-xs text-[#B7C6C2] dark:text-muted-foreground">
     © 2026 TUTOR VN — Hệ thống quản lý học thuật chuyên nghiệp.
   </p>
 );

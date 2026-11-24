@@ -103,7 +103,7 @@ const AVATAR_COLORS = [
   "bg-rose-100 text-rose-700",
   "bg-cyan-100 text-cyan-700",
   "bg-orange-100 text-orange-700",
-  "bg-slate-100 text-slate-700",
+  "bg-slate-100 dark:bg-muted text-slate-700 dark:text-foreground",
 ];
 
 const fmtTime = (iso?: string) => {

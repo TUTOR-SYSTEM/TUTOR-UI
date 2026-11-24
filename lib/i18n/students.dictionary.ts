@@ -9,6 +9,7 @@ export type StudentValidationMessages = {
   schoolMax: string;
   codeMax: string;
   tutorRequired: string;
+  parentContactRequired: string;
   passwordTooShort: string;
   passwordTooLong: string;
   passwordComplexity: string;
@@ -161,6 +162,8 @@ export type StudentsDictionary = {
     classLabel: string;
     classPlaceholder: string;
     studentPhoneLabel: string;
+    studentEmailLabel: string;
+    studentEmailPlaceholder: string;
     studentPhonePlaceholder: string;
     schoolLabel: string;
     schoolPlaceholder: string;
@@ -202,6 +205,8 @@ export type StudentsDictionary = {
     genderOther: string;
     birthdayLabel: string;
     studentPhoneLabel: string;
+    studentEmailLabel: string;
+    studentEmailPlaceholder: string;
     studentPhonePlaceholder: string;
     schoolLabel: string;
     schoolPlaceholder: string;
@@ -400,6 +405,7 @@ const vi: StudentsDictionary = {
     schoolMax: "Trường tối đa 255 ký tự",
     codeMax: "Mã học sinh tối đa 50 ký tự",
     tutorRequired: "Vui lòng chọn gia sư quản lý",
+    parentContactRequired: "Nhập SĐT hoặc email phụ huynh",
     passwordTooShort: "Mật khẩu tối thiểu 8 ký tự",
     passwordTooLong: "Mật khẩu tối đa 100 ký tự",
     passwordComplexity: "Mật khẩu cần có chữ thường, chữ hoa, số và ký tự đặc biệt",
@@ -422,6 +428,8 @@ const vi: StudentsDictionary = {
     classLabel: "Lớp học",
     classPlaceholder: "Chọn lớp học...",
     studentPhoneLabel: "SĐT học sinh",
+    studentEmailLabel: "Email học sinh",
+    studentEmailPlaceholder: "VD: hocsinh@gmail.com",
     studentPhonePlaceholder: "VD: 0901 234 567",
     schoolLabel: "Trường",
     schoolPlaceholder: "VD: THPT Quang Trung",
@@ -435,8 +443,9 @@ const vi: StudentsDictionary = {
     parentPhonePlaceholder: "VD: 0912 345 678",
     parentEmailLabel: "Email phụ huynh",
     parentEmailPlaceholder: "VD: phuhuynh@gmail.com",
-    studentPasswordLabel: "Mật khẩu đăng nhập",
-    studentPasswordHint: "Để trống để hệ thống tự tạo mật khẩu ngẫu nhiên",
+    studentPasswordLabel: "Mật khẩu đăng nhập (tuỳ chọn)",
+    studentPasswordHint:
+      "Để trống, hệ thống sẽ tự tạo mật khẩu ngẫu nhiên đáp ứng quy tắc bảo mật và gửi qua email (nếu có).",
     parentPasswordLabel: "Mật khẩu phụ huynh (tài khoản mới)",
     passwordPlaceholder: "Nhập mật khẩu",
     toastSuccess: "Thêm học sinh thành công!",
@@ -468,6 +477,8 @@ const vi: StudentsDictionary = {
     genderOther: "Khác",
     birthdayLabel: "Ngày sinh",
     studentPhoneLabel: "SĐT học sinh",
+    studentEmailLabel: "Email học sinh",
+    studentEmailPlaceholder: "VD: hocsinh@gmail.com",
     studentPhonePlaceholder: "VD: 0901 234 567",
     schoolLabel: "Trường",
     schoolPlaceholder: "VD: THPT Quang Trung",
@@ -669,6 +680,7 @@ const en: StudentsDictionary = {
     schoolMax: "School must be at most 255 characters",
     codeMax: "Student code must be at most 50 characters",
     tutorRequired: "Please select a managing tutor",
+    parentContactRequired: "Enter a parent phone or email",
     passwordTooShort: "Password must be at least 8 characters",
     passwordTooLong: "Password must be at most 100 characters",
     passwordComplexity: "Password needs lowercase, uppercase, a number and a special character",
@@ -691,6 +703,8 @@ const en: StudentsDictionary = {
     classLabel: "Class",
     classPlaceholder: "Select a class...",
     studentPhoneLabel: "Student phone",
+    studentEmailLabel: "Student email",
+    studentEmailPlaceholder: "e.g. student@gmail.com",
     studentPhonePlaceholder: "e.g. 0901 234 567",
     schoolLabel: "School",
     schoolPlaceholder: "e.g. Quang Trung High School",
@@ -704,8 +718,9 @@ const en: StudentsDictionary = {
     parentPhonePlaceholder: "e.g. 0912 345 678",
     parentEmailLabel: "Parent email",
     parentEmailPlaceholder: "e.g. parent@gmail.com",
-    studentPasswordLabel: "Login password",
-    studentPasswordHint: "Leave empty to let the system generate a random password",
+    studentPasswordLabel: "Login password (optional)",
+    studentPasswordHint:
+      "Leave empty and the system will generate a random password that meets the security rules and send it by email (if an email is provided).",
     parentPasswordLabel: "Parent password (new account)",
     passwordPlaceholder: "Enter password",
     toastSuccess: "Student added successfully!",
@@ -737,6 +752,8 @@ const en: StudentsDictionary = {
     genderOther: "Other",
     birthdayLabel: "Date of birth",
     studentPhoneLabel: "Student phone",
+    studentEmailLabel: "Student email",
+    studentEmailPlaceholder: "e.g. student@gmail.com",
     studentPhonePlaceholder: "e.g. 0901 234 567",
     schoolLabel: "School",
     schoolPlaceholder: "e.g. Quang Trung High School",

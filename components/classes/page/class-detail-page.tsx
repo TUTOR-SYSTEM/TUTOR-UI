@@ -41,6 +41,7 @@ import { useLocale } from "@/hooks/useLocale.hook";
 import { DeleteIcon } from "@/components/ui/delete-icon.ui";
 import type { CurriculumDetail } from "@/types";
 import { useClassActions } from "@/lib/services/class.service";
+import { useScheduleActions } from "@/lib/services/schedule.service";
 import { useClassesCopy } from "@/hooks/useClassesCopy.hook";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import type { ClassesDictionary } from "@/lib/i18n/classes.dictionary";
@@ -104,7 +105,7 @@ const AVATAR_COLORS = [
   "bg-rose-100 text-rose-700",
   "bg-cyan-100 text-cyan-700",
   "bg-orange-100 text-orange-700",
-  "bg-slate-100 text-slate-700",
+  "bg-slate-100 dark:bg-muted text-slate-700 dark:text-foreground",
 ];
 
 const getInitials = (name: string) =>
@@ -122,6 +123,11 @@ type ClassDetailPageProps = {
 /** Tutor's management view — students/parents get `ClassDetailWatchPage` instead. */
 const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
   const queryClient = useQueryClient();
+  /* Lịch cố định của lớp — dùng để cảnh báo khi tạo buổi học lệch lịch. */
+  const { byClass: classScheduleQuery } = useScheduleActions({
+    classId,
+    byClassOptions: { enabled: !!classId },
+  });
   const { detail } = useClassesCopy();
   const [studentSearch, setStudentSearch] = useState("");
   const [selectedUpcoming, setSelectedUpcoming] = useState<Set<string>>(
@@ -407,7 +413,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
               aria-label={detail.students.removeStudent.removeAria}
               title={detail.students.removeStudent.removeAria}
               onClick={() => setRemovingStudentItem(student)}
-              className="rounded-md text-[#8AA09B] hover:bg-red-50 hover:text-red-500"
+              className="rounded-md text-[#8AA09B] dark:text-muted-foreground hover:bg-red-50 hover:text-red-500"
             >
               <DeleteIcon />
             </Button>
@@ -774,6 +780,7 @@ const TutorClassDetailPage = ({ classId }: ClassDetailPageProps) => {
         lessons={lessons.map((l) => ({ id: l.id, title: l.title }))}
         nextSessionNumber={sessions.length + 1}
         classLocation={cls.location}
+        classSchedules={classScheduleQuery.data ?? null}
       />
     </div>
   );

@@ -7,13 +7,11 @@
  */
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
-  CreditCard,
   Clock,
   Star,
 } from "lucide-react";
@@ -58,16 +56,16 @@ function toAssignment(row: ParentExerciseRow): Assignment {
 const WorkRow = ({ a }: { a: Assignment }) => {
   const meta = PRACTICE_STATUS[a.status];
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
+    <div className="relative overflow-hidden rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
       <span className={cn("absolute inset-y-0 left-0 w-1", meta.bar)} />
       <div className="flex items-center gap-4 pl-5 pr-4 py-4">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#F1F0FE] text-[#6366F1]">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#F1F0FE] dark:bg-[#6366F1]/15 text-[#6366F1] dark:text-[#A5B4FC]">
           <ClipboardCheck className="size-5" />
         </span>
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-bold text-[#16302b]">{a.title}</h3>
+            <h3 className="font-bold text-[#16302b] dark:text-foreground">{a.title}</h3>
             <span
               className={cn(
                 "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",
@@ -79,7 +77,7 @@ const WorkRow = ({ a }: { a: Assignment }) => {
             </span>
           </div>
           {a.description && (
-            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-[#9AAEA9]">
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-[#9AAEA9] dark:text-muted-foreground">
               <Clock className="size-3.5" />
               Lớp: <span className="font-medium">{a.description}</span>
             </p>
@@ -91,26 +89,26 @@ const WorkRow = ({ a }: { a: Assignment }) => {
           <div className="text-right">
             {a.status === "GRADED" ? (
               <>
-                <p className="text-xl font-bold text-[#4f46e5]">
+                <p className="text-xl font-bold text-[#4f46e5] dark:text-[#A5B4FC]">
                   {a.score?.toFixed(1)}
                 </p>
-                <p className="text-[11px] text-[#9AAEA9]">điểm</p>
+                <p className="text-[11px] text-[#9AAEA9] dark:text-muted-foreground">điểm</p>
               </>
             ) : a.status === "SUBMITTED" ? (
               <>
-                <p className="text-lg font-bold tracking-widest text-[#C5D5D1]">
+                <p className="text-lg font-bold tracking-widest text-[#C5D5D1] dark:text-muted-foreground">
                   •••
                 </p>
-                <p className="text-[11px] text-[#9AAEA9]">chờ chấm</p>
+                <p className="text-[11px] text-[#9AAEA9] dark:text-muted-foreground">chờ chấm</p>
               </>
             ) : (
               <>
-                <p className="text-lg font-bold text-[#C5D5D1]">—</p>
-                <p className="text-[11px] text-[#E85D24]">chưa nộp</p>
+                <p className="text-lg font-bold text-[#C5D5D1] dark:text-muted-foreground">—</p>
+                <p className="text-[11px] text-[#E85D24] dark:text-[#FF9A6C]">chưa nộp</p>
               </>
             )}
           </div>
-          <ChevronRight className="size-4 text-[#C5D5D1]" />
+          <ChevronRight className="size-4 text-[#C5D5D1] dark:text-muted-foreground" />
         </div>
       </div>
     </div>
@@ -153,12 +151,12 @@ export const ParentPortalView = () => {
   const missing = assignments.find((a) => a.status === "NOT_SUBMITTED") ?? null;
 
   if (children.isLoading) {
-    return <p className="py-10 text-center text-sm text-[#9AAEA9]">Đang tải…</p>;
+    return <p className="py-10 text-center text-sm text-[#9AAEA9] dark:text-muted-foreground">Đang tải…</p>;
   }
 
   if (childList.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-[#D5E2DE] bg-white px-6 py-12 text-center text-sm text-[#5c726d]">
+      <div className="rounded-xl border border-dashed border-[#D5E2DE] dark:border-border bg-white dark:bg-card px-6 py-12 text-center text-sm text-[#5c726d] dark:text-muted-foreground">
         Tài khoản này chưa được liên kết với học sinh nào.
       </div>
     );
@@ -176,8 +174,8 @@ export const ParentPortalView = () => {
               className={cn(
                 "rounded-full border px-3 py-1 text-sm font-semibold transition-colors",
                 activeChild?.id === c.id
-                  ? "border-[#0E9F8E] bg-[#E4F6EF] text-[#0B7A6D]"
-                  : "border-[#E7EEEC] bg-white text-[#5c726d] hover:border-[#0E9F8E]/40",
+                  ? "border-[#0E9F8E] bg-[#E4F6EF] dark:bg-primary-light text-[#0B7A6D] dark:text-[#5EEAD4]"
+                  : "border-[#E7EEEC] dark:border-border bg-white dark:bg-card text-[#5c726d] dark:text-muted-foreground hover:border-[#0E9F8E]/40",
               )}
             >
               {`${c.lastName} ${c.firstName}`.trim()}
@@ -196,15 +194,6 @@ export const ParentPortalView = () => {
         />
       )}
 
-      <Link
-        href="/fees"
-        className="flex items-center gap-2 self-start rounded-lg border border-[#E7EEEC] bg-white px-4 py-2 text-sm font-semibold text-[#5c726d] transition-colors hover:border-[#0E9F8E]/40 hover:text-[#0E9F8E]"
-      >
-        <CreditCard className="size-4" />
-        Xem học phí
-        <ChevronRight className="size-4" />
-      </Link>
-
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatTile
           label="Đã nộp"
@@ -217,22 +206,22 @@ export const ParentPortalView = () => {
           value={stats.graded}
           suffix="bài"
           icon={Star}
-          iconClass="bg-[#F1F0FE] text-[#6366F1]"
+          iconClass="bg-[#F1F0FE] dark:bg-[#6366F1]/15 text-[#6366F1] dark:text-[#A5B4FC]"
         />
         <StatTile
           label="Chưa nộp"
           value={stats.notSubmitted}
           suffix="bài"
           icon={AlertTriangle}
-          iconClass="bg-[#FFF0E6] text-[#F59E0B]"
+          iconClass="bg-[#FFF0E6] dark:bg-[#E85D24]/15 text-[#F59E0B]"
         />
       </div>
 
       {missing && (
-        <div className="flex items-start gap-3 rounded-xl border border-[#FF7A45]/30 bg-[#FFF0E6] px-4 py-3">
+        <div className="flex items-start gap-3 rounded-xl border border-[#FF7A45]/30 bg-[#FFF0E6] dark:bg-[#E85D24]/15 px-4 py-3">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-[#FF7A45]" />
-          <p className="text-sm leading-relaxed text-[#16302b]">
-            <span className="font-semibold text-[#E85D24]">Nhắc nhở:</span>{" "}
+          <p className="text-sm leading-relaxed text-[#16302b] dark:text-foreground">
+            <span className="font-semibold text-[#E85D24] dark:text-[#FF9A6C]">Nhắc nhở:</span>{" "}
             Con còn{" "}
             <span className="font-semibold">{stats.notSubmitted} bài</span>{" "}
             chưa nộp — “{missing.title}”. Bạn có thể nhắc con hoàn thành đúng hạn.
@@ -240,10 +229,10 @@ export const ParentPortalView = () => {
         </div>
       )}
 
-      <h2 className="mt-1 font-bold text-[#16302b]">Bài tập gần đây</h2>
+      <h2 className="mt-1 font-bold text-[#16302b] dark:text-foreground">Bài tập gần đây</h2>
       <div className="flex flex-col gap-3">
         {assignments.length === 0 && !exercises.isLoading && (
-          <p className="py-6 text-center text-sm text-[#9AAEA9]">Chưa có bài tập nào.</p>
+          <p className="py-6 text-center text-sm text-[#9AAEA9] dark:text-muted-foreground">Chưa có bài tập nào.</p>
         )}
         {assignments.map((a) => (
           <WorkRow key={a.id} a={a} />

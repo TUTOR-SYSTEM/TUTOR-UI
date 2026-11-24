@@ -74,7 +74,7 @@ const ForgotPass = () => {
         </p>
 
         <Link
-          href={`/reset-password?email=${encodeURIComponent(sentTo)}`}
+          href={`/verify-otp?email=${encodeURIComponent(sentTo)}`}
           className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-md transition hover:bg-primary-hover"
         >
           {t.enterCode}

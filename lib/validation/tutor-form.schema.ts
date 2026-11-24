@@ -32,16 +32,21 @@ function passwordField(m: TutorValidationMessages) {
     });
 }
 
+/** Mật khẩu tùy chọn: để trống = BE tự sinh; nhập thì vẫn theo rule 8–20 + độ phức tạp. */
+function optionalPasswordField(m: TutorValidationMessages) {
+  return z.union([z.literal(""), passwordField(m)]);
+}
+
 /** Create-tutor form. Field names match the form values and the BE 422 `errors[].field`. */
 export function buildTutorCreateSchema(m: TutorValidationMessages) {
   return z.object({
     lastName: nameField(m),
     firstName: nameField(m),
     email: z.string().trim().min(1, m.required).email(m.emailInvalid),
-    password: passwordField(m),
+    password: optionalPasswordField(m),
     phone: z.string().trim().max(20, m.phoneMax),
     gender: z.enum(["MALE", "FEMALE", "OTHER"]),
-    subjects: z.array(z.string()),
+    subjects: z.array(z.string()).min(1, m.subjectsRequired),
     school: z.string().trim().max(255, m.schoolMax),
   });
 }

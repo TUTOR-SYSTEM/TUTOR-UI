@@ -10,6 +10,7 @@ import { Search } from "lucide-react";
 
 import {
   useNotificationActions,
+  useNotificationCounts,
   NOTIFICATIONS_QUERY_KEY,
 } from "@/lib/services/notification.service";
 import { getErrorMessage } from "@/lib/axios";
@@ -19,6 +20,8 @@ import UsageGuides, {
   type UsageGuideStep,
 } from "@/components/ui/usage-guide.ui";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.ui";
+import { Button } from "@/components/ui/button.ui";
+import { Input } from "@/components/ui/input.ui";
 
 /* ─── Config ─── */
 const TYPE_LABELS: Record<NotificationType, string> = {
@@ -40,13 +43,13 @@ const TYPE_TABS: {
   { label: "Gia sư", value: "TUTOR", dot: "#7C3AED" },
 ];
 
-const TYPE_BADGE: Record<string, { bg: string; text: string }> = {
-  TUITION: { bg: "#FFF0E6", text: "#E85D24" },
-  SYSTEM: { bg: "#EEF2FF", text: "#4F46E5" },
-  STUDENT: { bg: "#E4F6EF", text: "#0B7A6D" },
-  TUTOR: { bg: "#F3E8FF", text: "#7C3AED" },
+const TYPE_BADGE: Record<string, string> = {
+  TUITION: "bg-[#FFF0E6] text-[#E85D24] dark:bg-[#E85D24]/15 dark:text-[#FF9A6B]",
+  SYSTEM: "bg-[#EEF2FF] text-[#4F46E5] dark:bg-[#4F46E5]/15 dark:text-[#A5B4FC]",
+  STUDENT: "bg-[#E4F6EF] text-[#0B7A6D] dark:bg-[#0E9F8E]/15 dark:text-[#5EEAD4]",
+  TUTOR: "bg-[#F3E8FF] text-[#7C3AED] dark:bg-[#7C3AED]/15 dark:text-[#C4B5FD]",
 };
-const FALLBACK_BADGE = { bg: "#F3F7F5", text: "#16302b" };
+const FALLBACK_BADGE = "bg-muted text-foreground";
 
 const PAGE_SIZE = 5;
 
@@ -130,41 +133,41 @@ function DetailPanel({
   });
 
   return (
-    <div className="flex w-95 shrink-0 flex-col rounded-xl border border-[#E7EEEC] bg-white shadow-sm overflow-y-auto">
+    <div className="flex w-95 shrink-0 flex-col rounded-xl border border-border bg-card shadow-sm overflow-y-auto">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-[#EEF3F1] px-5 pt-5 pb-4">
-        <span
-          className="rounded-md px-2.5 py-0.5 text-xs font-semibold"
-          style={{ backgroundColor: badge.bg, color: badge.text }}
-        >
+      <div className="flex items-start justify-between gap-3 border-b border-border-light px-5 pt-5 pb-4">
+        <span className={`rounded-md px-2.5 py-0.5 text-xs font-semibold ${badge}`}>
           {TYPE_LABELS[notification.type]}
         </span>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           onClick={onClose}
-          className="rounded-md p-0.5 text-[#9AAEA9] hover:bg-[#F3F7F5] hover:text-[#16302b] transition-colors"
+          aria-label="Đóng"
+          className="text-muted-foreground"
         >
-          <X className="size-4" />
-        </button>
+          <X />
+        </Button>
       </div>
 
       {/* Body */}
       <div className="flex flex-col gap-4 px-5 py-4">
-        <h2 className="text-base font-bold leading-snug text-[#16302b]">
+        <h2 className="text-base font-bold leading-snug text-foreground">
           {notification.title}
         </h2>
 
-        <div className="flex items-center gap-1.5 text-xs text-[#9AAEA9]">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Clock className="size-3.5 shrink-0" />
           {date}
         </div>
 
         {notification.subContent && (
-          <p className="text-xs text-[#9AAEA9]">{notification.subContent}</p>
+          <p className="text-xs text-muted-foreground">{notification.subContent}</p>
         )}
 
         {notification.content && (
-          <p className="text-sm leading-relaxed text-[#5c726d]">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             {notification.content}
           </p>
         )}
@@ -172,7 +175,7 @@ function DetailPanel({
         {safeRedirectHref(notification.detailUrl ?? notification.redirectUrl) && (
           <Link
             href={safeRedirectHref(notification.detailUrl ?? notification.redirectUrl) ?? "/notifications"}
-            className="mt-1 w-full rounded-lg border border-[#0E9F8E] py-2 text-center text-sm font-semibold text-[#0E9F8E] hover:bg-[#F1FBF9] transition-colors"
+            className="mt-1 w-full rounded-lg border border-[#0E9F8E] py-2 text-center text-sm font-semibold text-[#0E9F8E] hover:bg-primary-soft transition-colors"
           >
             {notification.actionLabel ?? "Xem chi tiết"}
           </Link>
@@ -235,18 +238,7 @@ export default function NotificationsPage() {
       toast.error(getErrorMessage(err, "Không thể đánh dấu đã đọc")),
   };
 
-  const counts = useMemo(() => {
-    const total = pagination?.total ?? notificationList.length;
-    const byType = TYPE_TABS.slice(1).reduce<
-      Partial<Record<NotificationType, number>>
-    >((acc, t) => {
-      acc[t.value as NotificationType] = notificationList.filter(
-        (n) => n.type === t.value,
-      ).length;
-      return acc;
-    }, {});
-    return { total, ...byType };
-  }, [notificationList, pagination]);
+  const counts = useNotificationCounts();
 
   const selectedNotification =
     notificationList.find((n) => n.id === selectedId) ?? null;
@@ -263,8 +255,8 @@ export default function NotificationsPage() {
       {/* ── Search + Filter tabs ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#9AAEA9]" />
-          <input
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+          <Input
             type="search"
             value={search}
             onChange={(e) => {
@@ -272,7 +264,7 @@ export default function NotificationsPage() {
               setPage(1);
             }}
             placeholder="Tìm theo tiêu đề..."
-            className="h-10 w-56 rounded-lg border border-[#E7EEEC] bg-white pl-9 pr-3 text-sm text-[#16302b] placeholder:text-[#9AAEA9] focus:outline-none focus:ring-2 focus:ring-[#0E9F8E]/30 focus:border-[#0E9F8E] transition-colors"
+            className="w-56 rounded-lg pl-9 pr-3 md:text-sm"
           />
         </div>
       </div>
@@ -285,19 +277,19 @@ export default function NotificationsPage() {
             : counts.total;
           const isActive = activeTab === tab.value;
           return (
-            <button
+            <Button
               key={tab.value}
               type="button"
+              variant={isActive ? "default" : "outline"}
               onClick={() => {
                 setActiveTab(tab.value);
                 setPage(1);
               }}
-              className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`h-9 gap-1.5 rounded-full px-4 text-sm font-medium transition-colors ${
                 isActive
-                  ? "text-white shadow-sm"
-                  : "border border-[#E7EEEC] bg-white text-[#16302b] hover:border-[#0E9F8E]/40 hover:text-[#0E9F8E]"
+                  ? "bg-[#0E9F8E] text-white shadow-sm hover:bg-[#0b7a6d]"
+                  : "text-foreground hover:border-[#0E9F8E]/40 hover:text-[#0E9F8E]"
               }`}
-              style={isActive ? { background: "#0E9F8E" } : undefined}
             >
               {tab.dot && !isActive && (
                 <span
@@ -308,14 +300,12 @@ export default function NotificationsPage() {
               {tab.label}
               <span
                 className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
-                  isActive
-                    ? "bg-white/20 text-white"
-                    : "bg-[#F3F7F5] text-[#16302b]"
+                  isActive ? "bg-white/20 text-white" : "bg-muted text-foreground"
                 }`}
               >
                 {count}
               </span>
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -325,7 +315,7 @@ export default function NotificationsPage() {
         className={`flex gap-4 ${selectedNotification ? "items-start" : ""}`}
       >
         {/* Table */}
-        <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
+        <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           <div className="overflow-x-auto">
             <Table className="w-full text-sm">
               <TableHeader>
@@ -345,7 +335,7 @@ export default function NotificationsPage() {
                   <TableRow>
                     <TableCell
                       colSpan={4}
-                      className="py-14 text-center text-[#9AAEA9]"
+                      className="py-14 text-center text-muted-foreground"
                     >
                       <Loader2 className="mx-auto size-5 animate-spin" />
                     </TableCell>
@@ -369,12 +359,12 @@ export default function NotificationsPage() {
                       <TableRow
                         key={n.id}
                         onClick={() => openDetail(n)}
-                        className={`cursor-pointer border-b border-[#EEF3F1] last:border-0 transition-colors ${
-                          isSelected ? "bg-[#E4F6EF]" : "hover:bg-[#F1FBF9]"
+                        className={`cursor-pointer border-b border-border-light last:border-0 transition-colors ${
+                          isSelected ? "bg-primary-light" : "hover:bg-primary-soft"
                         }`}
                       >
                         {/* STT */}
-                        <TableCell className="px-4 py-4 text-[#9AAEA9] font-medium">
+                        <TableCell className="px-4 py-4 text-muted-foreground font-medium">
                           {String((page - 1) * PAGE_SIZE + i + 1).padStart(
                             2,
                             "0",
@@ -384,11 +374,7 @@ export default function NotificationsPage() {
                         {/* Type badge */}
                         <TableCell className="px-4 py-4">
                           <span
-                            className="rounded-md px-2.5 py-0.5 text-xs font-semibold"
-                            style={{
-                              backgroundColor: badge.bg,
-                              color: badge.text,
-                            }}
+                            className={`rounded-md px-2.5 py-0.5 text-xs font-semibold ${badge}`}
                           >
                             {TYPE_LABELS[n.type]}
                           </span>
@@ -409,14 +395,14 @@ export default function NotificationsPage() {
                               <p
                                 className={`leading-tight ${
                                   n.isRead
-                                    ? "font-medium text-[#16302b]"
-                                    : "font-semibold text-[#16302b]"
+                                    ? "font-medium text-foreground"
+                                    : "font-semibold text-foreground"
                                 }`}
                               >
                                 {n.title}
                               </p>
                               {n.subContent && (
-                                <p className="mt-0.5 text-xs text-[#9AAEA9]">
+                                <p className="mt-0.5 text-xs text-muted-foreground">
                                   {n.subContent}
                                 </p>
                               )}
@@ -426,16 +412,18 @@ export default function NotificationsPage() {
 
                         {/* Detail link */}
                         <TableCell className="px-4 py-4 text-center">
-                          <button
+                          <Button
                             type="button"
+                            variant="link"
+                            size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               openDetail(n);
                             }}
-                            className="text-sm font-medium text-[#0E9F8E] hover:underline transition-colors"
+                            className="h-auto w-auto p-0 text-sm font-medium text-[#0E9F8E]"
                           >
                             Xem →
-                          </button>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
@@ -445,7 +433,7 @@ export default function NotificationsPage() {
                   <TableRow>
                     <TableCell
                       colSpan={4}
-                      className="py-14 text-center text-[#9AAEA9]"
+                      className="py-14 text-center text-muted-foreground"
                     >
                       Không có thông báo nào.
                     </TableCell>
@@ -457,38 +445,39 @@ export default function NotificationsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-end gap-1 border-t border-[#EEF3F1] px-4 py-3">
-              <button
+            <div className="flex items-center justify-end gap-1 border-t border-border-light px-4 py-3">
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="rounded-lg px-3 py-1.5 text-sm text-[#16302b] hover:bg-[#F3F7F5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="w-auto px-3 text-foreground"
               >
                 Trước
-              </button>
+              </Button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
+                <Button
                   key={p}
                   type="button"
+                  variant={p === page ? "default" : "ghost"}
+                  size="icon-sm"
                   onClick={() => setPage(p)}
-                  className="size-8 rounded-lg text-sm font-medium transition-colors"
-                  style={
-                    p === page
-                      ? { background: "#0E9F8E", color: "#fff" }
-                      : { color: "#16302b" }
-                  }
+                  className={`text-sm font-medium ${p === page ? "bg-[#0E9F8E] text-white hover:bg-[#0b7a6d]" : "text-foreground"}`}
                 >
                   {p}
-                </button>
+                </Button>
               ))}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="rounded-lg px-3 py-1.5 text-sm text-[#16302b] hover:bg-[#F3F7F5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="w-auto px-3 text-foreground"
               >
                 Sau
-              </button>
+              </Button>
             </div>
           )}
         </div>

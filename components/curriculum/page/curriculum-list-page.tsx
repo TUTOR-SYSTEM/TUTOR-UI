@@ -84,7 +84,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     title: "Sửa / Xoá",
     body: (
       <>
-        Dùng icon <span className="font-semibold text-[#16302b]">✏️ / 🗑️</span>{" "}
+        Dùng icon <span className="font-semibold text-[#16302b] dark:text-foreground">✏️ / 🗑️</span>{" "}
         ở góc dưới thẻ để chỉnh sửa hoặc xoá khung chương trình.
       </>
     ),
@@ -93,7 +93,7 @@ const USAGE_GUIDE_STEPS: UsageGuideStep[] = [
 
 const USAGE_GUIDE_WARNING = (
   <>
-    <span className="font-semibold text-[#E85D24]">Lưu ý:</span> Xoá khung
+    <span className="font-semibold text-[#E85D24] dark:text-[#FF9A6C]">Lưu ý:</span> Xoá khung
     chương trình sẽ xoá luôn tất cả chương và bài học liên quan, không thể hoàn
     tác.
   </>

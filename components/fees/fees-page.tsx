@@ -23,7 +23,7 @@ const TUTOR_USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     body: (
       <>
         Nhấn{" "}
-        <span className="font-semibold text-[#0E9F8E]">+ Tạo hóa đơn</span> ở
+        <span className="font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">+ Tạo hóa đơn</span> ở
         góc trên, chọn lớp, học sinh và số tiền cần thu.
       </>
     ),
@@ -33,7 +33,7 @@ const TUTOR_USAGE_GUIDE_STEPS: UsageGuideStep[] = [
     title: "Lọc theo trạng thái",
     body: (
       <>
-        Dùng các thẻ <span className="font-semibold text-[#0E9F8E]">Đã đóng</span>,{" "}
+        Dùng các thẻ <span className="font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">Đã đóng</span>,{" "}
         <span className="font-semibold text-[#F97316]">Chưa đóng</span>,{" "}
         <span className="font-semibold text-red-500">Quá hạn</span> hoặc chọn
         tháng để lọc danh sách.
@@ -54,7 +54,7 @@ const TUTOR_USAGE_GUIDE_STEPS: UsageGuideStep[] = [
 
 const TUTOR_USAGE_GUIDE_WARNING = (
   <>
-    <span className="font-semibold text-[#E85D24]">Lưu ý:</span> Trạng thái
+    <span className="font-semibold text-[#E85D24] dark:text-[#FF9A6C]">Lưu ý:</span> Trạng thái
     hóa đơn không tự động chuyển sang{" "}
     <span className="font-semibold text-red-500">Quá hạn</span> — hãy vào chi
     tiết hóa đơn để cập nhật thủ công khi học sinh quá hạn đóng.

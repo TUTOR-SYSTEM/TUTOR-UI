@@ -268,7 +268,7 @@ export default function StudentsPage() {
       body: (
         <>
           {copy.list.guide.step1Prefix}{" "}
-          <span className="font-semibold text-[#0E9F8E]">
+          <span className="font-semibold text-[#0E9F8E] dark:text-[#2DD4BF]">
             {copy.list.guide.step1Highlight}
           </span>{" "}
           {copy.list.guide.step1Suffix}
@@ -294,7 +294,7 @@ export default function StudentsPage() {
 
   const usageGuideWarning = (
     <>
-      <span className="font-semibold text-[#E85D24]">
+      <span className="font-semibold text-[#E85D24] dark:text-[#FF9A6C]">
         {copy.list.guide.noteLabel}
       </span>{" "}
       {copy.list.guide.noteBody}
@@ -316,7 +316,7 @@ export default function StudentsPage() {
             <Plus className="size-4" />
             {copy.list.addButton}
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
               <Input
@@ -337,35 +337,31 @@ export default function StudentsPage() {
               type="button"
               variant="outline"
               onClick={handleSearchSubmit}
-              className="h-10! w-auto! gap-1.5 rounded-lg! border-[#E7EEEC]! bg-white text-sm text-[#16302b] hover:bg-[#F1FBF9]"
+              className="h-10! w-auto! gap-1.5 rounded-lg! border-[#E7EEEC] dark:border-border! bg-white dark:bg-card text-sm text-[#16302b] dark:text-foreground hover:bg-[#F1FBF9] dark:hover:bg-primary-soft"
             >
               <Search className="size-3.5" />
               {common.actions.search}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setFilterOpen(true)}
+              className="h-10! w-auto! gap-1.5 rounded-lg! border-[#E7EEEC] dark:border-border! bg-white dark:bg-card text-sm text-[#16302b] dark:text-foreground hover:bg-[#F1FBF9] dark:hover:bg-primary-soft"
+            >
+              <SlidersHorizontal className="size-3.5" />
+              {common.actions.filter}
+              {activeFilterCount > 0 && (
+                <span className="flex size-4 items-center justify-center rounded-full bg-[#0E9F8E] text-[10px] font-bold text-white">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* ── Filter button (lọc lớp qua popup "Bộ lọc") ── */}
-      <div className="flex items-center justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setFilterOpen(true)}
-          className="h-10! w-auto! gap-1.5 rounded-lg! border-[#E7EEEC]! bg-white text-sm text-[#16302b] hover:bg-[#F1FBF9]"
-        >
-          <SlidersHorizontal className="size-3.5" />
-          {common.actions.filter}
-          {activeFilterCount > 0 && (
-            <span className="flex size-4 items-center justify-center rounded-full bg-[#0E9F8E] text-[10px] font-bold text-white">
-              {activeFilterCount}
-            </span>
-          )}
-        </Button>
-      </div>
-
       {/* ── Table ── */}
-      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30">
@@ -564,7 +560,7 @@ export default function StudentsPage() {
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
-          className="border-t border-[#EEF3F1] px-4 py-3"
+          className="border-t border-[#EEF3F1] dark:border-border-light px-4 py-3"
         />
       </div>
 

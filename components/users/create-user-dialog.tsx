@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select.ui";
 import { usePost } from "@/lib/axios/query";
 import { getErrorMessage } from "@/lib/axios";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
+import { useUsersCopy } from "@/hooks/useUsersCopy.hook";
 import { ROLE_OPTIONS } from "./role-options";
 import type {
   ApiManagedUser,
@@ -50,11 +51,13 @@ function Field({
   label,
   required,
   error,
+  hint,
   children,
 }: {
   label: string;
   required?: boolean;
   error?: string;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -64,12 +67,17 @@ function Field({
         {required && <span className="ml-0.5 text-destructive">*</span>}
       </label>
       {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error ? (
+        <p className="text-xs text-destructive">{error}</p>
+      ) : hint ? (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      ) : null}
     </div>
   );
 }
 
 export function CreateUserDialog({ open, onClose, onCreated }: Props) {
+  const copy = useUsersCopy().createDialog;
   const [values, setValues] = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormValues, string>>
@@ -97,11 +105,13 @@ export function CreateUserDialog({ open, onClose, onCreated }: Props) {
     if (!values.email.trim()) next.email = "Vui lòng nhập email";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim()))
       next.email = "Email không hợp lệ";
-    if (!values.password) next.password = "Vui lòng nhập mật khẩu";
-    else if (values.password.length < PASSWORD_MIN_LENGTH)
-      next.password = `Mật khẩu phải có ít nhất ${PASSWORD_MIN_LENGTH} ký tự`;
-    else if (values.password.length > PASSWORD_MAX_LENGTH)
-      next.password = `Mật khẩu tối đa ${PASSWORD_MAX_LENGTH} ký tự`;
+    // Mật khẩu tùy chọn: để trống = BE tự sinh; nhập thì phải 8–20 ký tự.
+    if (values.password) {
+      if (values.password.length < PASSWORD_MIN_LENGTH)
+        next.password = copy.passwordTooShort;
+      else if (values.password.length > PASSWORD_MAX_LENGTH)
+        next.password = copy.passwordTooLong;
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -115,7 +125,7 @@ export function CreateUserDialog({ open, onClose, onCreated }: Props) {
       email: values.email.trim(),
       phone: values.phone.trim() || undefined,
       role: values.role,
-      password: values.password,
+      password: values.password || undefined,
     };
 
     createUser.mutate(payload, {
@@ -183,7 +193,11 @@ export function CreateUserDialog({ open, onClose, onCreated }: Props) {
           </Field>
         </div>
 
-        <Field label="Mật khẩu" required error={errors.password}>
+        <Field
+          label={copy.passwordLabel}
+          error={errors.password}
+          hint={copy.passwordHint}
+        >
           <Input
             value={values.password}
             onChange={(e) =>
@@ -191,7 +205,7 @@ export function CreateUserDialog({ open, onClose, onCreated }: Props) {
             }
             type="password"
             autoComplete="new-password"
-            placeholder={`${PASSWORD_MIN_LENGTH}–${PASSWORD_MAX_LENGTH} ký tự`}
+            placeholder={copy.passwordPlaceholder}
             invalid={!!errors.password}
             disabled={isPending}
           />

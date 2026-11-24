@@ -78,7 +78,7 @@ const GRADE_BADGE: Record<
   ASSIGNED: {
     label: "Chưa nộp",
     dot: "bg-slate-400",
-    className: "bg-slate-50 text-slate-600 border-slate-200",
+    className: "bg-slate-50 dark:bg-slate-900/40 text-slate-600 dark:text-muted-foreground border-slate-200 dark:border-border",
   },
   SUBMITTED: {
     label: "Chờ chấm",

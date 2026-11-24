@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table.ui";
 import { cn } from "@/lib/utils";
 import { useGet } from "@/lib/axios/query";
+import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
 import { getErrorMessage } from "@/lib/axios";
 import type {
@@ -38,6 +39,7 @@ import {
   fmtDateTime,
   fmtTime,
 } from "@/components/sessions/session-shared";
+import { currentPersonName } from "@/lib/format/person-name";
 
 /* ─── Types ─── */
 
@@ -88,6 +90,7 @@ export const SessionSubmissionsPage = ({
   classId,
   sessionId,
 }: SessionSubmissionsPageProps) => {
+  const isTutor = useCurrentUserRole() === "TUTOR";
   const {
     data: sessionRaw,
     isLoading: sessionLoading,
@@ -254,7 +257,7 @@ export const SessionSubmissionsPage = ({
             <TableBody>
               {students.map((student, idx) => {
                 const name =
-                  `${student.firstName} ${student.lastName}`.trim();
+                  currentPersonName(student.firstName, student.lastName);
                 const submission = submissionByStudent[student.id] ?? null;
                 const statusMeta = submission
                   ? EXERCISE_STATUS_META[submission.status]
@@ -310,9 +313,11 @@ export const SessionSubmissionsPage = ({
                           <Link
                             href={`/classes/${classId}/sessions/${sessionId}/submissions/${submission.id}`}
                           >
-                            {submission.status === "GRADED"
-                              ? "Sửa điểm"
-                              : "Chấm điểm"}
+                            {!isTutor
+                              ? "Xem bài"
+                              : submission.status === "GRADED"
+                                ? "Sửa điểm"
+                                : "Chấm điểm"}
                           </Link>
                         ) : (
                           "Chưa nộp"

@@ -13,3 +13,16 @@ export function normalizeOtp(value: string): string {
 export function isCompleteOtp(value: string): boolean {
   return new RegExp(`^\\d{${OTP_LENGTH}}$`).test(value);
 }
+
+/** `true` khi lỗi 422 từ BE nói về field `otp` (mã sai/hết hạn) — dùng để đưa user về bước nhập mã. */
+export function isOtpError(error: unknown): boolean {
+  const data = (error as { data?: { errors?: unknown; issues?: unknown } })
+    ?.data;
+  const hit = (list: unknown, key: "field" | "path") =>
+    Array.isArray(list) &&
+    list.some((item) => {
+      const v = (item as Record<string, unknown>)?.[key];
+      return Array.isArray(v) ? v.includes("otp") : v === "otp";
+    });
+  return hit(data?.errors, "field") || hit(data?.issues, "path");
+}

@@ -6,6 +6,7 @@ import { CalendarPlus, Save } from "lucide-react";
 import { toast } from "sonner";
 
 import { Dialog } from "@/components/ui/dialog-form.ui";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
 import { Input } from "@/components/ui/input.ui";
 import { DatePicker } from "@/components/ui/date-picker.ui";
 import { TimePicker } from "@/components/ui/time-picker.ui";
@@ -13,7 +14,7 @@ import { Label } from "@/components/ui/label.ui";
 import { Select } from "@/components/ui/select.ui";
 import { useGet, usePost } from "@/lib/axios/query";
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
-import type { ApiResponse, CurriculumLesson } from "@/types";
+import type { ApiClassSchedule, ApiResponse, CurriculumLesson } from "@/types";
 import { getErrorMessage } from "@/lib/axios";
 import { FieldError } from "../components/field-error";
 import { ClassLocationHint } from "../components/class-location-hint";
@@ -21,6 +22,17 @@ import { ClassLocationHint } from "../components/class-location-hint";
 /* ─── Helpers ─── */
 
 const todayInput = () => new Date().toISOString().slice(0, 10);
+
+/** Thứ (JS getDay) → `dayOfWeek` của BE. */
+const DAY_KEYS = [
+  "SUNDAY",
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
+] as const;
 
 /* ─── Props ─── */
 
@@ -34,6 +46,8 @@ type CreateSessionDialogProps = {
   nextSessionNumber: number;
   /** Địa điểm/link mặc định của lớp, điền sẵn vào buổi học. */
   classLocation?: string | null;
+  /** Lịch cố định của lớp — dùng để cảnh báo khi buổi học lệch lịch. */
+  classSchedules?: ApiClassSchedule[] | null;
 };
 
 type FormState = {
@@ -65,9 +79,11 @@ export function CreateSessionDialog({
   lessons,
   nextSessionNumber,
   classLocation,
+  classSchedules,
 }: CreateSessionDialogProps) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<FormState>(getInitialState(classLocation));
+  const [offScheduleOpen, setOffScheduleOpen] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const prevOpenRef = useRef(open);
 
@@ -139,12 +155,33 @@ export function CreateSessionDialog({
     return !Object.keys(e).length;
   };
 
+  /** Buổi học không khớp bất kỳ khung giờ cố định nào của lớp. */
+  const isOffSchedule = () => {
+    const slots = classSchedules ?? [];
+    if (!slots.length || !form.date) return false;
+    const day = DAY_KEYS[new Date(`${form.date}T00:00:00`).getDay()];
+    return !slots.some(
+      (slot) =>
+        slot.dayOfWeek === day &&
+        slot.startTime.slice(0, 5) === form.startTime,
+    );
+  };
+
   const handleSubmit = () => {
     if (!validate()) return;
     if (form.lessonId && lessonQuery.isLoading) {
       toast.error("Đang tải tài liệu bài giảng, vui lòng thử lại");
       return;
     }
+    if (isOffSchedule()) {
+      setOffScheduleOpen(true);
+      return;
+    }
+    submitSession();
+  };
+
+  const submitSession = () => {
+    setOffScheduleOpen(false);
     mutate({
       classId,
       lessonId: form.lessonId || undefined,
@@ -168,6 +205,17 @@ export function CreateSessionDialog({
   ];
 
   return (
+    <>
+    <ConfirmDialog
+      open={offScheduleOpen}
+      onClose={() => setOffScheduleOpen(false)}
+      onConfirm={submitSession}
+      loading={loading}
+      title="Buổi học lệch lịch lớp"
+      description="Ngày giờ bạn chọn không khớp lịch cố định của lớp. Bạn vẫn muốn tạo buổi học này?"
+      confirmLabel="Vẫn tạo buổi học"
+      variant="default"
+    />
     <Dialog
       isOpen={open}
       icon={CalendarPlus}
@@ -282,9 +330,10 @@ export function CreateSessionDialog({
           onChange={(e) => update("note", e.target.value)}
           rows={3}
           placeholder="Ghi chú cho buổi học..."
-          className="w-full resize-none rounded-lg border border-[#E7EEEC] bg-white px-3 py-2.5 text-sm text-[#16302b] outline-none placeholder:text-[#9AAEA9] focus:border-[#0E9F8E] focus:ring-2 focus:ring-[#0E9F8E]/30 transition-colors"
+          className="w-full resize-none rounded-lg border border-[#E7EEEC] dark:border-border bg-white dark:bg-card px-3 py-2.5 text-sm text-[#16302b] dark:text-foreground outline-none placeholder:text-[#9AAEA9] focus:border-[#0E9F8E] focus:ring-2 focus:ring-[#0E9F8E]/30 transition-colors"
         />
       </div>
     </Dialog>
+    </>
   );
 }

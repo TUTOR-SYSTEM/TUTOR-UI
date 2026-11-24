@@ -164,7 +164,9 @@ export const ExerciseGradePage = ({
     );
   }
 
-  if (!isTutor && exercise.studentId !== currentUserId) {
+  /* Admin chỉ xem (read-only), học sinh chỉ xem bài của mình. */
+  const isAdmin = role === "ADMIN";
+  if (!isTutor && !isAdmin && exercise.studentId !== currentUserId) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center">
         <XCircle className="size-10 text-red-500" />

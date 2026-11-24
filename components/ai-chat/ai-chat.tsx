@@ -73,8 +73,8 @@ export const AiChatPage = () => {
           <Sparkles className="size-5 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[#16302b]">AI Trợ lý</h2>
-          <p className="text-xs text-[#8AA09B]">
+          <h2 className="text-lg font-bold text-[#16302b] dark:text-foreground">AI Trợ lý</h2>
+          <p className="text-xs text-[#8AA09B] dark:text-muted-foreground">
             Hỏi bất cứ điều gì về việc học
           </p>
         </div>
@@ -87,13 +87,13 @@ export const AiChatPage = () => {
       >
         {messages.length === 0 && !isLoading && (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-[#f0faf7]">
-              <Bot className="size-8 text-[#12b3a0]" />
+            <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-[#f0faf7] dark:bg-primary-soft">
+              <Bot className="size-8 text-[#12b3a0] dark:text-[#2DD4BF]" />
             </div>
-            <h3 className="text-lg font-semibold text-[#16302b]">
+            <h3 className="text-lg font-semibold text-[#16302b] dark:text-foreground">
               Chào bạn! Tôi có thể giúp gì?
             </h3>
-            <p className="mt-1 max-w-sm text-sm text-[#8AA09B]">
+            <p className="mt-1 max-w-sm text-sm text-[#8AA09B] dark:text-muted-foreground">
               Hãy hỏi tôi về lịch học, bài tập, hoặc bất cứ điều gì liên quan
               đến việc học của bạn.
             </p>
@@ -112,20 +112,20 @@ export const AiChatPage = () => {
             >
               <div
                 className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
-                  msg.role === "user" ? "bg-[#12b3a0]" : "bg-[#e8f5f2]"
+                  msg.role === "user" ? "bg-[#12b3a0]" : "bg-[#e8f5f2] dark:bg-primary-light"
                 }`}
               >
                 {msg.role === "user" ? (
                   <User className="size-4 text-white" />
                 ) : (
-                  <Bot className="size-4 text-[#12b3a0]" />
+                  <Bot className="size-4 text-[#12b3a0] dark:text-[#2DD4BF]" />
                 )}
               </div>
               <div
                 className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   msg.role === "user"
                     ? "bg-[#12b3a0] text-white"
-                    : "bg-[#f5f8f7] text-[#16302b]"
+                    : "bg-[#f5f8f7] dark:bg-muted text-[#16302b] dark:text-foreground"
                 }`}
               >
                 {msg.content}
@@ -137,10 +137,10 @@ export const AiChatPage = () => {
         {isLoading && (
           <div className="flex justify-start">
             <div className="flex max-w-[80%] flex-row gap-3">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#e8f5f2]">
-                <Bot className="size-4 text-[#12b3a0]" />
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#e8f5f2] dark:bg-primary-light">
+                <Bot className="size-4 text-[#12b3a0] dark:text-[#2DD4BF]" />
               </div>
-              <div className="rounded-2xl bg-[#f5f8f7] px-4 py-2.5">
+              <div className="rounded-2xl bg-[#f5f8f7] dark:bg-muted px-4 py-2.5">
                 <div className="flex gap-1">
                   <span
                     className="size-2 animate-bounce rounded-full bg-[#12b3a0]"
@@ -163,21 +163,21 @@ export const AiChatPage = () => {
 
       {/* Input */}
       <div className="border-t px-6 py-4">
-        <div className="flex items-end gap-2 rounded-2xl border border-[#E7EEEC] bg-white px-4 py-3 focus-within:border-[#12b3a0] focus-within:ring-1 focus-within:ring-[#12b3a0]">
+        <div className="flex items-end gap-2 rounded-2xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card px-4 py-3 focus-within:border-[#12b3a0] focus-within:ring-1 focus-within:ring-[#12b3a0]">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Nhập tin nhắn..."
             rows={1}
-            className="flex-1 resize-none bg-transparent text-sm text-[#16302b] outline-none placeholder:text-[#8AA09B]"
+            className="flex-1 resize-none bg-transparent text-sm text-[#16302b] dark:text-foreground outline-none placeholder:text-[#8AA09B]"
             style={{ maxHeight: "120px" }}
           />
           {isLoading ? (
             <button
               type="button"
               disabled
-              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#e8f5f2] text-[#8AA09B]"
+              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#e8f5f2] dark:bg-primary-light text-[#8AA09B] dark:text-muted-foreground"
             >
               <Square className="size-4" />
             </button>

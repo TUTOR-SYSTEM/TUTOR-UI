@@ -39,6 +39,11 @@ describe("buildTutorCreateSchema", () => {
     expect(firstMessage({ password: "Ab1!abcdefghij" }, "password")).toBeUndefined();
   });
 
+  it("allows an empty password (BE generates one) but still validates a typed one", () => {
+    expect(firstMessage({ password: "" }, "password")).toBeUndefined();
+    expect(firstMessage({ password: "Ab1!" }, "password")).toBeDefined();
+  });
+
   it("reports each missing password character class", () => {
     expect(firstMessage({ password: "abcdef1!" }, "password")).toBe(m.passwordUpper);
     expect(firstMessage({ password: "ABCDEF1!" }, "password")).toBe(m.passwordLower);

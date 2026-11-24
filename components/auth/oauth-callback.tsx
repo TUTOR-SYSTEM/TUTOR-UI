@@ -49,7 +49,7 @@ export function OAuthCallback() {
       subtitle={t.subtitle}
       showBadge={false}
     >
-      <p className="py-4 text-center text-sm text-slate-500">
+      <p className="py-4 text-center text-sm text-slate-500 dark:text-muted-foreground">
         {t.waitMessage}
       </p>
     </AuthCardShell>

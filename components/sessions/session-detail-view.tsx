@@ -979,7 +979,7 @@ export const SessionDetailView = ({ sessionId }: { sessionId: string }) => {
               </p>
               <Button
                 asChild
-                className="mt-4 w-full bg-white text-emerald-900 hover:bg-emerald-50"
+                className="mt-4 w-full bg-white dark:bg-card text-emerald-900 hover:bg-emerald-50"
               >
                 <Link href="/discussions">Gửi tin nhắn cho {tutorName}</Link>
               </Button>

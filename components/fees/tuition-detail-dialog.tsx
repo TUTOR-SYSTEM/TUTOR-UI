@@ -17,6 +17,7 @@ import type {
   TuitionStatus,
   UpdateTuitionPayload,
 } from "@/types";
+import { currentPersonName } from "@/lib/format/person-name";
 
 const fmtPeriod = (iso: string | null) => {
   if (!iso) return "";
@@ -89,7 +90,7 @@ export const TuitionDetailDialog = ({ tuition, onClose }: Props) => {
   };
 
   const studentName =
-    `${tuition.student.firstName} ${tuition.student.lastName}`.trim();
+    currentPersonName(tuition.student.firstName, tuition.student.lastName);
 
   const qrAmount = Number(amount) || 0;
   const qrNote =
@@ -166,7 +167,7 @@ export const TuitionDetailDialog = ({ tuition, onClose }: Props) => {
               <img
                 src={qrUrl}
                 alt="Mã QR chuyển khoản"
-                className="size-44 rounded-md border border-input bg-white p-1"
+                className="size-44 rounded-md border border-input bg-white dark:bg-card p-1"
               />
               <div className="w-full space-y-1 text-sm">
                 <div className="flex justify-between border-b border-border/60 py-1.5">

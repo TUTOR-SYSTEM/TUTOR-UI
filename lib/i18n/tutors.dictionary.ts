@@ -3,6 +3,7 @@ import type { Language } from "@/types";
 export type TutorValidationMessages = {
   required: string;
   emailInvalid: string;
+  subjectsRequired: string;
   nameMin: string;
   nameMax: string;
   phoneMax: string;
@@ -218,8 +219,9 @@ export const tutorsDictionary: Record<Language, TutorsDictionary> = {
       lastName: "Họ",
       firstName: "Tên",
       email: "Email",
-      password: "Mật khẩu",
-      passwordHint: "8–20 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.",
+      password: "Mật khẩu (tuỳ chọn)",
+      passwordHint:
+        "Để trống, hệ thống sẽ tự tạo mật khẩu ngẫu nhiên đáp ứng quy tắc bảo mật và gửi qua email (nếu có). Nếu tự đặt: 8–20 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.",
       phone: "Số điện thoại",
       gender: "Giới tính",
       subjects: "Môn dạy",
@@ -265,6 +267,7 @@ export const tutorsDictionary: Record<Language, TutorsDictionary> = {
     validation: {
       required: "Vui lòng nhập thông tin này",
       emailInvalid: "Email không hợp lệ",
+      subjectsRequired: "Chọn ít nhất một môn dạy",
       nameMin: "Phải có ít nhất 2 ký tự",
       nameMax: "Tối đa 100 ký tự",
       phoneMax: "SĐT tối đa 20 ký tự",
@@ -368,8 +371,9 @@ export const tutorsDictionary: Record<Language, TutorsDictionary> = {
       lastName: "Last name",
       firstName: "First name",
       email: "Email",
-      password: "Password",
-      passwordHint: "8–20 characters, including uppercase, lowercase, a digit and a special character.",
+      password: "Password (optional)",
+      passwordHint:
+        "Leave empty and the system will generate a random password that meets the security rules and send it by email (if an email is provided). If you set one: 8–20 characters, including uppercase, lowercase, a digit and a special character.",
       phone: "Phone number",
       gender: "Gender",
       subjects: "Subjects",
@@ -415,6 +419,7 @@ export const tutorsDictionary: Record<Language, TutorsDictionary> = {
     validation: {
       required: "This field is required",
       emailInvalid: "Invalid email address",
+      subjectsRequired: "Select at least one subject",
       nameMin: "Must be at least 2 characters",
       nameMax: "At most 100 characters",
       phoneMax: "Phone must be at most 20 characters",

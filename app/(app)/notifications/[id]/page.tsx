@@ -60,7 +60,7 @@ export default function NotificationDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="size-8 animate-spin text-[#0E9F8E]" />
+        <Loader2 className="size-8 animate-spin text-[#0E9F8E] dark:text-[#2DD4BF]" />
       </div>
     );
   }
@@ -74,7 +74,7 @@ export default function NotificationDetailPage() {
         </p>
         <Link
           href="/notifications"
-          className="text-sm font-medium text-[#0E9F8E] hover:underline"
+          className="text-sm font-medium text-[#0E9F8E] dark:text-[#2DD4BF] hover:underline"
         >
           Quay lại danh sách
         </Link>
@@ -97,7 +97,7 @@ export default function NotificationDetailPage() {
       <div className="mb-6 flex items-center gap-3">
         <Link
           href="/notifications"
-          className="flex items-center gap-1.5 text-sm text-[#9AAEA9] hover:text-[#16302b] transition-colors"
+          className="flex items-center gap-1.5 text-sm text-[#9AAEA9] dark:text-muted-foreground hover:text-[#16302b] dark:hover:text-foreground transition-colors"
         >
           <ArrowLeft className="size-4" />
           Quay lại
@@ -105,7 +105,7 @@ export default function NotificationDetailPage() {
       </div>
 
       {/* Card */}
-      <div className="rounded-xl border border-[#E7EEEC] bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card p-6 shadow-sm">
         {/* Badge + Mark read */}
         <div className="mb-4 flex items-center justify-between">
           <span
@@ -126,24 +126,24 @@ export default function NotificationDetailPage() {
         </div>
 
         {/* Title */}
-        <h1 className="mb-3 text-xl font-bold leading-snug text-[#16302b]">
+        <h1 className="mb-3 text-xl font-bold leading-snug text-[#16302b] dark:text-foreground">
           {notification.title}
         </h1>
 
         {/* Timestamp */}
-        <div className="mb-5 flex items-center gap-1.5 text-xs text-[#9AAEA9]">
+        <div className="mb-5 flex items-center gap-1.5 text-xs text-[#9AAEA9] dark:text-muted-foreground">
           <Clock className="size-3.5 shrink-0" />
           {date}
         </div>
 
         {/* Sub content */}
         {notification.subContent && (
-          <p className="mb-3 text-xs text-[#9AAEA9]">{notification.subContent}</p>
+          <p className="mb-3 text-xs text-[#9AAEA9] dark:text-muted-foreground">{notification.subContent}</p>
         )}
 
         {/* Content */}
         {notification.content && (
-          <p className="mb-5 text-sm leading-relaxed text-[#5c726d]">
+          <p className="mb-5 text-sm leading-relaxed text-[#5c726d] dark:text-muted-foreground">
             {notification.content}
           </p>
         )}
@@ -154,7 +154,7 @@ export default function NotificationDetailPage() {
             href={safeRedirectHref(notification.detailUrl ?? notification.redirectUrl) ?? undefined}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block rounded-lg border border-[#E7EEEC] px-4 py-2 text-sm font-medium text-[#0E9F8E] hover:bg-[#F1FBF9] transition-colors"
+            className="inline-block rounded-lg border border-[#E7EEEC] dark:border-border px-4 py-2 text-sm font-medium text-[#0E9F8E] dark:text-[#2DD4BF] hover:bg-[#F1FBF9] dark:hover:bg-primary-soft transition-colors"
           >
             {notification.actionLabel ?? "Xem chi tiết"}
           </a>

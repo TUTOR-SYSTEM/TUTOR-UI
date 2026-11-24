@@ -7,6 +7,8 @@ import {
   GraduationCap,
   Pencil,
   Plus,
+  Search,
+  SlidersHorizontal,
   Users,
   Wallet,
 } from "lucide-react";
@@ -22,6 +24,9 @@ import { ClassStudentBadges } from "../components/class-student-badges";
 import { useClassesCopy } from "@/hooks/useClassesCopy.hook";
 import { useCommonCopy } from "@/hooks/useCommonCopy.hook";
 import { Button } from "@/components/ui/button.ui";
+import { Dialog } from "@/components/ui/dialog-form.ui";
+import { Label } from "@/components/ui/label.ui";
+import { Input } from "@/components/ui/input.ui";
 import { Select } from "@/components/ui/select.ui";
 import { Pagination } from "@/components/ui/pagination.ui";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table.ui";
@@ -231,6 +236,16 @@ export const ClassesPage = () => {
   } | null>(null);
   const [subjectFilter, setSubjectFilter] = useState(ALL_SUBJECTS_VALUE);
   const [statusFilter, setStatusFilter] = useState<ClassStatusFilter>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const handleSearchSubmit = () => {
+    setSearch(searchInput.trim());
+    setPage(1);
+  };
+  const activeFilterCount =
+    (subjectFilter !== ALL_SUBJECTS_VALUE ? 1 : 0) +
+    (statusFilter !== "all" ? 1 : 0);
   const [page, setPage] = useState(1);
 
   const queryClient = useQueryClient();
@@ -273,12 +288,18 @@ export const ClassesPage = () => {
 
   const filtered = useMemo(() => {
     let list = classes;
+    const q = search.toLowerCase();
+    if (q)
+      list = list.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q),
+      );
     if (statusFilter !== "all")
       list = list.filter((c) => c.status === statusFilter);
     if (subjectFilter !== ALL_SUBJECTS_VALUE)
       list = list.filter((c) => c.subject === subjectFilter);
     return list;
-  }, [classes, statusFilter, subjectFilter]);
+  }, [classes, statusFilter, subjectFilter, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const safePage = Math.min(page, totalPages);
@@ -304,7 +325,7 @@ export const ClassesPage = () => {
         key: "stt",
         header: copy.list.table.columns.stt,
         headerClassName: "w-14 pl-5 px-4",
-        cellClassName: "relative py-3.5 pl-5 pr-2 font-medium text-[#9AAEA9]",
+        cellClassName: "relative py-3.5 pl-5 pr-2 font-medium text-[#9AAEA9] dark:text-muted-foreground",
         render: (cls: ClassItem, idx: number) => (
           <>
             <span
@@ -324,11 +345,11 @@ export const ClassesPage = () => {
           <>
             <Link
               href={`/classes/${cls.id}`}
-              className="font-semibold leading-5 text-[#16302b] transition-colors hover:text-[#0E9F8E]"
+              className="font-semibold leading-5 text-[#16302b] dark:text-foreground transition-colors hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF]"
             >
               {cls.name}
             </Link>
-            <p className="mt-0.5 text-xs text-[#9AAEA9]">
+            <p className="mt-0.5 text-xs text-[#9AAEA9] dark:text-muted-foreground">
               {copy.list.table.classCodePrefix} {cls.code}
             </p>
           </>
@@ -361,10 +382,10 @@ export const ClassesPage = () => {
         cellClassName: "px-4 py-3.5 tabular-nums",
         render: (cls: ClassItem) => (
           <>
-            <span className="font-semibold text-[#16302b]">
+            <span className="font-semibold text-[#16302b] dark:text-foreground">
               {feeFormat(cls.feePerSession)}
             </span>
-            <span className="text-[#9AAEA9]">
+            <span className="text-[#9AAEA9] dark:text-muted-foreground">
               {copy.list.table.perSessionSuffix}
             </span>
           </>
@@ -391,14 +412,14 @@ export const ClassesPage = () => {
                 {cls.scheduleGroups.map((g, i) => (
                   <span
                     key={i}
-                    className="inline-flex w-fit items-center gap-1.5 rounded-md bg-[#F3F7F5] py-1 pl-1.5 pr-2.5 text-xs"
+                    className="inline-flex w-fit items-center gap-1.5 rounded-md bg-[#F3F7F5] dark:bg-muted py-1 pl-1.5 pr-2.5 text-xs"
                   >
-                    <Clock className="size-3 shrink-0 text-[#0E9F8E]" />
-                    <span className="font-semibold text-[#16302b]">
+                    <Clock className="size-3 shrink-0 text-[#0E9F8E] dark:text-[#2DD4BF]" />
+                    <span className="font-semibold text-[#16302b] dark:text-foreground">
                       {g.days}
                     </span>
                     {g.time && (
-                      <span className="text-[#9AAEA9]">· {g.time}</span>
+                      <span className="text-[#9AAEA9] dark:text-muted-foreground">· {g.time}</span>
                     )}
                   </span>
                 ))}
@@ -407,12 +428,12 @@ export const ClassesPage = () => {
           }
           if (cls.nextSession) {
             return (
-              <span className="inline-flex w-fit items-center gap-1.5 rounded-md bg-[#F3F7F5] py-1 pl-1.5 pr-2.5 text-xs">
-                <Clock className="size-3 shrink-0 text-[#0E9F8E]" />
-                <span className="font-semibold text-[#16302b]">
+              <span className="inline-flex w-fit items-center gap-1.5 rounded-md bg-[#F3F7F5] dark:bg-muted py-1 pl-1.5 pr-2.5 text-xs">
+                <Clock className="size-3 shrink-0 text-[#0E9F8E] dark:text-[#2DD4BF]" />
+                <span className="font-semibold text-[#16302b] dark:text-foreground">
                   {fmtSessionDate(cls.nextSession.startAt)}
                 </span>
-                <span className="text-[#9AAEA9]">
+                <span className="text-[#9AAEA9] dark:text-muted-foreground">
                   {fmtSessionRange(
                     cls.nextSession.startAt,
                     cls.nextSession.endAt,
@@ -422,7 +443,7 @@ export const ClassesPage = () => {
             );
           }
           return (
-            <span className="text-sm text-[#9AAEA9]">
+            <span className="text-sm text-[#9AAEA9] dark:text-muted-foreground">
               {copy.list.table.noSchedule}
             </span>
           );
@@ -459,7 +480,7 @@ export const ClassesPage = () => {
                         endTime: cls.endTime,
                       })
                     }
-                    className="text-[#8AA09B] hover:bg-[#E4F6EF] hover:text-[#0E9F8E]"
+                    className="text-[#8AA09B] dark:text-muted-foreground hover:bg-[#E4F6EF] dark:hover:bg-primary-light hover:text-[#0E9F8E] hover:dark:text-[#2DD4BF]"
                   >
                     <Pencil className="size-3.5" />
                   </Button>
@@ -471,7 +492,7 @@ export const ClassesPage = () => {
                     onClick={() =>
                       setDeletingClass({ id: cls.id, name: cls.name })
                     }
-                    className="text-[#8AA09B] hover:bg-red-50 hover:text-red-500"
+                    className="text-[#8AA09B] dark:text-muted-foreground hover:bg-red-50 hover:text-red-500"
                   >
                     <DeleteIcon />
                   </Button>
@@ -488,69 +509,68 @@ export const ClassesPage = () => {
     <div className="flex flex-col gap-5">
       {/* ── Page Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-[#16302b]">
-            {copy.list.pageTitle}
-          </h1>
-          <span className="rounded-full bg-[#E4F6EF] px-3 py-0.5 text-sm font-semibold text-[#0E9F8E]">
-            {copy.list.classCount(classes.length)}
-          </span>
-        </div>
-        {isTutor && (
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              size="lg"
-              onClick={() => setCreateModalOpen(true)}
-            >
-              <Plus className="size-4" />
-              {copy.list.addClass}
-            </Button>
-          </div>
+        {isTutor ? (
+          <Button
+            type="button"
+            size="lg"
+            onClick={() => setCreateModalOpen(true)}
+          >
+            <Plus className="size-4" />
+            {copy.list.addClass}
+          </Button>
+        ) : (
+          <div />
         )}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSearchSubmit();
+                }
+              }}
+              placeholder={copy.list.searchPlaceholder}
+              className="h-10 w-56 rounded-lg pl-9"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleSearchSubmit}
+            className="h-10! w-auto! gap-1.5 rounded-lg! text-sm"
+          >
+            <Search className="size-3.5" />
+            {actions.search}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setFilterOpen(true)}
+            className="h-10! w-auto! gap-1.5 rounded-lg! text-sm"
+          >
+            <SlidersHorizontal className="size-3.5" />
+            {actions.filter}
+            {activeFilterCount > 0 && (
+              <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* ── Main Table Card ── */}
-      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] bg-white shadow-sm">
-        {/* Filter Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E7EEEC] px-5 py-4">
-          <div className="flex flex-wrap items-center gap-6">
-            {/* Subject select */}
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]">
-                {copy.list.filters.subjectLabel}
-              </span>
-              <Select
-                value={subjectFilter}
-                onValueChange={(value) => {
-                  setSubjectFilter(value);
-                  setPage(1);
-                }}
-                options={ALL_SUBJECTS}
-                className="h-10! w-44!"
-              />
-            </div>
-
-            {/* Status select */}
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs font-semibold uppercase tracking-wide text-[#9AAEA9]">
-                {copy.list.filters.statusLabel}
-              </span>
-              <Select
-                value={statusFilter}
-                onValueChange={(value) => {
-                  setStatusFilter(value as ClassStatusFilter);
-                  setPage(1);
-                }}
-                options={STATUS_FILTER_OPTIONS}
-                className="h-10! w-44!"
-              />
-            </div>
-          </div>
-
-          <span className="text-sm text-[#9AAEA9]">
+      <div className="overflow-hidden rounded-xl border border-[#E7EEEC] dark:border-border bg-white dark:bg-card shadow-sm">
+        {/* Count bar */}
+        <div className="flex flex-wrap items-center justify-end gap-4 border-b border-[#E7EEEC] dark:border-border px-5 py-4">
+          <span className="text-sm text-[#9AAEA9] dark:text-muted-foreground">
             {copy.list.showing.prefix}{" "}
-            <strong className="font-semibold text-[#16302b]">
+            <strong className="font-semibold text-[#16302b] dark:text-foreground">
               {filtered.length}
             </strong>{" "}
             {copy.list.showing.suffix}
@@ -567,19 +587,19 @@ export const ClassesPage = () => {
           errorMessage={copy.list.table.loadError}
           emptyMessage={copy.list.table.empty}
           className="min-w-215"
-          headerRowClassName="border-[#E7EEEC] bg-[#F3F7F5] hover:bg-[#F3F7F5]"
+          headerRowClassName="border-[#E7EEEC] dark:border-border bg-[#F3F7F5] dark:bg-muted hover:bg-[#F3F7F5] dark:hover:bg-muted"
           rowClassName={(cls) =>
             cn(
-              "border-[#EEF3F1] hover:bg-[#F1FBF9]",
+              "border-[#EEF3F1] dark:border-border-light hover:bg-[#F1FBF9] dark:hover:bg-primary-soft",
               STATUS_STYLES[cls.status].rowBg,
             )
           }
         />
 
         {/* Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#EEF3F1] px-5 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#EEF3F1] dark:border-border-light px-5 py-3">
           {/* Legend */}
-          <div className="flex items-center gap-4 text-xs text-[#9AAEA9]">
+          <div className="flex items-center gap-4 text-xs text-[#9AAEA9] dark:text-muted-foreground">
             {(Object.keys(STATUS_STYLES) as ClassDisplayStatus[]).map((key) => (
               <span key={key} className="flex items-center gap-1.5">
                 <span
@@ -589,7 +609,7 @@ export const ClassesPage = () => {
                 {copy.list.status[key]}
               </span>
             ))}
-            <span className="text-[#9AAEA9]">
+            <span className="text-[#9AAEA9] dark:text-muted-foreground">
               {filtered.length === 0 ? "0" : (safePage - 1) * PER_PAGE + 1}–
               {Math.min(safePage * PER_PAGE, filtered.length)} /{" "}
               {filtered.length}
@@ -628,6 +648,54 @@ export const ClassesPage = () => {
           invalidateClasses();
         }}
       />
+
+      {/* ── Filter dialog ── */}
+      <Dialog
+        isOpen={filterOpen}
+        icon={SlidersHorizontal}
+        title={copy.list.filters.popupTitle}
+        cancelText={actions.close}
+        onCancel={() => setFilterOpen(false)}
+        submitText={copy.list.filters.apply}
+        onSubmit={() => setFilterOpen(false)}
+        className="w-105!"
+      >
+        <div className="flex flex-col gap-1.5">
+          <Label>{copy.list.filters.subjectLabel}</Label>
+          <Select
+            value={subjectFilter}
+            onValueChange={(value) => {
+              setSubjectFilter(value);
+              setPage(1);
+            }}
+            options={ALL_SUBJECTS}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>{copy.list.filters.statusLabel}</Label>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              setStatusFilter(value as ClassStatusFilter);
+              setPage(1);
+            }}
+            options={STATUS_FILTER_OPTIONS}
+          />
+        </div>
+        {activeFilterCount > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              setSubjectFilter(ALL_SUBJECTS_VALUE);
+              setStatusFilter("all");
+              setPage(1);
+            }}
+          >
+            {copy.list.filters.reset}
+          </Button>
+        )}
+      </Dialog>
 
       <UsageGuides
         title={copy.usageGuide.title}

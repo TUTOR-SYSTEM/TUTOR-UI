@@ -22,6 +22,7 @@ type RouteAccessRule = {
 export const ROUTE_ACCESS: readonly RouteAccessRule[] = [
   { prefix: "/tutors", allow: ["ADMIN"] },
   { prefix: "/users", allow: ["ADMIN"] },
+  { prefix: "/parents", allow: ["ADMIN"] },
   // Internal/dev pages (API map, API gap report, admin reports) — ADMIN only.
   { prefix: "/flow-request", allow: ["ADMIN"] },
   { prefix: "/api-gaps", allow: ["ADMIN"] },
@@ -29,7 +30,8 @@ export const ROUTE_ACCESS: readonly RouteAccessRule[] = [
   // Gateway `GET /students` cho ADMIN + TUTOR (TUTOR chỉ thấy học sinh của mình — BE lọc theo tutorId).
   { prefix: "/students", allow: ["ADMIN", "TUTOR"] },
   { prefix: "/sessions", allow: ["TUTOR", "STUDENT"] },
-  { prefix: "/curriculum", allow: ["TUTOR", "PARENT"] },
+  // Chương trình học là công cụ của gia sư (tạo/sửa). Phụ huynh không có trang này.
+  { prefix: "/curriculum", allow: ["TUTOR"] },
   { prefix: "/schedule", allow: ["TUTOR", "STUDENT", "PARENT"] },
   { prefix: "/classes", allow: ["ADMIN", "TUTOR", "STUDENT", "PARENT"] },
   { prefix: "/grades", allow: ["TUTOR", "STUDENT", "PARENT"] },

@@ -12,6 +12,8 @@ export type ApiUser = {
   district?: string | null;
   province?: string | null;
   isActive?: boolean;
+  /** true: a staff-created or admin-reset password must be changed before using the app. */
+  mustChangePassword?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -91,14 +93,15 @@ export type ManagedUsersApiPayload = {
   };
 };
 
-/** `POST /users` body — gateway `createUserSchema` (password 8–20 chars required). */
+/** `POST /users` body — gateway `createUserSchema` (password optional; 8–20 chars when sent). */
 export type CreateManagedUserPayload = {
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
   role: ManagedUserRole;
-  password: string;
+  /** Optional: BE generates a random password when omitted. */
+  password?: string;
 };
 
 export type UpdateManagedUserPayload = {
@@ -135,7 +138,8 @@ export type CreateAdminUserPayload = {
   email: string;
   firstName: string;
   lastName: string;
-  password: string;
+  /** Optional: BE generates a random password when omitted. */
+  password?: string;
   username?: string;
   phone?: string;
   gender?: AdminGender;

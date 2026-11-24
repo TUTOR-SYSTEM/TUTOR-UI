@@ -48,6 +48,12 @@ export type FormValuesStudent = {
   parentLastName: string;
   /** Tên phụ huynh (bắt buộc ở form tạo). */
   parentFirstName: string;
+  /** Email học sinh (bắt buộc khi tạo). */
+  email: string;
+  /** SĐT phụ huynh MỚI — bắt buộc nhập SĐT hoặc email nếu không liên kết phụ huynh có sẵn. */
+  parentPhone: string;
+  /** Email phụ huynh MỚI. */
+  parentEmail: string;
   /** Mật khẩu đăng nhập cho học sinh (trống = BE sinh ngẫu nhiên). */
   password?: string;
   /** Mật khẩu cho phụ huynh MỚI (bỏ qua khi liên kết phụ huynh có sẵn). */
@@ -60,6 +66,8 @@ export type FormValuesStudent = {
 export type CreateStudentPayload = {
   tutorId?: string;
   studentName: string;
+  /** Bắt buộc: email học sinh. */
+  email: string;
   userCode?: string;
   classCode?: string;
   gender: GENDER_ENUM;

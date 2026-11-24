@@ -3,6 +3,7 @@ import type { Language } from "@/types";
 export type ClassesDictionary = {
   list: {
     pageTitle: string;
+    searchPlaceholder: string;
     classCount: (n: number) => string;
     addClass: string;
     stats: {
@@ -16,6 +17,9 @@ export type ClassesDictionary = {
       statusLabel: string;
       allSubjects: string;
       allStatuses: string;
+      popupTitle: string;
+      apply: string;
+      reset: string;
     };
     status: {
       active: string;
@@ -172,6 +176,7 @@ export type ClassesDictionary = {
 const vi: ClassesDictionary = {
   list: {
     pageTitle: "Quản lý lớp học",
+    searchPlaceholder: "Tìm theo tên, mã lớp...",
     classCount: (n) => `${n} lớp học`,
     addClass: "Thêm lớp học",
     stats: {
@@ -185,6 +190,9 @@ const vi: ClassesDictionary = {
       statusLabel: "Trạng thái",
       allSubjects: "Tất cả môn học",
       allStatuses: "Tất cả trạng thái",
+      popupTitle: "Bộ lọc lớp học",
+      apply: "Áp dụng",
+      reset: "Đặt lại bộ lọc",
     },
     status: {
       active: "Đang mở",
@@ -363,6 +371,7 @@ const vi: ClassesDictionary = {
 const en: ClassesDictionary = {
   list: {
     pageTitle: "Class management",
+    searchPlaceholder: "Search by name or code...",
     classCount: (n) => `${n} classes`,
     addClass: "Add class",
     stats: {
@@ -376,6 +385,9 @@ const en: ClassesDictionary = {
       statusLabel: "Status",
       allSubjects: "All subjects",
       allStatuses: "All statuses",
+      popupTitle: "Filter classes",
+      apply: "Apply",
+      reset: "Reset filters",
     },
     status: {
       active: "Active",
