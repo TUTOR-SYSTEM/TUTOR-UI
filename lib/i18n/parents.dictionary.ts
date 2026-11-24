@@ -33,6 +33,34 @@ export type ParentsDictionary = {
     toastError: string;
   };
   unnamed: string;
+  actions: {
+    edit: string;
+    changePassword: string;
+    delete: string;
+  };
+  editDialog: {
+    title: string;
+    subtitle: string;
+    lastName: string;
+    firstName: string;
+    email: string;
+    phone: string;
+    submit: string;
+    cancel: string;
+    required: string;
+    emailInvalid: string;
+    toastSuccess: string;
+    toastError: string;
+  };
+  deleteDialog: {
+    title: string;
+    description: string;
+    warning: string;
+    confirm: string;
+    cancel: string;
+    toastSuccess: string;
+    toastError: string;
+  };
 };
 
 export const parentsDictionary: Record<Language, ParentsDictionary> = {
@@ -69,6 +97,34 @@ export const parentsDictionary: Record<Language, ParentsDictionary> = {
       toastError: "Không thể đặt mật khẩu",
     },
     unnamed: "Chưa có tên",
+    actions: {
+      edit: "Sửa thông tin",
+      changePassword: "Đổi mật khẩu",
+      delete: "Xoá phụ huynh",
+    },
+    editDialog: {
+      title: "Sửa thông tin phụ huynh",
+      subtitle: "Cập nhật họ tên, email và số điện thoại",
+      lastName: "Họ",
+      firstName: "Tên",
+      email: "Email",
+      phone: "Số điện thoại",
+      submit: "Lưu thay đổi",
+      cancel: "Hủy",
+      required: "Vui lòng nhập thông tin này",
+      emailInvalid: "Email không hợp lệ",
+      toastSuccess: "Đã cập nhật phụ huynh",
+      toastError: "Không thể cập nhật phụ huynh",
+    },
+    deleteDialog: {
+      title: "Xoá phụ huynh",
+      description: "Bạn có chắc muốn xoá tài khoản phụ huynh này?",
+      warning: "Không thể hoàn tác. Phụ huynh đang liên kết với học sinh sẽ không xoá được.",
+      confirm: "Xoá",
+      cancel: "Hủy",
+      toastSuccess: "Đã xoá phụ huynh",
+      toastError: "Không thể xoá phụ huynh",
+    },
   },
   en: {
     title: "Parent management",
@@ -103,5 +159,33 @@ export const parentsDictionary: Record<Language, ParentsDictionary> = {
       toastError: "Could not set password",
     },
     unnamed: "No name",
+    actions: {
+      edit: "Edit",
+      changePassword: "Change password",
+      delete: "Delete parent",
+    },
+    editDialog: {
+      title: "Edit parent",
+      subtitle: "Update name, email and phone",
+      lastName: "Last name",
+      firstName: "First name",
+      email: "Email",
+      phone: "Phone",
+      submit: "Save changes",
+      cancel: "Cancel",
+      required: "This field is required",
+      emailInvalid: "Invalid email address",
+      toastSuccess: "Parent updated",
+      toastError: "Could not update parent",
+    },
+    deleteDialog: {
+      title: "Delete parent",
+      description: "Are you sure you want to delete this parent account?",
+      warning: "This cannot be undone. Parents linked to students cannot be deleted.",
+      confirm: "Delete",
+      cancel: "Cancel",
+      toastSuccess: "Parent deleted",
+      toastError: "Could not delete parent",
+    },
   },
 };

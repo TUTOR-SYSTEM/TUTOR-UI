@@ -1,8 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
 
 import { unwrapApiData } from "@/lib/axios/api-unwrap";
-import { apiPut, useGet } from "@/lib/axios/query";
-import type { ApiResponse, ParentPasswordPayload, AdminParentsPayload } from "@/types";
+import type {
+  AdminParentsPayload,
+  ApiResponse,
+  ParentPasswordPayload,
+  ParentUpdatePayload,
+} from "@/types";
+import { apiDelete, apiPut, useGet } from "@/lib/axios/query";
+
 
 export const PARENTS_QUERY_KEY = ["parents"] as const;
 
@@ -25,5 +31,13 @@ export function useParentActions(args?: {
     mutationFn: ({ id, password }) => apiPut(`/admin/parents/${id}/password`, { password }),
   });
 
-  return { list, setPassword };
+  const updateParent = useMutation<ApiResponse<unknown>, Error, { id: string; body: ParentUpdatePayload }>({
+    mutationFn: ({ id, body }) => apiPut(`/admin/parents/${id}`, body),
+  });
+
+  const deleteParent = useMutation<ApiResponse<unknown>, Error, string>({
+    mutationFn: (id) => apiDelete(`/admin/parents/${id}`),
+  });
+
+  return { list, setPassword, updateParent, deleteParent };
 }

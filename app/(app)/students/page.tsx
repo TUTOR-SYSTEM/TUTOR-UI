@@ -24,6 +24,7 @@ import {
   STUDENTS_QUERY_KEY,
 } from "@/lib/services/student.service";
 import { useClassActions } from "@/lib/services/class.service";
+import { useParentActions } from "@/lib/services/parent.service";
 import { useCurrentUserRole } from "@/hooks/useCurrentUserRole";
 import { getErrorMessage } from "@/lib/axios";
 import { Button } from "@/components/ui/button.ui";
@@ -243,6 +244,7 @@ export default function StudentsPage() {
 
   /* ── mutations ── */
   const deleteStudent = studentActions.delete;
+  const { deleteParent } = useParentActions();
 
   const handleAdd = () => {
     invalidate();
@@ -250,11 +252,29 @@ export default function StudentsPage() {
   };
 
   const handleDelete = (id: string) => {
+    const parentId = deletingStudent?.parentId ?? null;
+    const finish = () => {
+      invalidate();
+      setDeletingStudent(null);
+    };
     deleteStudent.mutate(id, {
       onSuccess: () => {
-        invalidate();
-        toast.success(copy.list.deleteSuccess);
-        setDeletingStudent(null);
+        // Xóa học sinh rồi xóa luôn tài khoản phụ huynh đang liên kết.
+        if (!parentId) {
+          toast.success(copy.list.deleteSuccess);
+          finish();
+          return;
+        }
+        deleteParent.mutate(parentId, {
+          onSuccess: () => {
+            toast.success(copy.list.deleteSuccess);
+            finish();
+          },
+          onError: (err) => {
+            toast.error(getErrorMessage(err, copy.list.deleteParentError));
+            finish();
+          },
+        });
       },
       onError: (err) =>
         toast.error(getErrorMessage(err, copy.list.deleteError)),
@@ -594,6 +614,7 @@ export default function StudentsPage() {
       {/* ── Delete student dialog ── */}
       <DeleteStudentDialog
         student={deletingStudent}
+        hasParent={!!deletingStudent?.parentId}
         onClose={() => setDeletingStudent(null)}
         onConfirm={handleDelete}
       />

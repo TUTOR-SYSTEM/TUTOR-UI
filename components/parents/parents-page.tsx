@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, KeyRound, Search } from "lucide-react";
+import { z } from "zod";
+import { Check, KeyRound, Pencil, Search, Trash2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button.ui";
@@ -13,13 +15,14 @@ import { FormField } from "@/components/ui/form-field.ui";
 import { Input } from "@/components/ui/input.ui";
 import { Pagination } from "@/components/ui/pagination.ui";
 import { getErrorMessage } from "@/lib/axios";
-import { useParentActions } from "@/lib/services/parent.service";
+import { PARENTS_QUERY_KEY, useParentActions } from "@/lib/services/parent.service";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog.ui";
 import { useParentsCopy } from "@/hooks/useParentsCopy.hook";
 import { useTutorsCopy } from "@/hooks/useTutorsCopy.hook";
 import { useLocale } from "@/hooks/useLocale.hook";
 import { formatPersonName } from "@/lib/format/person-name";
 import { buildTutorPasswordSchema } from "@/lib/validation/tutor-form.schema";
-import type { ApiParent } from "@/types";
+import type { ApiParent, ParentUpdatePayload } from "@/types";
 
 const PAGE_SIZE = 10;
 
@@ -37,10 +40,14 @@ export function ParentsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [target, setTarget] = useState<ApiParent | null>(null);
+  const [editTarget, setEditTarget] = useState<ApiParent | null>(null);
+  const [deleteTargetRow, setDeleteTargetRow] = useState<ApiParent | null>(null);
+  const queryClient = useQueryClient();
 
-  const { list, setPassword } = useParentActions({
+  const { list, setPassword, updateParent, deleteParent } = useParentActions({
     list: { page, limit: PAGE_SIZE, search },
   });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: PARENTS_QUERY_KEY });
   const payload = list.data;
   const parents = payload?.parents ?? [];
   const totalPages = payload?.pagination.totalPages ?? 1;
@@ -79,10 +86,36 @@ export function ParentsPage() {
       header: copy.columns.actions,
       align: "center",
       render: (p) => (
-        <Button variant="outline" size="sm" onClick={() => setTarget(p)}>
-          <KeyRound className="size-3.5" />
-          {copy.setPassword}
-        </Button>
+        <div className="flex items-center justify-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={copy.actions.edit}
+            title={copy.actions.edit}
+            onClick={() => setEditTarget(p)}
+          >
+            <Pencil className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={copy.actions.changePassword}
+            title={copy.actions.changePassword}
+            onClick={() => setTarget(p)}
+          >
+            <KeyRound className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={copy.actions.delete}
+            title={copy.actions.delete}
+            className="text-rose-500 hover:text-rose-600"
+            onClick={() => setDeleteTargetRow(p)}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        </div>
       ),
     },
   ];
@@ -126,6 +159,62 @@ export function ParentsPage() {
       {totalPages > 1 && (
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       )}
+
+      {editTarget && (
+        <EditParentDialog
+          key={editTarget.id}
+          parent={editTarget}
+          loading={updateParent.isPending}
+          onClose={() => setEditTarget(null)}
+          onSubmit={(body) =>
+            updateParent.mutate(
+              { id: editTarget.id, body },
+              {
+                onSuccess: () => {
+                  toast.success(copy.editDialog.toastSuccess);
+                  setEditTarget(null);
+                  void refresh();
+                },
+                onError: (err) =>
+                  toast.error(getErrorMessage(err, copy.editDialog.toastError)),
+              },
+            )
+          }
+        />
+      )}
+
+      <ConfirmDialog
+        open={!!deleteTargetRow}
+        onClose={() => setDeleteTargetRow(null)}
+        loading={deleteParent.isPending}
+        title={copy.deleteDialog.title}
+        description={copy.deleteDialog.description}
+        warning={copy.deleteDialog.warning}
+        confirmLabel={copy.deleteDialog.confirm}
+        cancelLabel={copy.deleteDialog.cancel}
+        entity={
+          deleteTargetRow
+            ? {
+                label: copy.columns.name.toLowerCase(),
+                name:
+                  formatPersonName(deleteTargetRow.firstName, deleteTargetRow.lastName, language) ||
+                  copy.unnamed,
+              }
+            : undefined
+        }
+        onConfirm={() => {
+          if (!deleteTargetRow) return;
+          deleteParent.mutate(deleteTargetRow.id, {
+            onSuccess: () => {
+              toast.success(copy.deleteDialog.toastSuccess);
+              setDeleteTargetRow(null);
+              void refresh();
+            },
+            onError: (err) =>
+              toast.error(getErrorMessage(err, copy.deleteDialog.toastError)),
+          });
+        }}
+      />
 
       {target && (
         <SetParentPasswordDialog
@@ -216,6 +305,87 @@ function SetParentPasswordDialog({
             placeholder={t.passwordPlaceholder}
             invalid={!!errors.confirm}
           />
+        </FormField>
+      </form>
+    </Dialog>
+  );
+}
+
+function EditParentDialog({
+  parent,
+  onClose,
+  onSubmit,
+  loading,
+}: {
+  parent: ApiParent;
+  onClose: () => void;
+  onSubmit: (body: ParentUpdatePayload) => void;
+  loading: boolean;
+}) {
+  const copy = useParentsCopy();
+  const t = copy.editDialog;
+  const schema = useMemo(
+    () =>
+      z.object({
+        lastName: z.string().trim().min(1, t.required),
+        firstName: z.string().trim().min(1, t.required),
+        email: z
+          .string()
+          .trim()
+          .refine((v) => v === "" || z.email().safeParse(v).success, { message: t.emailInvalid }),
+        phone: z.string().trim().max(20),
+      }),
+    [t.required, t.emailInvalid],
+  );
+  type EditForm = z.infer<typeof schema>;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<EditForm>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      lastName: parent.lastName ?? "",
+      firstName: parent.firstName ?? "",
+      email: isPlaceholderEmail(parent.email) ? "" : (parent.email ?? ""),
+      phone: parent.phone ?? "",
+    },
+  });
+
+  return (
+    <Dialog
+      isOpen
+      icon={Pencil}
+      title={t.title}
+      subtitle={t.subtitle}
+      className="max-w-md"
+      cancelText={t.cancel}
+      onCancel={onClose}
+      submitText={t.submit}
+      submitIcon={Check}
+      onSubmit={handleSubmit((v) =>
+        onSubmit({
+          lastName: v.lastName,
+          firstName: v.firstName,
+          phone: v.phone,
+          // Email trống: không gửi (giữ nguyên email hiện tại / email giả do hệ thống sinh).
+          ...(v.email ? { email: v.email } : {}),
+        }),
+      )}
+      loading={loading}
+    >
+      <form noValidate className="flex flex-col gap-4">
+        <FormField label={t.lastName} required error={errors.lastName?.message}>
+          <Input {...register("lastName")} invalid={!!errors.lastName} />
+        </FormField>
+        <FormField label={t.firstName} required error={errors.firstName?.message}>
+          <Input {...register("firstName")} invalid={!!errors.firstName} />
+        </FormField>
+        <FormField label={t.email} error={errors.email?.message}>
+          <Input type="email" {...register("email")} invalid={!!errors.email} />
+        </FormField>
+        <FormField label={t.phone} error={errors.phone?.message}>
+          <Input type="tel" {...register("phone")} invalid={!!errors.phone} />
         </FormField>
       </form>
     </Dialog>
