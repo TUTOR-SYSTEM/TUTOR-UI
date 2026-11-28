@@ -3,14 +3,10 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
-COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm \
- npm config set fetch-retries 5 \
- && npm config set fetch-retry-mintimeout 20000 \
- && npm config set fetch-retry-maxtimeout 120000 \
- && npm config set maxsockets 5 \
- && npm config set fetch-timeout 600000 \
- && npm ci --no-audit --no-fund --prefer-offline
+COPY --from=oven/bun:1-alpine /usr/local/bin/bun /usr/local/bin/bun
+COPY package.json bun.lock ./
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+ bun install --frozen-lockfile
 # ---------- Stage 2: build ----------
 FROM node:22-alpine AS build
 WORKDIR /app
