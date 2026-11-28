@@ -40,6 +40,7 @@ export type StudentsDictionary = {
     loadError: string;
     deleteSuccess: string;
     deleteError: string;
+    deleteParentError: string;
     filterPopup: {
       title: string;
       classLabel: string;
@@ -252,6 +253,7 @@ export type StudentsDictionary = {
   deleteDialog: {
     descriptionPrefix: string;
     warningText: string;
+    parentWarningText: string;
   };
   rowActions: {
     viewDetail: string;
@@ -293,6 +295,7 @@ const vi: StudentsDictionary = {
     loadError: "Không thể tải danh sách học sinh.",
     deleteSuccess: "Xóa học sinh thành công!",
     deleteError: "Xóa thất bại",
+    deleteParentError: "Đã xóa học sinh nhưng xóa tài khoản phụ huynh thất bại",
     filterPopup: {
       title: "Bộ lọc",
       classLabel: "Lớp học",
@@ -525,6 +528,8 @@ const vi: StudentsDictionary = {
     descriptionPrefix: "Bạn có chắc muốn xóa học sinh",
     warningText:
       "Toàn bộ điểm số và lịch sử buổi học liên quan cũng sẽ bị gỡ. Hành động này không thể hoàn tác.",
+    parentWarningText:
+      "Tài khoản phụ huynh liên kết với học sinh này cũng sẽ bị xóa.",
   },
   rowActions: {
     viewDetail: "Xem chi tiết",
@@ -567,6 +572,7 @@ const en: StudentsDictionary = {
     loadError: "Unable to load the student list.",
     deleteSuccess: "Student deleted successfully!",
     deleteError: "Delete failed",
+    deleteParentError: "Student deleted but deleting the parent account failed",
     filterPopup: {
       title: "Filters",
       classLabel: "Class",
@@ -800,6 +806,8 @@ const en: StudentsDictionary = {
     descriptionPrefix: "Are you sure you want to delete student",
     warningText:
       "All related scores and session history will also be removed. This action cannot be undone.",
+    parentWarningText:
+      "The parent account linked to this student will also be deleted.",
   },
   rowActions: {
     viewDetail: "View details",

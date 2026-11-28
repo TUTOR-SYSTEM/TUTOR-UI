@@ -6,12 +6,14 @@ import { useStudentsCopy } from "@/hooks/useStudentsCopy.hook";
 /* ─── props ─── */
 type Props = {
   student: { id: string; name: string } | null;
+  /** Học sinh có phụ huynh liên kết — phụ huynh cũng sẽ bị xóa. */
+  hasParent?: boolean;
   onClose: () => void;
   onConfirm: (id: string) => void;
 };
 
 /* ─── component ─── */
-export function DeleteStudentDialog({ student, onClose, onConfirm }: Props) {
+export function DeleteStudentDialog({ student, hasParent = false, onClose, onConfirm }: Props) {
   const copy = useStudentsCopy();
 
   const handleConfirm = () => {
@@ -34,6 +36,9 @@ export function DeleteStudentDialog({ student, onClose, onConfirm }: Props) {
             ?
           </p>
           <p className="mt-1">{copy.deleteDialog.warningText}</p>
+          {hasParent && (
+            <p className="mt-1">{copy.deleteDialog.parentWarningText}</p>
+          )}
         </>
       }
     />

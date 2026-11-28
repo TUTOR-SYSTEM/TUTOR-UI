@@ -58,5 +58,13 @@ export type AdminParentsPayload = {
   };
 };
 
+/** PUT /admin/parents/:id — chỉ gửi các trường cần đổi. */
+export type ParentUpdatePayload = {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+};
+
 /** PUT /admin/parents/:id/password — id nằm trong URL. */
 export type ParentPasswordPayload = { id: string; password: string };
